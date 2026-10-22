@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useState, type ReactNode } from "react";
 
 import { api } from "@/lib/api";
 import { shortSha } from "@/lib/format";
@@ -64,7 +64,30 @@ const NAV: { section: string; items: NavItem[] }[] = [
 ];
 
 function Nav({ roles, onNavigate }: { roles: string[] | undefined; onNavigate?: () => void }) {
+  return (
+    <Suspense fallback={<NavList roles={roles} pathname="" />}>
+      <NavWithPath roles={roles} onNavigate={onNavigate} />
+    </Suspense>
+  );
+}
+
+function NavWithPath({ roles, onNavigate }: { roles: string[] | undefined; onNavigate?: () => void }) {
+  return <NavList roles={roles} pathname={usePathname()} onNavigate={onNavigate} />;
+}
+
+/** Watches for 401s from any API call and sends the user to /login with a return path. */
+function AuthWatcher() {
+  const router = useRouter();
   const pathname = usePathname();
+  useEffect(() => {
+    const onUnauthorized = () => router.replace(`/login?expired=1&next=${encodeURIComponent(pathname)}`);
+    window.addEventListener("treadops:unauthorized", onUnauthorized);
+    return () => window.removeEventListener("treadops:unauthorized", onUnauthorized);
+  }, [router, pathname]);
+  return null;
+}
+
+function NavList({ roles, pathname, onNavigate }: { roles: string[] | undefined; pathname: string; onNavigate?: () => void }) {
   return (
     <nav aria-label="Primary" className="flex flex-col gap-5">
       {NAV.map((group) => {
@@ -98,16 +121,9 @@ function Nav({ roles, onNavigate }: { roles: string[] | undefined; onNavigate?: 
 
 export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const me = useQuery({ queryKey: qk.me, queryFn: () => api<Me>("/v1/me"), staleTime: 60_000 });
   const models = useQuery({ queryKey: qk.models, queryFn: () => api<ModelsResponse>("/v1/models"), staleTime: 15_000 });
-
-  useEffect(() => {
-    const onUnauthorized = () => router.replace(`/login?expired=1&next=${encodeURIComponent(pathname)}`);
-    window.addEventListener("treadops:unauthorized", onUnauthorized);
-    return () => window.removeEventListener("treadops:unauthorized", onUnauthorized);
-  }, [router, pathname]);
 
   const signOut = async () => {
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
@@ -118,6 +134,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const roles = me.data?.roles;
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[260px_1fr]">
+      <Suspense fallback={null}><AuthWatcher /></Suspense>
       <a href="#main" className="sr-only-focusable absolute left-2 top-2 z-50 rounded-lg bg-primary px-3 py-2 text-white">
         Skip to content
       </a>
