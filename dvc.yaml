@@ -1,0 +1,86 @@
+# DVC owns data/model bytes and stage reproducibility; MLflow owns run detail; SQL owns jobs and releases.
+stages:
+  prepare:
+    cmd: python -m treadops_ml.prepare --config configs/data.yaml
+    deps:
+      - data/raw/archive/bn7ch8tvyp-1.zip
+      - configs/data.yaml
+      - configs/weights.lock.yaml
+      - packages/treadops_ml/treadops_ml/prepare.py
+      - packages/treadops_ml/treadops_ml/preprocess.py
+      - packages/treadops_ml/treadops_ml/descriptors.py
+    outs:
+      - data/processed
+      - data/manifests/image_manifest.parquet
+      - data/manifests/source_manifest.json:
+          cache: false
+      - data/manifests/duplicate_review.csv:
+          cache: false
+      - data/manifests/quality_report.json:
+          cache: false
+      - data/manifests/class_mapping.json:
+          cache: false
+  split:
+    cmd: python -m treadops_ml.split --config configs/split.yaml
+    deps:
+      - data/manifests/image_manifest.parquet
+      - data/processed
+      - configs/split.yaml
+      - packages/treadops_ml/treadops_ml/split.py
+    outs:
+      - data/yolo/dev
+      - data/eval
+      - data/manifests/split_assignments.parquet
+      - data/manifests/split_manifest.json:
+          cache: false
+  train:
+    cmd: python -m treadops_ml.train --config configs/train.yaml
+    deps:
+      - data/yolo/dev
+      - configs/train.yaml
+      - configs/recipes/nano_224.yaml
+      - configs/weights.lock.yaml
+      - packages/treadops_ml/treadops_ml/train.py
+      - packages/treadops_ml/treadops_ml/transforms.py
+      - packages/treadops_ml/treadops_ml/preprocess.py
+    outs:
+      - artifacts/native
+  evaluate:
+    cmd: python -m treadops_ml.evaluate --config configs/evaluate.yaml
+    deps:
+      - artifacts/native
+      - data/eval
+      - configs/evaluate.yaml
+      - configs/policy.yaml
+      - packages/treadops_ml/treadops_ml/evaluate.py
+      - packages/treadops_ml/treadops_ml/calibrate.py
+      - packages/treadops_ml/treadops_ml/policy.py
+      - packages/treadops_ml/treadops_ml/metrics.py
+      - packages/treadops_ml/treadops_ml/scenarios.py
+    outs:
+      - artifacts/evaluation
+    metrics:
+      - reports/metrics.json:
+          cache: false
+  export_parity:
+    cmd: python -m treadops_ml.export_parity
+    deps:
+      - artifacts/native
+      - artifacts/evaluation
+      - configs/policy.yaml
+      - packages/treadops_ml/treadops_ml/export_parity.py
+    outs:
+      - artifacts/export
+  package:
+    cmd: python -m treadops_ml.package --config configs/bundle.yaml
+    deps:
+      - artifacts/native
+      - artifacts/evaluation
+      - artifacts/export
+      - configs/bundle.yaml
+      - configs/policy.yaml
+      - packages/treadops_ml/treadops_ml/package.py
+      - packages/treadops_ml/treadops_ml/gates.py
+      - packages/treadops_ml/treadops_ml/bundle.py
+    outs:
+      - artifacts/bundle

@@ -1,0 +1,94 @@
+schema: '2.0'
+stages:
+  prepare:
+    cmd: python -m treadops_ml.prepare --config configs/data.yaml
+    deps:
+    - path: configs/data.yaml
+      hash: md5
+      md5: a23a24609cec73dc0f4f7de0d2b27035
+      size: 1670
+    - path: configs/weights.lock.yaml
+      hash: md5
+      md5: 72ee4f4343c458eb6f6888b2e769d01d
+      size: 566
+    - path: data/raw/archive/bn7ch8tvyp-1.zip
+      hash: md5
+      md5: 34b25cc245cc2095615105c7c8f37f61
+      size: 2859136943
+    - path: packages/treadops_ml/treadops_ml/descriptors.py
+      hash: md5
+      md5: d8986e803fb75e921764bf00303b5823
+      size: 3950
+    - path: packages/treadops_ml/treadops_ml/prepare.py
+      hash: md5
+      md5: 68b9e4bf270bcc85169ee675d36cf2d3
+      size: 16484
+    - path: packages/treadops_ml/treadops_ml/preprocess.py
+      hash: md5
+      md5: cf7100aa4a6dcbba3d0b02ffd905a1f5
+      size: 15461
+    outs:
+    - path: data/manifests/class_mapping.json
+      hash: md5
+      md5: d817b60cd28aa299c4328a9c97078333
+      size: 83
+    - path: data/manifests/duplicate_review.csv
+      hash: md5
+      md5: 28aae0e082bc117a751670c26effed7f
+      size: 496706
+    - path: data/manifests/image_manifest.parquet
+      hash: md5
+      md5: a22f0440d993e65e4caf29e3454edf04
+      size: 624148
+    - path: data/manifests/quality_report.json
+      hash: md5
+      md5: e9036cecf6060976580542018dd4031e
+      size: 1281
+    - path: data/manifests/source_manifest.json
+      hash: md5
+      md5: 07138e305cae56b658e6273b106b7e71
+      size: 1723
+    - path: data/processed
+      hash: md5
+      md5: 2b34ee5aa1e8e333659bf056a8ee267e.dir
+      size: 449690368
+      nfiles: 1830
+  split:
+    cmd: python -m treadops_ml.split --config configs/split.yaml
+    deps:
+    - path: configs/split.yaml
+      hash: md5
+      md5: ac9b365d3d05563dd50eba09faf18eac
+      size: 412
+    - path: data/manifests/image_manifest.parquet
+      hash: md5
+      md5: a22f0440d993e65e4caf29e3454edf04
+      size: 624148
+    - path: data/processed
+      hash: md5
+      md5: 2b34ee5aa1e8e333659bf056a8ee267e.dir
+      size: 449690368
+      nfiles: 1830
+    - path: packages/treadops_ml/treadops_ml/split.py
+      hash: md5
+      md5: 669e3a57783ba9437303363310b973ec
+      size: 7684
+    outs:
+    - path: data/eval
+      hash: md5
+      md5: 1cbdec79de3279e82fa0544ebf02229a.dir
+      size: 580739
+      nfiles: 5
+    - path: data/manifests/split_assignments.parquet
+      hash: md5
+      md5: 75117a31f825c15982c2217a03756ab4
+      size: 214263
+    - path: data/manifests/split_manifest.json
+      hash: md5
+      md5: f52f30468d71c858e7a974a2dd364beb
+      size: 1628
+    - path: data/yolo/dev
+      hash: md5
+      md5: de784e0b37336acf7ccc9a4aa66a4158.dir
+      size: 310393959
+      nfiles: 1276
