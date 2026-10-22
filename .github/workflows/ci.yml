@@ -1,0 +1,85 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+env:
+  UV_PYTHON: "3.11"
+  YOLO_AUTOINSTALL: "false"
+
+jobs:
+  python:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:17.6-alpine
+        env: {POSTGRES_USER: treadops, POSTGRES_PASSWORD: ci-only, POSTGRES_DB: treadops_test}
+        ports: ["5432:5432"]
+        options: --health-cmd "pg_isready -U treadops" --health-interval 5s --health-retries 20
+      redis:
+        image: redis:7.4-alpine
+        ports: ["6379:6379"]
+    env:
+      DATABASE_URL: postgresql+psycopg://treadops:ci-only@127.0.0.1:5432/treadops_test
+      TEST_DATABASE_URL: postgresql+psycopg://treadops:ci-only@127.0.0.1:5432/treadops_test
+      REDIS_URL: redis://127.0.0.1:6379/0
+      S3_ENDPOINT_URL: http://127.0.0.1:8333
+      S3_ACCESS_KEY_ID: ci
+      S3_SECRET_ACCESS_KEY: ci-secret-only
+      JWT_SECRET: ci-only-not-a-real-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with: {version: "0.11.26"}
+      - run: uv sync --locked
+      - name: object store
+        run: |
+          printf '{"identities":[{"name":"ci","credentials":[{"accessKey":"ci","secretKey":"ci-secret-only"}],"actions":["Admin","Read","List","Tagging","Write"]}]}' > /tmp/s3.json
+          docker run -d --name s3 -p 8333:8333 -v /tmp/s3.json:/s3.json chrislusf/seaweedfs:4.01 server -s3 -s3.config=/s3.json
+          for i in $(seq 1 30); do curl -s -o /dev/null http://127.0.0.1:8333 && break; sleep 2; done
+      - name: lint + types
+        run: |
+          uv run ruff check packages services tests scripts
+          uv run mypy --ignore-missing-imports packages/treadops_ml/treadops_ml/preprocess.py packages/treadops_agent/treadops_agent/guardrails.py
+      - name: generated-contract diff
+        run: uv run python scripts/export_openapi.py --check
+      - name: migrations (fresh upgrade, round trip, drift)
+        run: |
+          uv run alembic upgrade head && uv run alembic downgrade base && uv run alembic upgrade head && uv run alembic check
+      - name: unit tests
+        run: uv run pytest tests/unit -q --junitxml=reports/unit.xml
+      - name: data / model tests (SKIPPED with reason when data or trusted artifacts are absent)
+        run: uv run pytest tests/ml -q -rs --junitxml=reports/ml.xml
+      - name: integration tests (real postgres/redis/s3; bundle tests SKIPPED without a trusted artifact)
+        run: uv run pytest tests/integration -q -rs --junitxml=reports/integration.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: python-reports, path: reports/}
+
+  web:
+    runs-on: ubuntu-24.04
+    defaults: {run: {working-directory: apps/web}}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: "22", cache: npm, cache-dependency-path: apps/web/package-lock.json}
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test
+      - run: npm run build
+
+  images:
+    if: github.event_name == 'push'
+    needs: [python, web]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: build immutable images tagged with the commit SHA
+        run: |
+          docker build -f infra/docker/python.Dockerfile -t treadops/app:${GITHUB_SHA} .
+          docker build -f infra/docker/web.Dockerfile -t treadops/web:${GITHUB_SHA} apps/web
+          sha256sum uv.lock apps/web/package-lock.json > dependency-locks.sha256
+      - uses: actions/upload-artifact@v4
+        with: {name: dependency-locks, path: dependency-locks.sha256}
