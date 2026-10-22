@@ -29,8 +29,7 @@ from .preprocess import (
     ImageRejected,
     Limits,
     PreprocessContract,
-    canonicalize,
-    decode_validated,
+    canonical_from_raw,
     load_canonical,
 )
 
@@ -54,11 +53,10 @@ def _process(args: tuple[str, bytes, dict, dict]) -> dict[str, Any]:
     contract = PreprocessContract.from_dict(contract_d)
     rec: dict[str, Any] = {"original_sha256": sha256_bytes(data), "bytes": len(data)}
     try:
-        dec = decode_validated(data, limits)
+        canonical, ing = canonical_from_raw(data, contract, limits)  # same ingest path as the serving API
     except ImageRejected as exc:
         rec.update(status="quarantined", quarantine_reason=exc.code, quarantine_detail=exc.message)
         return rec
-    canonical, cmeta = canonicalize(dec.image, contract)
     rgb = load_canonical(canonical)
     rec.update(
         status="ok",
@@ -66,10 +64,11 @@ def _process(args: tuple[str, bytes, dict, dict]) -> dict[str, Any]:
         canonical_sha256=sha256_bytes(canonical),
         width=int(rgb.shape[1]),
         height=int(rgb.shape[0]),
-        original_width=dec.info["original_width"],
-        original_height=dec.info["original_height"],
-        exif_orientation=dec.info["exif_orientation"],
-        source_format=dec.info["format"],
+        original_width=ing.info["original_width"],
+        original_height=ing.info["original_height"],
+        exif_orientation=ing.info["exif_orientation"],
+        had_gps=ing.info["had_gps"],
+        source_format=ing.info["format"],
         phash=f"{phash(rgb):016x}",
         **{f"desc_{k}": v for k, v in image_descriptors(rgb).items()},
     )

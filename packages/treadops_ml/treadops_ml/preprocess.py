@@ -1,10 +1,11 @@
 """The single full-image transform contract shared by prepare, training, evaluation, serving and ONNX parity.
 
-    raw bytes -> validate + decode (PIL) -> EXIF transpose -> RGB -> canonical JPEG (long side <= 1024)
-              -> decode canonical -> letterbox 224 (aspect preserved, pad 114) -> float32 NCHW in [0, 1]
+    raw bytes -> ingest: validate + decode (PIL) + EXIF transpose + RGB + re-encode without metadata ("sanitized")
+              -> canonical JPEG (long side <= 1024)
+              -> letterbox 224 (aspect preserved, pad 114) -> float32 NCHW in [0, 1]
 
-Every model path starts from the *canonical bytes*: the prepare stage stores them for the public archive and the
-inference worker stores them for uploads, so training and serving decode exactly the same JPEG.
+The API persists only the sanitized image (raw uploads carry EXIF/GPS and are never stored). The prepare stage
+runs the same ingest step on archive originals, so training and serving canonical bytes are produced by one path.
 """
 
 from __future__ import annotations
@@ -12,14 +13,14 @@ from __future__ import annotations
 import contextlib
 import io
 import time
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from typing import Any
 
 import cv2
 import numpy as np
 from PIL import Image, ImageOps, UnidentifiedImageError
 
-from .common import sha256_json
+from .common import sha256_bytes, sha256_json
 
 # PIL's own bomb guard is replaced by an explicit pixel check before any full decode.
 Image.MAX_IMAGE_PIXELS = None
@@ -30,6 +31,8 @@ ALLOWED_FORMATS = {"JPEG", "PNG", "WEBP"}
 @dataclass(frozen=True)
 class PreprocessContract:
     version: str = "v1"
+    sanitize_format: str = "JPEG"
+    sanitize_quality: int = 95
     canonical_max_side: int = 1024
     canonical_resample: str = "LANCZOS"
     canonical_format: str = "JPEG"
@@ -59,7 +62,7 @@ class PreprocessContract:
     def from_dict(cls, d: dict[str, Any]) -> PreprocessContract:
         d = dict(d)
         d["mean"], d["std"] = tuple(d.get("mean", (0, 0, 0))), tuple(d.get("std", (1, 1, 1)))
-        known = {f for f in cls.__dataclass_fields__}
+        known = set(cls.__dataclass_fields__)
         return cls(**{k: v for k, v in d.items() if k in known})
 
 
@@ -83,14 +86,21 @@ class ImageRejected(ValueError):
 
 
 @dataclass
-class Decoded:
-    image: Image.Image                    # oriented RGB
-    raw: Image.Image                      # as stored in the file (no EXIF transpose), RGB
-    info: dict[str, Any] = field(default_factory=dict)
+class Ingested:
+    sanitized: bytes                       # oriented RGB, re-encoded, no EXIF/XMP/ICC/GPS
+    image: Image.Image                     # decoded sanitized image (RGB)
+    info: dict[str, Any]
 
 
-def decode_validated(data: bytes, limits: Limits = Limits()) -> Decoded:
-    """Validate size/format/pixels before a full decode, then decode once and apply EXIF orientation."""
+def _encode_jpeg(img: Image.Image, quality: int, subsampling: int = 0) -> bytes:
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=quality, subsampling=subsampling, optimize=False)
+    return buf.getvalue()
+
+
+def ingest(data: bytes, limits: Limits = Limits(), contract: PreprocessContract = PreprocessContract()) -> Ingested:
+    """Validate size/format/pixels before a full decode, decode once, orient, and strip all metadata."""
+    t0 = time.perf_counter()
     if not data:
         raise ImageRejected("empty_upload", "The uploaded file is empty.", 400)
     if len(data) > limits.max_bytes:
@@ -115,21 +125,35 @@ def decode_validated(data: bytes, limits: Limits = Limits()) -> Decoded:
         raise ImageRejected("corrupt_image", f"Image failed to decode ({exc.__class__.__name__}).", 422) from exc
 
     exif_orientation = None
+    had_exif = False
     with contextlib.suppress(Exception):
-        exif_orientation = img.getexif().get(0x0112)
-    raw_rgb = img.convert("RGB")
+        exif = img.getexif()
+        had_exif = len(exif) > 0
+        exif_orientation = exif.get(0x0112)
+    had_gps = False
+    with contextlib.suppress(Exception):
+        had_gps = bool(img.getexif().get_ifd(0x8825))
+    mode = img.mode
     oriented = ImageOps.exif_transpose(img).convert("RGB")
+    sanitized = _encode_jpeg(oriented, contract.sanitize_quality)
+    image = Image.open(io.BytesIO(sanitized)).convert("RGB")
     info = {
         "format": fmt,
-        "mode": img.mode,
+        "mode": mode,
+        "bytes": len(data),
+        "sha256": sha256_bytes(data),
         "original_width": w,
         "original_height": h,
         "exif_orientation": exif_orientation,
-        "oriented_width": oriented.width,
-        "oriented_height": oriented.height,
-        "bytes": len(data),
+        "had_exif": had_exif,
+        "had_gps": had_gps,
+        "width": image.width,
+        "height": image.height,
+        "sanitized_bytes": len(sanitized),
+        "sanitized_sha256": sha256_bytes(sanitized),
+        "ingest_ms": round((time.perf_counter() - t0) * 1000, 2),
     }
-    return Decoded(image=oriented, raw=raw_rgb, info=info)
+    return Ingested(sanitized=sanitized, image=image, info=info)
 
 
 def canonicalize(img: Image.Image, contract: PreprocessContract = PreprocessContract()) -> tuple[bytes, dict]:
@@ -139,15 +163,13 @@ def canonicalize(img: Image.Image, contract: PreprocessContract = PreprocessCont
     if scale < 1.0:
         size = (max(1, round(w * scale)), max(1, round(h * scale)))
         img = img.resize(size, getattr(Image.Resampling, contract.canonical_resample))
-    buf = io.BytesIO()
-    img.save(
-        buf,
-        format=contract.canonical_format,
-        quality=contract.canonical_quality,
-        subsampling=contract.canonical_subsampling,
-        optimize=False,
-    )
-    return buf.getvalue(), {"canonical_width": img.width, "canonical_height": img.height, "scale": scale}
+    data = _encode_jpeg(img, contract.canonical_quality, contract.canonical_subsampling)
+    return data, {"canonical_width": img.width, "canonical_height": img.height, "scale": scale}
+
+
+def canonical_from_sanitized(sanitized: bytes, contract: PreprocessContract = PreprocessContract()):
+    with Image.open(io.BytesIO(sanitized)) as im:
+        return canonicalize(im.convert("RGB"), contract)
 
 
 def load_canonical(data: bytes) -> np.ndarray:
@@ -180,11 +202,19 @@ def tensor_from_canonical(data: bytes, contract: PreprocessContract = Preprocess
     return to_tensor(lb, contract)
 
 
+def canonical_from_raw(
+    raw: bytes, contract: PreprocessContract = PreprocessContract(), limits: Limits = Limits()
+) -> tuple[bytes, Ingested]:
+    ing = ingest(raw, limits, contract)
+    canonical, _ = canonical_from_sanitized(ing.sanitized, contract)
+    return canonical, ing
+
+
 def decode_to_tensor(
     image_bytes: bytes, contract: PreprocessContract = PreprocessContract(), limits: Limits = Limits()
 ) -> np.ndarray:
     """Full serving path from raw upload bytes (used by tests and the prediction adapter)."""
-    canonical, _ = canonicalize(decode_validated(image_bytes, limits).image, contract)
+    canonical, _ = canonical_from_raw(image_bytes, contract, limits)
     return tensor_from_canonical(canonical, contract)
 
 
@@ -198,13 +228,13 @@ class Stage:
     index: int
     name: str
     title: str
-    image: Image.Image
+    image: Image.Image | None
     params: dict[str, Any]
     duration_ms: float
     log: list[str]
 
 
-def _thumb(img: Image.Image, side: int = 640) -> Image.Image:
+def thumb(img: Image.Image, side: int = 640) -> Image.Image:
     img = img.copy()
     img.thumbnail((side, side), Image.Resampling.LANCZOS)
     return img
@@ -228,7 +258,6 @@ def _tensor_planes(x: np.ndarray) -> Image.Image:
     strip = np.concatenate([planes[0], gap, planes[1], gap, planes[2]], axis=1)
     rgb = np.stack([strip] * 3, axis=-1)
     w = strip.shape[1]
-    # colour cue bar per channel
     bar = np.full((8, w, 3), 255, dtype=np.uint8)
     s = x.shape[3]
     for c, col in enumerate([(239, 68, 68), (34, 197, 94), (59, 130, 246)]):
@@ -239,89 +268,71 @@ def _tensor_planes(x: np.ndarray) -> Image.Image:
 
 
 def run_stages(
-    image_bytes: bytes, contract: PreprocessContract = PreprocessContract(), limits: Limits = Limits()
+    sanitized: bytes, ingest_info: dict[str, Any], contract: PreprocessContract = PreprocessContract()
 ) -> dict[str, Any]:
-    """Run the serving preprocessing once, keeping each intermediate for the UI and lineage.
+    """Re-run the serving preprocessing from the sanitized image, keeping each intermediate and its timing.
 
-    Returns canonical bytes, the model tensor, descriptor inputs and a list of `Stage` records.
-    Raises ImageRejected exactly like the serving path would.
+    Stage 1 reports the ingest step the API already performed (its timing is the API's measurement).
     """
     stages: list[Stage] = []
-
-    t0 = time.perf_counter()
-    dec = decode_validated(image_bytes, limits)
-    t1 = time.perf_counter()
-    info = dec.info
+    with Image.open(io.BytesIO(sanitized)) as im:
+        sanitized_img = im.convert("RGB")
+    orient = ingest_info.get("exif_orientation")
     stages.append(
         Stage(
             1,
-            "decode_validate",
-            "Decode + validate",
-            _thumb(dec.raw),
-            info,
+            "ingest",
+            "Ingest: validate, orient, strip metadata",
+            thumb(sanitized_img),
+            {k: ingest_info.get(k) for k in ("format", "mode", "bytes", "original_width", "original_height",
+                                             "exif_orientation", "had_exif", "had_gps", "width", "height")},
+            float(ingest_info.get("ingest_ms", 0.0)),
+            [
+                f"format={ingest_info.get('format')} mode={ingest_info.get('mode')} bytes={ingest_info.get('bytes')}",
+                f"stored {ingest_info.get('original_width')}x{ingest_info.get('original_height')}; structure verified"
+                " before full decode (decompression-bomb guard)",
+                f"EXIF orientation={orient if orient is not None else 'absent'}"
+                + (" -> transposed" if orient not in (None, 1) else " -> no rotation needed")
+                + f"; metadata removed (EXIF={'yes' if ingest_info.get('had_exif') else 'no'},"
+                f" GPS={'yes' if ingest_info.get('had_gps') else 'no'})",
+            ],
+        )
+    )
+
+    t0 = time.perf_counter()
+    canonical, cmeta = canonicalize(sanitized_img, contract)
+    canonical_rgb = load_canonical(canonical)
+    t1 = time.perf_counter()
+    stages.append(
+        Stage(
+            2,
+            "canonical",
+            "Canonical derivative",
+            thumb(Image.fromarray(canonical_rgb)),
+            {**cmeta, "format": contract.canonical_format, "quality": contract.canonical_quality,
+             "bytes": len(canonical)},
             (t1 - t0) * 1000,
             [
-                f"format={info['format']} mode={info['mode']} bytes={info['bytes']}",
-                f"stored size {info['original_width']}x{info['original_height']} "
-                f"({info['original_width'] * info['original_height'] / 1e6:.1f} MP <= {limits.max_decoded_pixels / 1e6:.0f} MP)",
-                "structure verified before full decode (decompression-bomb guard)",
+                f"long side <= {contract.canonical_max_side}px (scale {cmeta['scale']:.3f}, {contract.canonical_resample})",
+                f"{cmeta['canonical_width']}x{cmeta['canonical_height']} {contract.canonical_format} "
+                f"q{contract.canonical_quality} 4:4:4 -> {len(canonical)} bytes",
+                "identical code path to the training set's canonical images",
             ],
         )
     )
 
     t2 = time.perf_counter()
-    oriented = dec.image
-    t3 = time.perf_counter()
-    orient = info["exif_orientation"]
-    stages.append(
-        Stage(
-            2,
-            "exif_orient_rgb",
-            "EXIF orientation + RGB",
-            _thumb(oriented),
-            {"exif_orientation": orient, "width": oriented.width, "height": oriented.height, "mode": "RGB"},
-            (t3 - t2) * 1000 + 0.0,
-            [
-                f"EXIF orientation tag = {orient if orient is not None else 'absent'}"
-                + (" -> transposed" if orient not in (None, 1) else " -> no rotation needed"),
-                f"colour mode {info['mode']} -> RGB; metadata (EXIF/GPS) dropped from derivatives",
-            ],
-        )
-    )
-
-    t4 = time.perf_counter()
-    canonical, cmeta = canonicalize(oriented, contract)
-    canonical_rgb = load_canonical(canonical)
-    t5 = time.perf_counter()
-    stages.append(
-        Stage(
-            3,
-            "canonical",
-            "Canonical derivative",
-            _thumb(Image.fromarray(canonical_rgb)),
-            {**cmeta, "format": contract.canonical_format, "quality": contract.canonical_quality,
-             "bytes": len(canonical)},
-            (t5 - t4) * 1000,
-            [
-                f"long side <= {contract.canonical_max_side}px (scale {cmeta['scale']:.3f}, {contract.canonical_resample})",
-                f"re-encoded {contract.canonical_format} q{contract.canonical_quality} 4:4:4 "
-                f"-> {len(canonical)} bytes; same bytes the training set was built from",
-            ],
-        )
-    )
-
-    t6 = time.perf_counter()
     lb, lmeta = letterbox(canonical_rgb, contract)
-    t7 = time.perf_counter()
+    t3 = time.perf_counter()
     pad_frac = 1 - (lmeta["resized_w"] * lmeta["resized_h"]) / (contract.imgsz**2)
     stages.append(
         Stage(
-            4,
+            3,
             "letterbox",
             f"Letterbox {contract.imgsz}x{contract.imgsz}",
             _letterbox_display(lb, lmeta),
             {**lmeta, "pad_value": contract.pad_value, "pad_fraction": round(pad_frac, 4)},
-            (t7 - t6) * 1000,
+            (t3 - t2) * 1000,
             [
                 f"aspect preserved: {canonical_rgb.shape[1]}x{canonical_rgb.shape[0]} -> "
                 f"{lmeta['resized_w']}x{lmeta['resized_h']} (r={lmeta['ratio']:.4f})",
@@ -331,9 +342,9 @@ def run_stages(
         )
     )
 
-    t8 = time.perf_counter()
+    t4 = time.perf_counter()
     x = to_tensor(lb, contract)
-    t9 = time.perf_counter()
+    t5 = time.perf_counter()
     stats = {
         "shape": list(x.shape),
         "dtype": str(x.dtype),
@@ -345,12 +356,12 @@ def run_stages(
     }
     stages.append(
         Stage(
-            5,
+            4,
             "tensor",
             "Model tensor (R | G | B)",
             _tensor_planes(x),
             stats,
-            (t9 - t8) * 1000,
+            (t5 - t4) * 1000,
             [
                 f"tensor {stats['shape']} {stats['dtype']} range [{stats['min']:.3f}, {stats['max']:.3f}]",
                 "channel means R/G/B = " + " / ".join(f"{m:.3f}" for m in stats["channel_mean"]),
@@ -364,6 +375,5 @@ def run_stages(
         "letterboxed": lb,
         "letterbox_meta": lmeta,
         "tensor": x,
-        "decode_info": info,
         "stages": stages,
     }

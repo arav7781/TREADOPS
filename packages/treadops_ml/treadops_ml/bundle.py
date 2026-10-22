@@ -19,7 +19,7 @@ from .calibrate import TemperatureCalibrator
 from .common import sha256_file, sha256_json
 from .descriptors import image_descriptors, quality_status
 from .policy import Policy
-from .preprocess import PreprocessContract, run_stages, tensor_from_canonical
+from .preprocess import Limits, PreprocessContract, ingest, run_stages, tensor_from_canonical
 
 REQUIRED_FILES = ("best.pt", "class_mapping.json", "preprocess.json", "calibration.json", "policy.json",
                   "metrics.json", "gate_report.json", "model_card.md")
@@ -175,8 +175,9 @@ class Bundle:
                        "postprocess_ms": (t3 - t2) * 1000},
         )
 
-    def predict_bytes(self, image_bytes: bytes) -> tuple[Prediction, dict[str, Any]]:
-        staged = run_stages(image_bytes, self.preprocess)
+    def predict_bytes(self, image_bytes: bytes, limits: Limits = Limits()) -> tuple[Prediction, dict[str, Any]]:
+        ing = ingest(image_bytes, limits, self.preprocess)
+        staged = run_stages(ing.sanitized, ing.info, self.preprocess)
         pred = self.predict_canonical_rgb(staged["canonical_rgb"], staged["tensor"])
         return pred, staged
 

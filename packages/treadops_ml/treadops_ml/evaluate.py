@@ -26,8 +26,7 @@ from .metrics import binary_metrics, latency_summary, paired_bootstrap, probabil
 from .policy import Policy, select_binary_threshold
 from .preprocess import (
     PreprocessContract,
-    canonicalize,
-    decode_validated,
+    canonical_from_raw,
     letterbox,
     load_canonical,
     tensor_from_canonical,
@@ -223,8 +222,7 @@ def stress_eval(runner, calibrator, policy, test_rows, p_clean, tri_clean, cfg) 
         xs, descs = [], []
         for r in test_rows:
             rgb = load_canonical(repo_path(r["path"]).read_bytes())
-            dec = decode_validated(derivative_bytes(rgb, transform))
-            canonical, _ = canonicalize(dec.image, runner.contract)
+            canonical, _ = canonical_from_raw(derivative_bytes(rgb, transform), runner.contract)
             crgb = load_canonical(canonical)
             xs.append(to_tensor(letterbox(crgb, runner.contract)[0], runner.contract))
             descs.append(image_descriptors(crgb))
