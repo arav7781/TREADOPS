@@ -77,6 +77,9 @@ extend-exclude = ["apps", "data", "runs", "artifacts", "models", "migrations/ver
 select = ["E", "F", "I", "B", "UP", "SIM"]
 ignore = ["E501", "B008", "SIM108"]
 
+[tool.ruff.lint.isort]
+known-first-party = ["treadops_ml", "treadops_api", "treadops_worker", "treadops_agent"]
+
 [tool.mypy]
 python_version = "3.11"
 ignore_missing_imports = true
