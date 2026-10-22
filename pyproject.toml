@@ -96,3 +96,14 @@ markers = [
 ]
 addopts = "-ra"
 timeout = 600
+
+# Linux containers use CPU-only torch wheels (the CUDA build adds ~3-4 GB); macOS keeps the PyPI build (MPS).
+# The optional NVIDIA training image installs the matching CUDA wheel at build time (see infra/docker).
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+torchvision = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
