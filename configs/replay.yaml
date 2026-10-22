@@ -1,0 +1,13 @@
+schema_version: 1
+default_count: 600
+default_rate_per_s: 2.0
+seed: 42
+lines: [SIM-L01, SIM-L02, SIM-L03]
+cameras: [SIM-C01, SIM-C02, SIM-C03, SIM-C04]
+pool_roles: [policy, test]        # paired parents; replays are never training-eligible
+scenarios:
+  baseline: {version: v1}
+  low_light: {version: v1, start_after: 300, fraction: 0.70, brightness_factor: 0.45}
+  camera_blur: {version: v1, start_after: 300, fraction: 0.50, gaussian_sigma: 1.5}
+  class_prior_shift: {version: v1, start_after: 300, defective_fraction: 0.85}
+  burst_and_outage: {version: v1, burst_rate_per_s: 10.0, burst_events: 120, duplicate_fraction: 0.10}

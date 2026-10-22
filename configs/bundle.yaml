@@ -1,0 +1,9 @@
+schema_version: 1
+native_dir: artifacts/native
+evaluation_dir: artifacts/evaluation
+out_dir: artifacts/bundle
+registry_name: treadops-yolo-classify
+export_onnx: true
+reference_encoder: yolo26n-cls.pt    # fixed ImageNet encoder for drift embeddings; never the served model
+reference_pca_components: 16
+golden_images: 8

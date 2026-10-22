@@ -1,0 +1,35 @@
+# Data acquisition + canonicalisation contract (stage: prepare)
+schema_version: 1
+source:
+  id: "D1:v1"
+  name: "Digital images of defective and good condition tyres"
+  doi: "10.17632/bn7ch8tvyp.1"
+  url: "https://data.mendeley.com/datasets/bn7ch8tvyp/1"
+  license: "CC BY 4.0"
+  attribution: "Pathmanaban P. et al., Mendeley Data, V1, doi:10.17632/bn7ch8tvyp.1"
+  receipt: docs/evidence/data/download_receipt.json
+archive: data/raw/archive/bn7ch8tvyp-1.zip
+processed_dir: data/processed
+manifest_dir: data/manifests
+quarantine_dir: data/quarantine
+limits:
+  max_file_bytes: 26214400        # 25 MiB per source image
+  max_decoded_pixels: 25000000    # decompression-bomb guard (matches MAX_DECODED_PIXELS)
+  min_side: 64
+allowed_suffixes: [".jpg", ".jpeg", ".png"]
+canonical:
+  max_side: 1024                  # long side after EXIF transpose; never upscaled
+  resample: LANCZOS
+  format: JPEG
+  quality: 95
+  subsampling: 0                  # 4:4:4 chroma
+label_map:                        # archive folder (lower-cased) -> semantic label
+  defective: defective
+  good: good
+duplicates:                       # rules set after a visual review of candidate pairs (docs/adr/0003-*.md)
+  phash_hamming_max: 6
+  phash_requires_cosine_min: 0.85 # pHash alone produced false matches between different tyres
+  embedding_cosine_min: 0.90      # 0.90-0.98 pairs were the same physical tyre re-photographed
+  sequence_index_distance_max: 3  # publisher capture order: adjacent shots of one tyre ...
+  sequence_cosine_min: 0.80       # ... grouped when also visually similar
+  review_floor: 0.86              # pairs above this (or near pHash) are listed in duplicate_review.csv

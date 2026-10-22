@@ -1,0 +1,12 @@
+id: nano_smoke
+model: yolo26n-cls.pt
+epochs: 1
+imgsz: 224
+batch: 4
+optimizer: AdamW
+lr0: 0.001
+patience: 10
+seed: 42
+workers: 0
+fraction: 0.1
+augment: {hflip: 0.5, vflip: 0.0, rotate_deg: 0, brightness: 0.0, contrast: 0.0, saturation: 0.0}

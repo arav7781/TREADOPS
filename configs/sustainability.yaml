@@ -1,0 +1,30 @@
+# Circularity pathway factors. These are ESTIMATES from Michelin's published truck/bus retreading figures,
+# not measurements of any TreadOps tyre. Only inspector-verified dispositions count toward the ledger.
+schema_version: 1
+version: v1
+scope: "truck/bus casings (MICHELIN Remix retreading figures)"
+factors:
+  new_tyre_raw_material_kg: 70
+  retread_raw_material_saved_kg: 50
+  co2e_kg_per_kg_raw_material: 2.3
+  max_retreads_remix: 2
+sources:
+  - id: MICH-RETREAD-1
+    title: "Why is tyre retreading a good option for my trucks? (Michelin UK)"
+    url: "https://business.michelin.co.uk/help-advice/truck/tyre-basics-tyre-retreading"
+    used_for: [retread_raw_material_saved_kg, new_tyre_raw_material_kg, co2e_kg_per_kg_raw_material, max_retreads_remix]
+    note: "2.3 kg CO2/kg raw material is Michelin's internal cradle-to-gate LCA factor as stated on the page."
+pathways:
+  good_candidate:
+    pathway: retread_intake
+    label: "Retread intake (casing reuse)"
+    action: "Route to casing intake; full shearography / NDT inspection still required before retreading."
+  manual_review:
+    pathway: expert_inspection
+    label: "Expert casing inspection"
+    action: "Hold for a qualified inspector; capture additional angles (bead, sidewall, crown)."
+  defect_flagged:
+    pathway: material_recovery
+    label: "End-of-life material recovery"
+    action: "Remove from service flow; route to certified recycling / material recovery (ELT)."
+dispositions: [retread, repair, material_recovery, reinspect]
