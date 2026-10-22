@@ -1,0 +1,38 @@
+schema_version: 1
+prompt: configs/prompts/copilot_system.yaml
+max_agent_iterations: 5
+max_message_chars: 4000
+llm:
+  temperature: 0.2
+  max_tokens: 900
+  timeout_s: 45
+  vision: false                    # true -> also send a downscaled canonical image to a vision-capable LLM
+classify_wait_s: 90                # how long the classify tool waits for the YOLO job
+guardrails:
+  injection_patterns:
+    - "ignore (all |any |the )?(previous|prior|above) (instructions|rules|prompts?)"
+    - "disregard (all |any |the )?(previous|prior|above|system)"
+    - "(reveal|show|print|repeat) (me )?(your|the) (system )?(prompt|instructions|rules)"
+    - "you are now (?!looking)"
+    - "developer mode|jailbreak|\\bDAN\\b|do anything now"
+    - "act as (an? )?(unfiltered|unrestricted|different) "
+    - "pretend (that )?(you|the rules)"
+    - "</?(system|assistant)>"
+  certification_patterns:
+    - "\\bsafe to (drive|use|run)\\b"
+    - "\\broad ?worthy\\b"
+    - "\\bcertif(y|ied|ication)\\b"
+    - "\\bguarantee(d)?\\b"
+    - "\\bno (need|requirement) (for|of) (an? )?(human |manual )?(inspection|review)\\b"
+    - "\\bcleared for (retread|use|service)\\b"
+  domain_keywords: [tyre, tire, tread, casing, retread, defect, crack, sidewall, bead, crown, bulge, cut, puncture,
+                    inspection, inspect, triage, model, yolo, accuracy, recall, specificity, drift, monitor,
+                    calibration, gate, deploy, release, rollback, dataset, label, review, queue, circular,
+                    sustainab, co2, carbon, recycl, material, michelin, photo, image, upload, replay, shadow,
+                    preprocess, letterbox, heatmap, attribution, quality, blur, exposure, passport, ledger,
+                    disposition, hi, hello, help, thanks, thank]
+  disclaimer: "Triage aid only - final clearance requires a qualified inspector and full casing inspection."
+pricing_per_million_tokens:        # used for cost telemetry; unknown models report cost=null
+  gpt-4o-mini: {input: 0.15, output: 0.60}
+  gpt-4o: {input: 2.50, output: 10.00}
+  gpt-4.1-mini: {input: 0.40, output: 1.60}
