@@ -92,3 +92,41 @@ stages:
       md5: de784e0b37336acf7ccc9a4aa66a4158.dir
       size: 310393959
       nfiles: 1276
+  train:
+    cmd: python -m treadops_ml.train --config configs/train.yaml
+    deps:
+    - path: configs/recipes/nano_224.yaml
+      hash: md5
+      md5: dbc645f682e412f312c9844913baf9bf
+      size: 227
+    - path: configs/train.yaml
+      hash: md5
+      md5: 8cbda8366031bb3d4b898a2bf8a8d170
+      size: 304
+    - path: configs/weights.lock.yaml
+      hash: md5
+      md5: 72ee4f4343c458eb6f6888b2e769d01d
+      size: 566
+    - path: data/yolo/dev
+      hash: md5
+      md5: 7315ca1b24aa2a58ce06878dcb06e978.dir
+      size: 310544632
+      nfiles: 1278
+    - path: packages/treadops_ml/treadops_ml/preprocess.py
+      hash: md5
+      md5: cf7100aa4a6dcbba3d0b02ffd905a1f5
+      size: 15461
+    - path: packages/treadops_ml/treadops_ml/train.py
+      hash: md5
+      md5: 5ca90564cddbf295fa5c320234e660c2
+      size: 9328
+    - path: packages/treadops_ml/treadops_ml/transforms.py
+      hash: md5
+      md5: 971fc116ef1012110e698783651a1f5d
+      size: 4876
+    outs:
+    - path: artifacts/native
+      hash: md5
+      md5: 3d2715f45f56f5022d373cdec4544618.dir
+      size: 3258515
+      nfiles: 3

@@ -26,7 +26,7 @@ dependencies = [
   "boto3",
   "pillow",
   "numpy",
-  "pandas",
+  "pandas>=2.2,<3",  # evidently 0.7.23 imports pandas internals removed in 3.0
   "pyarrow",
   "scipy",
   "scikit-learn",

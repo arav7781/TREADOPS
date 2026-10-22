@@ -88,18 +88,20 @@ def run(
     final_test: bool = True,
     champion_bundle: str | None = None,
     purpose: str = "dvc_pipeline",
+    eval_dir: str | None = None,
+    metrics_path: str | None = None,
 ) -> dict[str, Any]:
     cfg = load_yaml(config_path)
     pcfg = load_yaml(cfg["policy"])
     native = repo_path(native_dir or cfg["native_dir"])
     out = repo_path(out_dir or cfg["out_dir"])
     out.mkdir(parents=True, exist_ok=True)
-    eval_dir = repo_path(cfg["eval_dir"])
+    eval_root = repo_path(eval_dir or cfg["eval_dir"])
     record = read_json(native / "training_record.json")
     runner = NativeRunner(native / "best.pt", cfg.get("device", "cpu"), int(record["recipe"]["imgsz"]))
     contract = runner.contract
     dix = runner.mapping["defective"]
-    rows = {r: read_jsonl(eval_dir / f"{r}.jsonl") for r in ("calibration", "policy", "test")}
+    rows = {r: read_jsonl(eval_root / f"{r}.jsonl") for r in ("calibration", "policy", "test")}
 
     def y_of(rs):
         return np.array([r["label"] == "defective" for r in rs])
@@ -206,7 +208,7 @@ def run(
         "test_brier": test_report.get("probabilistic", {}).get("brier"),
         "model_p95_ms_cpu": latency["model_only"].get("p95_ms"),
     }
-    write_json(cfg["metrics_path"], summary)
+    write_json(metrics_path or cfg["metrics_path"], summary)
     return summary
 
 

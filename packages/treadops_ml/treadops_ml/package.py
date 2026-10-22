@@ -149,7 +149,9 @@ def register_mlflow(bundle_dir: Path, run_id: str | None, registry_name: str, ga
 
 def run(config_path: str = "configs/bundle.yaml", native_dir: str | None = None, evaluation_dir: str | None = None,
         export_dir: str = "artifacts/export", out_dir: str | None = None, register: bool = True,
-        dataset_snapshot_id: str | None = None) -> dict[str, Any]:
+        dataset_snapshot_id: str | None = None, eval_dir: str = "data/eval",
+        split_manifest_path: str = "data/manifests/split_manifest.json",
+        summary_metrics_path: str = "reports/metrics.json") -> dict[str, Any]:
     cfg = load_yaml(config_path)
     pcfg = load_yaml("configs/policy.yaml")
     native = repo_path(native_dir or cfg["native_dir"])
@@ -175,8 +177,7 @@ def run(config_path: str = "configs/bundle.yaml", native_dir: str | None = None,
     shutil.copy2(evaluation / "calibration.json", out / "calibration.json")
     shutil.copy2(evaluation / "policy.json", out / "policy.json")
 
-    eval_dir = repo_path("data/eval")
-    roles = {r: read_jsonl(eval_dir / f"{r}.jsonl") for r in ("calibration", "policy", "test")}
+    roles = {r: read_jsonl(repo_path(eval_dir) / f"{r}.jsonl") for r in ("calibration", "policy", "test")}
     monitoring = reference_features(roles["calibration"] + roles["policy"], contract,
                                     int(cfg["reference_pca_components"]), out)
 
@@ -201,7 +202,7 @@ def run(config_path: str = "configs/bundle.yaml", native_dir: str | None = None,
          "p_defective": float(cal.apply(graw[i])[mapping["defective"]]),
          "triage": pol.decide(float(cal.apply(graw[i])[mapping["defective"]]))[0]} for i, r in enumerate(golden)]})
 
-    split_manifest = read_json("data/manifests/split_manifest.json")
+    split_manifest = read_json(split_manifest_path)
     gate_metrics = read_json(evaluation / "gate_metrics.json")
     test = read_json(evaluation / "test_metrics.json")
     stress = read_json(evaluation / "stress.json")
@@ -266,7 +267,7 @@ def run(config_path: str = "configs/bundle.yaml", native_dir: str | None = None,
     manifest["bundle_sha256"] = bundle_sha_from_files(manifest["files"])
     write_json(out / "manifest.json", manifest)
 
-    summary_metrics = read_json("reports/metrics.json") if repo_path("reports/metrics.json").exists() else {}
+    summary_metrics = read_json(summary_metrics_path) if repo_path(summary_metrics_path).exists() else {}
     reg = register_mlflow(out, record.get("mlflow_run_id"), cfg["registry_name"], gate, summary_metrics) \
         if register else {"status": "skipped"}
     if reg.get("version"):
