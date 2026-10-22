@@ -24,7 +24,7 @@ import numpy as np
 import pandas as pd
 
 from .common import load_yaml, read_json, repo_path, sha256_bytes, sha256_file, write_json
-from .descriptors import DESCRIPTOR_VERSION, hamming, image_descriptors, phash
+from .descriptors import DESCRIPTOR_VERSION, image_descriptors, phash
 from .preprocess import (
     ImageRejected,
     Limits,
@@ -74,6 +74,14 @@ def _process(args: tuple[str, bytes, dict, dict]) -> dict[str, Any]:
         **{f"desc_{k}": v for k, v in image_descriptors(rgb).items()},
     )
     return rec
+
+
+def _capture_index(member: str) -> int:
+    """Publisher file names encode capture order, e.g. 'Defective (412).jpg' -> 412 (-1 if absent)."""
+    import re
+
+    m = re.search(r"\((\d+)\)", PurePosixPath(member).name)
+    return int(m.group(1)) if m else -1
 
 
 class _UnionFind:
@@ -207,33 +215,39 @@ def run(config_path: str = "configs/data.yaml", archive: str | None = None, work
     canon.sort(key=lambda r: r["image_id"])
     ids = [r["image_id"] for r in canon]
     uf = _UnionFind(ids)
-    hashes = [int(r["phash"], 16) for r in canon]
+    hashes = np.array([int(r["phash"], 16) for r in canon], dtype=np.uint64)
     import os
 
     emb = _embeddings([processed / f"{r['original_sha256']}.jpg" for r in canon], contract,
                       os.environ.get("PREPARE_DEVICE", "cpu"))
     sims = emb @ emb.T
-    np.fill_diagonal(sims, -1.0)
+    ham = np.bitwise_count(hashes[:, None] ^ hashes[None, :]).astype(np.int32)
+    dup = cfg["duplicates"]
+    seq_num = np.array([_capture_index(r["member"]) for r in canon])
+    folder = np.array([r["folder"] for r in canon])
+    iu, ju = np.triu_indices(len(canon), k=1)
+    h, c = ham[iu, ju], sims[iu, ju]
+    same_seq = (folder[iu] == folder[ju]) & (np.abs(seq_num[iu] - seq_num[ju]) <= dup["sequence_index_distance_max"])
+    rule_phash = (h <= dup["phash_hamming_max"]) & (c >= dup["phash_requires_cosine_min"])
+    rule_emb = c >= dup["embedding_cosine_min"]
+    rule_seq = same_seq & (c >= dup["sequence_cosine_min"])
+    cand = (h <= dup["phash_hamming_max"] + 4) | (c >= dup["review_floor"]) | rule_seq
     review_rows = []
-    hmax = cfg["duplicates"]["phash_hamming_max"]
-    cmin = cfg["duplicates"]["embedding_cosine_min"]
-    review_floor = min(cmin, 0.93)
-    for i in range(len(canon)):
-        for j in range(i + 1, len(canon)):
-            hd = hamming(hashes[i], hashes[j])
-            cs = float(sims[i, j])
-            if hd <= hmax + 4 or cs >= review_floor:
-                group = hd <= hmax or cs >= cmin
-                if group:
-                    uf.union(ids[i], ids[j])
-                review_rows.append({
-                    "a_image_id": ids[i], "b_image_id": ids[j],
-                    "a_member": canon[i]["member"], "b_member": canon[j]["member"],
-                    "a_label": canon[i]["label"], "b_label": canon[j]["label"],
-                    "phash_hamming": hd, "embedding_cosine": round(cs, 4),
-                    "decision": "group" if group else "separate",
-                    "rule": ("phash" if hd <= hmax else "embedding" if cs >= cmin else "below_threshold"),
-                })
+    for k in np.where(cand)[0].tolist():
+        i, j = int(iu[k]), int(ju[k])
+        rule = ("embedding" if rule_emb[k] else "phash+cosine" if rule_phash[k] else
+                "capture_sequence" if rule_seq[k] else "phash_rejected_low_cosine" if h[k] <= dup["phash_hamming_max"]
+                else "below_threshold")
+        group = bool(rule_emb[k] or rule_phash[k] or rule_seq[k])
+        if group:
+            uf.union(ids[i], ids[j])
+        review_rows.append({
+            "a_image_id": ids[i], "b_image_id": ids[j],
+            "a_member": canon[i]["member"], "b_member": canon[j]["member"],
+            "a_label": canon[i]["label"], "b_label": canon[j]["label"],
+            "phash_hamming": int(h[k]), "embedding_cosine": round(float(c[k]), 4),
+            "decision": "group" if group else "separate", "rule": rule,
+        })
     members_of: dict[str, list[str]] = defaultdict(list)
     for i in ids:
         members_of[uf.find(i)].append(i)
@@ -252,6 +266,9 @@ def run(config_path: str = "configs/data.yaml", archive: str | None = None, work
         conflicts += int(r["group_label_conflict"])
 
     df = pd.DataFrame(records)
+    for col in ("quarantine_reason", "quarantine_detail", "duplicate_of_member", "image_id", "object_key"):
+        if col not in df.columns:
+            df[col] = None
     df["source_id"] = source_id
     df["image_origin"] = "public_dataset"
     df["metadata_origin"] = "observed"
