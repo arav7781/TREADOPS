@@ -1,0 +1,274 @@
+{
+  "binary": {
+    "accuracy": {
+      "ci95": [
+        0.8989185927645436,
+        0.9581992869039291
+      ],
+      "denominator": 275,
+      "numerator": 257,
+      "status": "ok",
+      "value": 0.9345454545454546
+    },
+    "confusion": {
+      "fn": 5,
+      "fp": 13,
+      "tn": 112,
+      "tp": 145
+    },
+    "defect_recall": {
+      "ci95": [
+        0.9243482033720778,
+        0.9856795681925687
+      ],
+      "denominator": 150,
+      "numerator": 145,
+      "status": "ok",
+      "value": 0.9666666666666667
+    },
+    "precision": {
+      "ci95": [
+        0.8643257284622042,
+        0.9512872851155868
+      ],
+      "denominator": 158,
+      "numerator": 145,
+      "status": "ok",
+      "value": 0.9177215189873418
+    },
+    "specificity": {
+      "ci95": [
+        0.8301771758422949,
+        0.9382090319792924
+      ],
+      "denominator": 125,
+      "numerator": 112,
+      "status": "ok",
+      "value": 0.896
+    },
+    "support": {
+      "defective": 150,
+      "good": 125,
+      "total": 275
+    },
+    "threshold": 0.205788
+  },
+  "by_role": {
+    "calibration": {
+      "accuracy": {
+        "ci95": [
+          0.9174111120959771,
+          0.9843120098367355
+        ],
+        "denominator": 137,
+        "numerator": 132,
+        "status": "ok",
+        "value": 0.9635036496350365
+      },
+      "confusion": {
+        "fn": 2,
+        "fp": 3,
+        "tn": 59,
+        "tp": 73
+      },
+      "defect_recall": {
+        "ci95": [
+          0.9078851173641037,
+          0.9926563110599679
+        ],
+        "denominator": 75,
+        "numerator": 73,
+        "status": "ok",
+        "value": 0.9733333333333334
+      },
+      "precision": {
+        "ci95": [
+          0.8902521217639222,
+          0.9864853650106148
+        ],
+        "denominator": 76,
+        "numerator": 73,
+        "status": "ok",
+        "value": 0.9605263157894737
+      },
+      "specificity": {
+        "ci95": [
+          0.8671196198147727,
+          0.9834083142785631
+        ],
+        "denominator": 62,
+        "numerator": 59,
+        "status": "ok",
+        "value": 0.9516129032258065
+      },
+      "support": {
+        "defective": 75,
+        "good": 62,
+        "total": 137
+      },
+      "threshold": 0.205788
+    },
+    "policy": {
+      "accuracy": {
+        "ci95": [
+          0.8454945217087928,
+          0.9441194662136689
+        ],
+        "denominator": 138,
+        "numerator": 125,
+        "status": "ok",
+        "value": 0.9057971014492754
+      },
+      "confusion": {
+        "fn": 3,
+        "fp": 10,
+        "tn": 53,
+        "tp": 72
+      },
+      "defect_recall": {
+        "ci95": [
+          0.8888701283966873,
+          0.9863039358464245
+        ],
+        "denominator": 75,
+        "numerator": 72,
+        "status": "ok",
+        "value": 0.96
+      },
+      "precision": {
+        "ci95": [
+          0.7898702592260134,
+          0.932391463815476
+        ],
+        "denominator": 82,
+        "numerator": 72,
+        "status": "ok",
+        "value": 0.8780487804878049
+      },
+      "specificity": {
+        "ci95": [
+          0.7318842311913697,
+          0.9114290764425027
+        ],
+        "denominator": 63,
+        "numerator": 53,
+        "status": "ok",
+        "value": 0.8412698412698413
+      },
+      "support": {
+        "defective": 75,
+        "good": 63,
+        "total": 138
+      },
+      "threshold": 0.205788
+    }
+  },
+  "evidence_label": "development evidence (outer validation: calibration + policy roles)",
+  "finite_probabilities": true,
+  "parents": 127,
+  "probabilistic": {
+    "average_precision": 0.9873657226218292,
+    "brier": 0.05124812704721897,
+    "ece": 0.0335658156570252,
+    "n": 275,
+    "nll": 0.17129776199069305,
+    "reliability": [
+      {
+        "bin": 0,
+        "count": 109,
+        "hi": 0.1,
+        "lo": 0.0,
+        "mean_predicted": 0.018312015137414758,
+        "observed_defective_rate": 0.03669724770642202
+      },
+      {
+        "bin": 1,
+        "count": 8,
+        "hi": 0.2,
+        "lo": 0.1,
+        "mean_predicted": 0.1406676723987134,
+        "observed_defective_rate": 0.125
+      },
+      {
+        "bin": 2,
+        "count": 8,
+        "hi": 0.30000000000000004,
+        "lo": 0.2,
+        "mean_predicted": 0.26351259634930957,
+        "observed_defective_rate": 0.625
+      },
+      {
+        "bin": 3,
+        "count": 8,
+        "hi": 0.4,
+        "lo": 0.30000000000000004,
+        "mean_predicted": 0.33091933176693145,
+        "observed_defective_rate": 0.375
+      },
+      {
+        "bin": 4,
+        "count": 3,
+        "hi": 0.5,
+        "lo": 0.4,
+        "mean_predicted": 0.4710839343517708,
+        "observed_defective_rate": 1.0
+      },
+      {
+        "bin": 5,
+        "count": 4,
+        "hi": 0.6000000000000001,
+        "lo": 0.5,
+        "mean_predicted": 0.5550315403543895,
+        "observed_defective_rate": 0.5
+      },
+      {
+        "bin": 7,
+        "count": 3,
+        "hi": 0.8,
+        "lo": 0.7000000000000001,
+        "mean_predicted": 0.7597279112161942,
+        "observed_defective_rate": 1.0
+      },
+      {
+        "bin": 8,
+        "count": 7,
+        "hi": 0.9,
+        "lo": 0.8,
+        "mean_predicted": 0.8709333016700164,
+        "observed_defective_rate": 0.8571428571428571
+      },
+      {
+        "bin": 9,
+        "count": 125,
+        "hi": 1.0,
+        "lo": 0.9,
+        "mean_predicted": 0.9938599941199726,
+        "observed_defective_rate": 0.984
+      }
+    ],
+    "status": "ok"
+  },
+  "triage": {
+    "defect_flagged": {
+      "count": 132,
+      "defective": 129,
+      "fraction": 0.48,
+      "good": 3
+    },
+    "defective_support": 150,
+    "false_negatives_routed_to_good_candidate": 5,
+    "good_candidate": {
+      "count": 116,
+      "defective": 5,
+      "fraction": 0.4218181818181818,
+      "good": 111
+    },
+    "manual_review": {
+      "count": 27,
+      "defective": 16,
+      "fraction": 0.09818181818181818,
+      "good": 11
+    },
+    "n": 275
+  }
+}

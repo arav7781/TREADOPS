@@ -1,0 +1,6 @@
+{
+  "model_uri": "models:/m-e170f0b2b8d84b38808bcacb806bb153",
+  "name": "treadops-yolo-classify",
+  "status": "registered",
+  "version": "1"
+}

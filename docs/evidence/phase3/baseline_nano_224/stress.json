@@ -1,0 +1,301 @@
+{
+  "clean": {
+    "accuracy": {
+      "ci95": [
+        0.8868888724641274,
+        0.9498821688774862
+      ],
+      "denominator": 277,
+      "numerator": 256,
+      "status": "ok",
+      "value": 0.924187725631769
+    },
+    "confusion": {
+      "fn": 9,
+      "fp": 12,
+      "tn": 115,
+      "tp": 141
+    },
+    "defect_recall": {
+      "ci95": [
+        0.8899102286718205,
+        0.9681159559462748
+      ],
+      "denominator": 150,
+      "numerator": 141,
+      "status": "ok",
+      "value": 0.94
+    },
+    "precision": {
+      "ci95": [
+        0.8679196803853763,
+        0.9545669307448635
+      ],
+      "denominator": 153,
+      "numerator": 141,
+      "status": "ok",
+      "value": 0.9215686274509803
+    },
+    "specificity": {
+      "ci95": [
+        0.8420914542277792,
+        0.9451208015866811
+      ],
+      "denominator": 127,
+      "numerator": 115,
+      "status": "ok",
+      "value": 0.905511811023622
+    },
+    "support": {
+      "defective": 150,
+      "good": 127,
+      "total": 277
+    },
+    "threshold": 0.205788
+  },
+  "clean_triage": {
+    "defect_flagged": {
+      "count": 121,
+      "defective": 118,
+      "fraction": 0.4368231046931408,
+      "good": 3
+    },
+    "defective_support": 150,
+    "false_negatives_routed_to_good_candidate": 6,
+    "good_candidate": {
+      "count": 118,
+      "defective": 6,
+      "fraction": 0.4259927797833935,
+      "good": 112
+    },
+    "manual_review": {
+      "count": 38,
+      "defective": 26,
+      "fraction": 0.1371841155234657,
+      "good": 12
+    },
+    "n": 277
+  },
+  "pairing": "same test parents, derivative per scenario",
+  "parents": 140,
+  "scenarios": {
+    "camera_blur": {
+      "binary": {
+        "accuracy": {
+          "ci95": [
+            0.8618980867903379,
+            0.9321442205253208
+          ],
+          "denominator": 277,
+          "numerator": 250,
+          "status": "ok",
+          "value": 0.9025270758122743
+        },
+        "confusion": {
+          "fn": 17,
+          "fp": 10,
+          "tn": 117,
+          "tp": 133
+        },
+        "defect_recall": {
+          "ci95": [
+            0.8259972496074807,
+            0.9280257611175121
+          ],
+          "denominator": 150,
+          "numerator": 133,
+          "status": "ok",
+          "value": 0.8866666666666667
+        },
+        "precision": {
+          "ci95": [
+            0.8760631922121196,
+            0.9615749035754673
+          ],
+          "denominator": 143,
+          "numerator": 133,
+          "status": "ok",
+          "value": 0.9300699300699301
+        },
+        "specificity": {
+          "ci95": [
+            0.8611139693314126,
+            0.9566696362234154
+          ],
+          "denominator": 127,
+          "numerator": 117,
+          "status": "ok",
+          "value": 0.9212598425196851
+        },
+        "support": {
+          "defective": 150,
+          "good": 127,
+          "total": 277
+        },
+        "threshold": 0.205788
+      },
+      "quality_low_fraction": 0.2527075812274368,
+      "recall_vs_clean": {
+        "ci95": [
+          -0.08919961960368009,
+          -0.022218137254901887
+        ],
+        "difference": -0.05333333333333323,
+        "metric": "recall",
+        "parents": 140,
+        "resamples": 1000,
+        "seed": 42,
+        "status": "ok",
+        "support": 150
+      },
+      "specificity_vs_clean": {
+        "ci95": [
+          -0.02174510272336358,
+          0.05608799153588432
+        ],
+        "difference": 0.015748031496063075,
+        "metric": "specificity",
+        "parents": 140,
+        "resamples": 1000,
+        "seed": 42,
+        "status": "ok",
+        "support": 127
+      },
+      "transform": {
+        "gaussian_sigma": 1.5
+      },
+      "triage": {
+        "defect_flagged": {
+          "count": 111,
+          "defective": 110,
+          "fraction": 0.4007220216606498,
+          "good": 1
+        },
+        "defective_support": 150,
+        "false_negatives_routed_to_good_candidate": 8,
+        "good_candidate": {
+          "count": 95,
+          "defective": 8,
+          "fraction": 0.34296028880866425,
+          "good": 87
+        },
+        "manual_review": {
+          "count": 71,
+          "defective": 32,
+          "fraction": 0.2563176895306859,
+          "good": 39
+        },
+        "n": 277
+      }
+    },
+    "low_light": {
+      "binary": {
+        "accuracy": {
+          "ci95": [
+            0.754361352325012,
+            0.8474016518738504
+          ],
+          "denominator": 277,
+          "numerator": 223,
+          "status": "ok",
+          "value": 0.8050541516245487
+        },
+        "confusion": {
+          "fn": 38,
+          "fp": 16,
+          "tn": 111,
+          "tp": 112
+        },
+        "defect_recall": {
+          "ci95": [
+            0.6715059061062735,
+            0.8095087731493255
+          ],
+          "denominator": 150,
+          "numerator": 112,
+          "status": "ok",
+          "value": 0.7466666666666667
+        },
+        "precision": {
+          "ci95": [
+            0.8065737285588992,
+            0.9215735539012713
+          ],
+          "denominator": 128,
+          "numerator": 112,
+          "status": "ok",
+          "value": 0.875
+        },
+        "specificity": {
+          "ci95": [
+            0.8051259059885026,
+            0.920943650345223
+          ],
+          "denominator": 127,
+          "numerator": 111,
+          "status": "ok",
+          "value": 0.8740157480314961
+        },
+        "support": {
+          "defective": 150,
+          "good": 127,
+          "total": 277
+        },
+        "threshold": 0.205788
+      },
+      "quality_low_fraction": 0.20216606498194944,
+      "recall_vs_clean": {
+        "ci95": [
+          -0.29452360567514674,
+          -0.08823529411764708
+        ],
+        "difference": -0.19333333333333325,
+        "metric": "recall",
+        "parents": 140,
+        "resamples": 1000,
+        "seed": 42,
+        "status": "ok",
+        "support": 150
+      },
+      "specificity_vs_clean": {
+        "ci95": [
+          -0.1304633867276888,
+          0.05694129325014175
+        ],
+        "difference": -0.03149606299212593,
+        "metric": "specificity",
+        "parents": 140,
+        "resamples": 1000,
+        "seed": 42,
+        "status": "ok",
+        "support": 127
+      },
+      "transform": {
+        "brightness_factor": 0.45
+      },
+      "triage": {
+        "defect_flagged": {
+          "count": 53,
+          "defective": 53,
+          "fraction": 0.19133574007220217,
+          "good": 0
+        },
+        "defective_support": 150,
+        "false_negatives_routed_to_good_candidate": 32,
+        "good_candidate": {
+          "count": 125,
+          "defective": 32,
+          "fraction": 0.45126353790613716,
+          "good": 93
+        },
+        "manual_review": {
+          "count": 99,
+          "defective": 65,
+          "fraction": 0.3574007220216607,
+          "good": 34
+        },
+        "n": 277
+      }
+    }
+  }
+}

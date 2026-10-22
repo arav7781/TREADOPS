@@ -1,0 +1,12 @@
+{
+  "extra": {},
+  "fitted_ids_sha256": "90235deb8e9b361f68a627774a51094f0e620e41fdf7770ce0c65482d55e46b5",
+  "fitted_on_role": "calibration",
+  "method": "temperature_scaling",
+  "n_fitted": 137,
+  "nll_after": 0.11035372332482536,
+  "nll_before": 0.12286943315468511,
+  "preprocess_sha256": "f514d3e30a023990d8340045e8cc39de87ad6ee684d3fdee368fe8ea01b866e5",
+  "temperature": 1.49634912833618,
+  "version": "v1"
+}
