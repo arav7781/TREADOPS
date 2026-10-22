@@ -14,6 +14,7 @@ from sqlalchemy.exc import OperationalError
 
 from treadops_api import jobs
 from treadops_api.db import new_session
+from treadops_api.errors import ApiError
 from treadops_api.models import Job
 from treadops_api.storage import StorageUnavailable
 from treadops_ml.bundle import BundleInvalid
@@ -89,6 +90,8 @@ def on_fail(kind: str):
 
 
 def _classify(exc: Exception) -> tuple[str, str, bool]:
+    if isinstance(exc, ApiError):  # typed service-layer errors keep their code; only 429/5xx are retried
+        return exc.code, exc.message, exc.retryable
     if isinstance(exc, Permanent):
         return exc.code, str(exc), False
     if isinstance(exc, Transient):

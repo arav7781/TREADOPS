@@ -134,6 +134,8 @@ def accept(
         ing = ingest(raw, _limits(), PreprocessContract())
     except ImageRejected as exc:
         raise ApiError(exc.http_status, exc.code, exc.message, retryable=False) from exc
+    except Exception as exc:  # Ultralytics patches PIL.Image.open (HEIF fallback), so decoders can raise anything
+        raise ApiError(415, "unsupported_media", "Not a decodable image.", retryable=False) from exc
 
     # Find-or-create the image asset; object bytes are written before the SQL transaction commits.
     if parent_image_id is None:
@@ -294,7 +296,8 @@ def append_review(db: Session, *, actor: Principal, inspection_id: uuid.UUID, ex
         raise ApiError(422, "invalid_disposition", f"disposition must be one of {sorted(DISPOSITIONS)}")
     if not reason or not reason.strip():
         raise ApiError(422, "reason_required", "A review reason is required.")
-    insp = db.execute(select(Inspection).where(Inspection.id == inspection_id).with_for_update()).scalar_one_or_none()
+    insp = db.execute(select(Inspection).where(Inspection.id == inspection_id)
+                      .with_for_update(of=Inspection)).scalar_one_or_none()  # lock only the inspection row
     if insp is None:
         raise ApiError(404, "not_found", "Inspection not found.")
     current = db.execute(select(func.coalesce(func.max(ReviewLabel.revision), 0))

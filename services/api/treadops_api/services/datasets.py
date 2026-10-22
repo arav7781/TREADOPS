@@ -23,6 +23,7 @@ from treadops_ml.descriptors import hamming, phash
 from treadops_ml.preprocess import load_canonical
 
 from .. import audit
+from ..errors import ApiError
 from ..models import DatasetSnapshot, ImageAsset, Inspection, ReviewLabel
 from ..storage import Storage
 
@@ -114,6 +115,9 @@ def build_snapshot(db: Session, storage: Storage, *, actor_id=None, job_id=None,
                 role = "dev_val" if int(sha256_bytes(str(a.id).encode())[:8], 16) % 100 < 15 else "dev_train"
                 rows.append(_row(a, lab[0], "inspector_verified", role, group=f"upl-{a.original_sha256[:16]}"))
 
+    if not rows:
+        raise ApiError(409, "empty_snapshot", "No training-eligible images: register the dataset catalogue first.",
+                       {"excluded": excluded})
     rows.sort(key=lambda r: r["image_id"])
     manifest_sha = sha256_json(rows)
     existing = db.execute(select(DatasetSnapshot).where(DatasetSnapshot.manifest_sha256 == manifest_sha)
