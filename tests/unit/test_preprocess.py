@@ -63,7 +63,7 @@ def test_tensor_layout_range_and_channel_order():
     a[..., 0] = 255  # pure red
     x = to_tensor(letterbox(a)[0])
     assert x.shape == (1, 3, 224, 224) and x.dtype == np.float32 and x.flags["C_CONTIGUOUS"]
-    assert 0.0 <= x.min() and x.max() <= 1.0
+    assert x.min() >= 0.0 and x.max() <= 1.0
     centre = x[0, :, 112, 112]
     assert centre[0] == pytest.approx(1.0) and centre[1] == pytest.approx(0.0) and centre[2] == pytest.approx(0.0)
 

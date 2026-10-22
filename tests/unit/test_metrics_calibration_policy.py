@@ -4,7 +4,13 @@ import numpy as np
 import pytest
 
 from treadops_ml.calibrate import apply_temperature, fit_temperature, nll
-from treadops_ml.metrics import binary_metrics, paired_bootstrap, probabilistic_metrics, triage_coverage, wilson
+from treadops_ml.metrics import (
+    binary_metrics,
+    paired_bootstrap,
+    probabilistic_metrics,
+    triage_coverage,
+    wilson,
+)
 from treadops_ml.policy import Policy, select_binary_threshold
 
 
