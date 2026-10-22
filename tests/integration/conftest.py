@@ -112,15 +112,46 @@ def jpeg(seed: int = 0, size=(640, 480)) -> bytes:
 
 requires_bundle = pytest.mark.skipif(not (BUNDLE_DIR / "manifest.json").exists(),
                                      reason="no trusted bundle: run the DVC pipeline (make train evaluate ...)")
+FIXTURE_DIR = ROOT / "runs/test-fixtures/bundle-fixture"
+
+
+def _rehash(dst: Path) -> None:
+    from treadops_ml.bundle import bundle_sha_from_files
+    from treadops_ml.common import sha256_file
+
+    m = json.loads((dst / "manifest.json").read_text())
+    m["files"] = {k: sha256_file(dst / k) for k in m["files"]}
+    m["bundle_sha256"] = bundle_sha_from_files(m["files"])
+    (dst / "manifest.json").write_text(json.dumps(m, indent=2, sort_keys=True))
+
+
+def fixture_bundle() -> Path:
+    """Trusted TEST fixture: the real trained weights with a gate report marked as a fixture.
+
+    The release machinery refuses gate-failing bundles, so integration tests need a promotable artifact. It lives
+    only in the disposable test database/bucket, is labelled `fixture: true`, and is never a measured candidate.
+    """
+    if not (FIXTURE_DIR / "manifest.json").exists():
+        if FIXTURE_DIR.exists():
+            shutil.rmtree(FIXTURE_DIR)
+        shutil.copytree(BUNDLE_DIR, FIXTURE_DIR)
+        gate = json.loads((FIXTURE_DIR / "gate_report.json").read_text())
+        gate.update(status="passed", fixture=True,
+                    fixture_note="integration-test fixture derived from real weights; not a measured candidate",
+                    measured_status=gate.get("status"))
+        (FIXTURE_DIR / "gate_report.json").write_text(json.dumps(gate, indent=2, sort_keys=True))
+        m = json.loads((FIXTURE_DIR / "manifest.json").read_text())
+        m["evaluation"]["gate_status"] = "passed"
+        m["registry"] = {"name": "treadops-test-fixture", "version": None}
+        (FIXTURE_DIR / "manifest.json").write_text(json.dumps(m, indent=2, sort_keys=True))
+        _rehash(FIXTURE_DIR)
+    return FIXTURE_DIR
 
 
 def variant_bundle(tmp: Path, *, low: float, high: float, version: str) -> Path:
     """A second, distinct trusted bundle: same weights, different versioned triage policy."""
-    from treadops_ml.bundle import bundle_sha_from_files
-    from treadops_ml.common import sha256_file
-
     dst = tmp / f"bundle-{version}"
-    shutil.copytree(BUNDLE_DIR, dst)
+    shutil.copytree(fixture_bundle(), dst)
     pol = json.loads((dst / "policy.json").read_text())
     pol.update(triage_low=low, triage_high=high, version=version)
     (dst / "policy.json").write_text(json.dumps(pol, indent=2, sort_keys=True))
@@ -132,10 +163,9 @@ def variant_bundle(tmp: Path, *, low: float, high: float, version: str) -> Path:
         item["triage"] = p.decide(item["p_defective"])[0]
     (dst / "golden.json").write_text(json.dumps(golden, indent=2, sort_keys=True))
     m = json.loads((dst / "manifest.json").read_text())
-    m["files"] = {k: sha256_file(dst / k) for k in m["files"]}
-    m["bundle_sha256"] = bundle_sha_from_files(m["files"])
     m["serving"]["policy_version"] = version
     (dst / "manifest.json").write_text(json.dumps(m, indent=2, sort_keys=True))
+    _rehash(dst)
     return dst
 
 

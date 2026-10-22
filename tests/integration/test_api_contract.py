@@ -11,7 +11,7 @@ from sqlalchemy import func, select
 from treadops_api import db as dbmod
 from treadops_api.models import Inspection, Job, ReviewLabel
 
-from .conftest import BUNDLE_DIR, admin_id, import_and_activate, jpeg, login, requires_bundle
+from .conftest import admin_id, fixture_bundle, import_and_activate, jpeg, login, requires_bundle
 
 pytestmark = pytest.mark.integration
 
@@ -73,7 +73,7 @@ def test_upload_without_a_model_is_explicitly_unavailable(client):
     (b"\xff\xd8\xff\xe0" + b"\x00" * 64, "image/jpeg", 415, "unsupported_media"),
 ])
 def test_api01_bad_uploads_get_typed_4xx_and_no_job(client, payload, ctype, status, code):
-    import_and_activate(BUNDLE_DIR, admin_id())
+    import_and_activate(fixture_bundle(), admin_id())
     h = login(client, "inspector")
     before = _jobs()
     r = client.post("/v1/inspections", headers={**h, "Idempotency-Key": f"bad-{code}-{len(payload)}"},
@@ -85,7 +85,7 @@ def test_api01_bad_uploads_get_typed_4xx_and_no_job(client, payload, ctype, stat
 
 @requires_bundle
 def test_api01_oversized_upload_is_413(client, monkeypatch):
-    import_and_activate(BUNDLE_DIR, admin_id())
+    import_and_activate(fixture_bundle(), admin_id())
     from treadops_api.settings import get_settings
 
     monkeypatch.setattr(get_settings(), "max_upload_bytes", 1000)
@@ -97,7 +97,7 @@ def test_api01_oversized_upload_is_413(client, monkeypatch):
 
 @requires_bundle
 def test_api03_idempotency_key_replays_or_conflicts(client):
-    import_and_activate(BUNDLE_DIR, admin_id())
+    import_and_activate(fixture_bundle(), admin_id())
     h = {**login(client, "inspector"), "Idempotency-Key": "same-key"}
     a = client.post("/v1/inspections", headers=h, files={"file": ("a.jpg", jpeg(1), "image/jpeg")})
     b = client.post("/v1/inspections", headers=h, files={"file": ("a.jpg", jpeg(1), "image/jpeg")})
@@ -112,7 +112,7 @@ def test_api03_idempotency_key_replays_or_conflicts(client):
 
 @requires_bundle
 def test_api04_concurrent_reviews_one_winner(client):
-    import_and_activate(BUNDLE_DIR, admin_id())
+    import_and_activate(fixture_bundle(), admin_id())
     h = login(client, "inspector")
     iid = client.post("/v1/inspections", headers={**h, "Idempotency-Key": "rev"},
                       files={"file": ("r.jpg", jpeg(3), "image/jpeg")}).json()["inspection_id"]

@@ -13,7 +13,7 @@ from treadops_api import db as dbmod
 from treadops_api import jobs
 from treadops_api.models import Inspection, InspectionStage, Job, JobEvent, Prediction
 
-from .conftest import BUNDLE_DIR, admin_id, import_and_activate, jpeg, login, requires_bundle
+from .conftest import admin_id, fixture_bundle, import_and_activate, jpeg, login, requires_bundle
 
 pytestmark = [pytest.mark.integration, requires_bundle]
 
@@ -37,7 +37,7 @@ def _count(model, **where) -> int:
 def test_job01_redelivery_after_completion_and_after_crash_gives_one_prediction(client):
     from treadops_worker.tasks import run_job
 
-    import_and_activate(BUNDLE_DIR, admin_id())
+    import_and_activate(fixture_bundle(), admin_id())
     acc = _submit(client, "job01", 11)
     run_job(acc["job_id"])
     run_job(acc["job_id"])  # redelivered message after a successful run: no-op
@@ -73,7 +73,7 @@ def test_job01_redelivery_after_completion_and_after_crash_gives_one_prediction(
 def test_job02_duplicate_dispatch_is_deduplicated(client):
     from treadops_worker.tasks import run_job
 
-    import_and_activate(BUNDLE_DIR, admin_id())
+    import_and_activate(fixture_bundle(), admin_id())
     acc = _submit(client, "job02", 21)
     ts = [threading.Thread(target=run_job, args=(acc["job_id"],)) for _ in range(3)]
     [t.start() for t in ts]
@@ -89,7 +89,7 @@ def test_job03_storage_outage_retries_with_persisted_attempts(client, monkeypatc
     from treadops_api.storage import StorageUnavailable, get_storage
     from treadops_worker.tasks import run_job
 
-    import_and_activate(BUNDLE_DIR, admin_id())
+    import_and_activate(fixture_bundle(), admin_id())
     acc = _submit(client, "job03", 31)
     storage = get_storage()
     real_get = storage.get
@@ -121,7 +121,7 @@ def test_job03_storage_outage_retries_with_persisted_attempts(client, monkeypatc
 def test_job03_permanent_failure_does_not_retry(client):
     from treadops_worker.tasks import run_job
 
-    import_and_activate(BUNDLE_DIR, admin_id())
+    import_and_activate(fixture_bundle(), admin_id())
     acc = _submit(client, "job03p", 32)
     with dbmod.session_scope() as s:
         insp = s.get(Inspection, uuid.UUID(acc["inspection_id"]))
@@ -138,11 +138,18 @@ def test_job03_permanent_failure_does_not_retry(client):
 
 def test_job04_single_training_slot(client):
     h = login(client, "ml")
-    from treadops_api.services.datasets import build_snapshot
+    from treadops_api.errors import ApiError
+    from treadops_api.services.datasets import build_snapshot, register_public_catalogue
     from treadops_api.storage import get_storage
 
+    with dbmod.session_scope() as s, pytest.raises(ApiError) as empty:
+        build_snapshot(s, get_storage(), include_verified_uploads=False)
+    assert empty.value.code == "empty_snapshot"
+    with dbmod.session_scope() as s:
+        register_public_catalogue(s, get_storage(), upload=False)
     with dbmod.session_scope() as s:
         snap, _ = build_snapshot(s, get_storage(), include_verified_uploads=False)
+        assert snap.counts["included"] == 1276 and "protected_role:test" in snap.counts["excluded"]
         sid = str(snap.id)
     a = client.post("/v1/training-runs", headers=h, json={"snapshot_id": sid, "config_id": "nano_smoke"})
     b = client.post("/v1/training-runs", headers=h, json={"snapshot_id": sid, "config_id": "nano_smoke"})

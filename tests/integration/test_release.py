@@ -12,7 +12,15 @@ from treadops_api import jobs
 from treadops_api.models import AuditEvent, Deployment, EnvironmentPointer, Job, ModelVersion, Prediction
 from treadops_api.services.inspections import active_deployment
 
-from .conftest import BUNDLE_DIR, admin_id, import_and_activate, jpeg, login, requires_bundle, variant_bundle
+from .conftest import (
+    admin_id,
+    fixture_bundle,
+    import_and_activate,
+    jpeg,
+    login,
+    requires_bundle,
+    variant_bundle,
+)
 
 pytestmark = [pytest.mark.integration, requires_bundle]
 
@@ -34,7 +42,7 @@ def _promote_job(mv_id, gen) -> str:
 def test_rel01_queued_job_keeps_its_pinned_bundle_across_promotion(client, tmp_path):
     from treadops_worker.tasks import run_job
 
-    import_and_activate(BUNDLE_DIR, admin_id())
+    import_and_activate(fixture_bundle(), admin_id())
     gen1, sha1 = _pointer()
     h = login(client, "inspector")
     old = client.post("/v1/inspections", headers={**h, "Idempotency-Key": "rel01-old"},
@@ -60,7 +68,7 @@ def test_rel02_tampered_bundle_fails_warmup_and_leaves_pointer(client, tmp_path)
     from treadops_api.storage import get_storage
     from treadops_worker.tasks import run_job
 
-    import_and_activate(BUNDLE_DIR, admin_id())
+    import_and_activate(fixture_bundle(), admin_id())
     gen, sha = _pointer()
     v3 = variant_bundle(tmp_path, low=0.15, high=0.85, version="v3-test")
     with dbmod.session_scope() as s:
@@ -86,7 +94,7 @@ def test_rel03_concurrent_promotions_one_winner(client, tmp_path):
     from treadops_api.storage import get_storage
     from treadops_worker.tasks import run_job
 
-    import_and_activate(BUNDLE_DIR, admin_id())
+    import_and_activate(fixture_bundle(), admin_id())
     gen, _ = _pointer()
     ids = []
     for v in ("v4a-test", "v4b-test"):
@@ -110,7 +118,7 @@ def test_rel03_concurrent_promotions_one_winner(client, tmp_path):
 def test_rel04_rollback_restores_previous_bundle_and_registry_reconciles(client, tmp_path, monkeypatch):
     from treadops_worker.tasks import run_job
 
-    first_mv, _ = import_and_activate(BUNDLE_DIR, admin_id())
+    first_mv, _ = import_and_activate(fixture_bundle(), admin_id())
     gen1, sha1 = _pointer()
     import_and_activate(variant_bundle(tmp_path, low=0.12, high=0.88, version="v5-test"), admin_id())
     gen2, sha2 = _pointer()
