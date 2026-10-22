@@ -1,0 +1,49 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# Secrets / local config
+.env
+.env.*
+!.env.example
+.dvc/config.local
+
+# Data bytes live in DVC / object storage, never in Git
+/data/raw/*
+!/data/raw/.gitkeep
+/data/processed/
+/data/quarantine/
+/data/yolo/
+/data/eval/
+/data/manifests/*.parquet
+
+# Model artifacts and run outputs
+/models/*
+!/models/.gitkeep
+/artifacts/
+/runs/
+/mlruns/
+*.pt
+*.onnx
+
+# Evidence binaries (keep JSON/MD/TXT evidence in Git)
+/docs/evidence/**/*.zip
+/docs/evidence/**/*.parquet
+
+# Node / Next.js
+node_modules/
+apps/web/.next/
+apps/web/out/
+apps/web/test-results/
+apps/web/playwright-report/
+*.tsbuildinfo
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
