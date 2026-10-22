@@ -1,0 +1,58 @@
+{
+  "actual_counts": {
+    "archive_members_images": 1856,
+    "by_label": {
+      "defective": 1000,
+      "good": 828
+    },
+    "canonical_images": 1828,
+    "exact_duplicates": 28,
+    "groups": 948,
+    "images_in_label_conflicting_groups": 0,
+    "multi_member_groups": 359,
+    "quarantined": 0,
+    "skipped_members": 0
+  },
+  "archive_bytes": 2859136943,
+  "archive_sha256": "897278a26d4df27889c87011337219ab46c862833b2b25815a3f3f87682c05d7",
+  "attribution": "Pathmanaban P. et al., Mendeley Data, V1, doi:10.17632/bn7ch8tvyp.1",
+  "doi": "10.17632/bn7ch8tvyp.1",
+  "license": "CC BY 4.0",
+  "name": "Digital images of defective and good condition tyres",
+  "preprocess_contract": {
+    "canonical_format": "JPEG",
+    "canonical_max_side": 1024,
+    "canonical_quality": 95,
+    "canonical_resample": "LANCZOS",
+    "canonical_subsampling": 0,
+    "channel_order": "RGB",
+    "dtype": "float32",
+    "imgsz": 224,
+    "layout": "NCHW",
+    "mean": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "pad_value": 114,
+    "resize_interpolation": "cv2.INTER_LINEAR",
+    "rounding": "new=round(dim*r); top,left=round((S-new)/2-0.1)",
+    "sanitize_format": "JPEG",
+    "sanitize_quality": 95,
+    "scale": 0.00392156862745098,
+    "std": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "version": "v1"
+  },
+  "preprocess_sha256": "f514d3e30a023990d8340045e8cc39de87ad6ee684d3fdee368fe8ea01b866e5",
+  "publisher_described_images": 1854,
+  "receipt_archive_sha256_matches": true,
+  "retrieval_endpoint": "https://data.mendeley.com/public-api/zip/bn7ch8tvyp/download/1",
+  "retrieved_at": "2026-10-22T15:07:23.685735+00:00",
+  "source_id": "D1:v1",
+  "url": "https://data.mendeley.com/datasets/bn7ch8tvyp/1",
+  "version": 1
+}

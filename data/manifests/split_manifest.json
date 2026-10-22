@@ -1,0 +1,75 @@
+{
+  "actual_outer_fractions": {
+    "test": 0.1515,
+    "train": 0.698,
+    "val": 0.1504
+  },
+  "assignments_sha256": "77f18d41d45476e223a0c8103cf6aa27abf741408d986405b57b6fdfbab17048",
+  "config": {
+    "calibration_fraction": 0.5,
+    "dev_val_fraction": 0.15,
+    "eval_dir": "data/eval",
+    "link_mode": "hardlink",
+    "outer": {
+      "test": 0.15,
+      "train": 0.7,
+      "val": 0.15
+    },
+    "schema_version": 1,
+    "seed": 42,
+    "yolo_dev_root": "data/yolo/dev"
+  },
+  "counts": {
+    "calibration": {
+      "by_label": {
+        "defective": 75,
+        "good": 62
+      },
+      "groups": 55,
+      "images": 137
+    },
+    "dev_train": {
+      "by_label": {
+        "defective": 595,
+        "good": 489
+      },
+      "groups": 570,
+      "images": 1084
+    },
+    "dev_val": {
+      "by_label": {
+        "defective": 105,
+        "good": 87
+      },
+      "groups": 111,
+      "images": 192
+    },
+    "policy": {
+      "by_label": {
+        "defective": 75,
+        "good": 63
+      },
+      "groups": 72,
+      "images": 138
+    },
+    "test": {
+      "by_label": {
+        "defective": 150,
+        "good": 127
+      },
+      "groups": 140,
+      "images": 277
+    }
+  },
+  "excluded_conflicting_groups": [],
+  "excluded_images": 0,
+  "leakage": {
+    "groups_in_multiple_roles": 0,
+    "image_ids_unassigned": 0,
+    "original_sha_in_multiple_roles": 0
+  },
+  "schema_version": 1,
+  "source_manifest_sha256": "3308cc66e1e34bab0f05bcbcdbb3e6cd7dfc200ca2b8fd5ca3c6c597557a209b",
+  "split_sha256": "ddf516172d7bc4d90530997190b91e8e62f984bfd5a08bb220c3bdef1e106d0e",
+  "training_eligible_images": 1276
+}

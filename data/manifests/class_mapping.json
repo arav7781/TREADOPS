@@ -1,0 +1,7 @@
+{
+  "labels": [
+    "defective",
+    "good"
+  ],
+  "positive_label": "defective"
+}
