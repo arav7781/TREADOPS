@@ -25,6 +25,22 @@ REQUIRED_FILES = ("best.pt", "class_mapping.json", "preprocess.json", "calibrati
                   "metrics.json", "gate_report.json", "model_card.md")
 
 
+_PREDICT_LOCK = threading.Lock()
+
+
+def native_raw_probs(model, x: np.ndarray, device: str, imgsz: int, batch: int = 32) -> np.ndarray:
+    """Run an Ultralytics classify model on prepared (N,3,S,S) tensors; no Ultralytics transforms applied."""
+    import torch
+
+    out = []
+    for i in range(0, len(x), batch):
+        chunk = torch.from_numpy(np.ascontiguousarray(x[i : i + batch]))
+        with _PREDICT_LOCK:
+            results = model.predict(source=chunk, verbose=False, device=device, imgsz=imgsz)
+        out.extend(r.probs.data.detach().cpu().numpy().astype(np.float64) for r in results)
+    return np.stack(out)
+
+
 class BundleInvalid(RuntimeError):
     def __init__(self, code: str, message: str):
         super().__init__(f"{code}: {message}")
@@ -73,8 +89,6 @@ class Prediction:
 
 
 class Bundle:
-    _lock = threading.Lock()
-
     def __init__(self, root: str | Path, device: str = "cpu", verify: bool = True, runtime: str = "native"):
         self.root = Path(root)
         self.manifest = verify_bundle(self.root) if verify else json.loads((self.root / "manifest.json").read_text())
@@ -117,12 +131,7 @@ class Bundle:
         if self._ort is not None:
             inp = self._ort.get_inputs()[0].name
             return np.asarray(self._ort.run(None, {inp: x.astype(np.float32)})[0], dtype=np.float64)
-        import torch
-
-        with self._lock:
-            results = self._model.predict(source=torch.from_numpy(np.ascontiguousarray(x)), verbose=False,
-                                          device=self.device, imgsz=self.preprocess.imgsz)
-        return np.stack([r.probs.data.detach().cpu().numpy().astype(np.float64) for r in results])
+        return native_raw_probs(self._model, x, self.device, self.preprocess.imgsz)
 
     # -- semantics ---------------------------------------------------------------------------------
     @property
