@@ -96,6 +96,7 @@ def run(
 
     ids = _folder_ids(data)
     epochs: list[dict[str, Any]] = []
+    final_eval: dict[str, float] = {}
     mlrun = _mlflow_run(cfg.get("mlflow_experiment", "treadops-yolo-classify"))
     recipe_sha = sha256_json(rec)
     split_manifest = repo_path(cfg.get("split_manifest", "data/manifests/split_manifest.json"))
@@ -112,9 +113,16 @@ def run(
 
     def _on_fit_epoch_end(trainer):
         m = {k: float(v) for k, v in (trainer.metrics or {}).items() if isinstance(v, int | float)}
-        m["train_loss"] = float(trainer.tloss.mean()) if getattr(trainer, "tloss", None) is not None else float("nan")
+        tl = getattr(trainer, "tloss", None)  # running mean of loss items: dict in 8.4.x, tensor in older releases
+        if isinstance(tl, dict):
+            m.update({f"train_{k}": float(v) for k, v in tl.items()})
+        elif tl is not None:
+            m["train_loss"] = float(tl.mean())
         m["lr"] = float(trainer.optimizer.param_groups[0]["lr"])
         e = int(trainer.epoch) + 1
+        if epochs and epochs[-1]["epoch"] == e:  # Ultralytics re-fires this hook for the final best.pt validation
+            final_eval.update(m)
+            return
         epochs.append({"epoch": e, **m, "t": round(time.time() - t0, 2)})
         if mlrun:
             import mlflow
@@ -175,6 +183,7 @@ def run(
         "duration_s": round(duration, 1),
         "epochs_completed": len(epochs),
         "epoch_metrics": epochs,
+        "final_best_pt_validation": final_eval,
         "class_names": names,
         "defective_index": next(k for k, v in names.items() if v == "defective"),
         "pretrained": {"name": rec["model"], "sha256": pinned_sha(rec["model"])},
