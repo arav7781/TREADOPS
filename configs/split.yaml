@@ -1,0 +1,9 @@
+# Grouped, stratified, deterministic split (stage: split)
+schema_version: 1
+seed: 42
+outer: {train: 0.70, val: 0.15, test: 0.15}
+dev_val_fraction: 0.15            # of the outer train pool -> checkpoint selection
+calibration_fraction: 0.50        # of outer val -> temperature fit; the rest is policy selection
+yolo_dev_root: data/yolo/dev
+eval_dir: data/eval
+link_mode: hardlink               # hardlink | copy

@@ -1,0 +1,13 @@
+schema_version: 1
+window_size: 500                  # latest completed inspections per window
+evaluate_every: 200               # completions between windows
+min_distinct_parents: 200
+psi_alert_candidate: 0.20
+consecutive_windows: 2
+psi_bins: 10
+psi_smoothing: 0.0001             # added to empty bins before the log ratio
+descriptors: [brightness, contrast, blur_variance, saturation, aspect_ratio]
+embedding:
+  enabled: true
+  domain_classifier_seed: 42
+  auc_alert: 0.75

@@ -1,0 +1,29 @@
+schema_version: 1
+version: v1
+task: classify
+positive_label: defective
+binary_threshold: 0.50            # evaluation; re-selected on the policy role by `evaluate`
+binary_threshold_selection: max_specificity_at_recall_target
+triage:
+  low: 0.20                       # p < low -> good_candidate
+  high: 0.80                      # p >= high -> defect_flagged
+  final_clearance: human
+targets:
+  defect_recall: 0.95
+  specificity: 0.90
+comparative:
+  max_recall_drop_pp: 2.0
+  min_gate_support_per_class: 30
+drift:
+  min_distinct_parents: 200
+  consecutive_windows: 2
+  descriptor_psi_candidate: 0.20
+parity:
+  fp32_max_abs_probability_error: 0.001
+  fp32_mean_abs_probability_error: 0.0001
+  min_images: 50
+  triage_boundary_band: 0.01
+quality:                          # image-quality screening (recorded, never silently dropped)
+  min_brightness: 0.12
+  max_brightness: 0.95
+  min_blur_variance: 15.0
