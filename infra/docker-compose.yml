@@ -1,0 +1,196 @@
+# TreadOps local stack.
+#   make infra   -> postgres, redis, object-store, mlflow (technical consoles bound to 127.0.0.1 only)
+#   make up      -> infra + migrate job + api + dispatcher + workers + web (CPU profile)
+#   --profile gpu adds the training worker on an NVIDIA host; --profile metrics adds Prometheus/Grafana.
+name: treadops
+
+x-app-env: &app-env
+  DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/treadops
+  REDIS_URL: redis://redis:6379/0
+  S3_ENDPOINT_URL: http://object-store:8333
+  S3_BUCKET: ${S3_BUCKET:-treadops}
+  S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
+  S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
+  MLFLOW_TRACKING_URI: http://mlflow:5000
+  JWT_SECRET: ${JWT_SECRET}
+  JWT_ISSUER: ${JWT_ISSUER:-treadops-api}
+  JWT_AUDIENCE: ${JWT_AUDIENCE:-treadops-web}
+  APP_ORIGIN: ${APP_ORIGIN:-http://localhost:3000}
+  MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-8388608}
+  MAX_DECODED_PIXELS: ${MAX_DECODED_PIXELS:-25000000}
+  INFERENCE_QUEUE_LIMIT: ${INFERENCE_QUEUE_LIMIT:-100}
+  TRAIN_DEVICE: ${TRAIN_DEVICE:-cpu}
+  LLM_BASE_URL: ${LLM_BASE_URL:-}
+  LLM_API_KEY: ${LLM_API_KEY:-}
+  LLM_MODEL: ${LLM_MODEL:-}
+  YOLO_AUTOINSTALL: "false"
+  YOLO_CONFIG_DIR: /tmp/ultralytics
+
+services:
+  postgres:
+    image: postgres:17.6-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: treadops
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres/init.sh:/docker-entrypoint-initdb.d/10-init.sh:ro
+    ports: ["127.0.0.1:${POSTGRES_HOST_PORT:-55432}:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d treadops"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    volumes: [redisdata:/data]
+    ports: ["127.0.0.1:${REDIS_HOST_PORT:-56379}:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  object-store:
+    image: chrislusf/seaweedfs:4.01
+    entrypoint: ["/bin/sh", "/entrypoint.sh"]
+    environment:
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
+    volumes:
+      - s3data:/data
+      - ./seaweedfs/entrypoint.sh:/entrypoint.sh:ro
+    ports: ["127.0.0.1:${S3_HOST_PORT:-58333}:8333"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:9333/cluster/status && wget -q -S -O /dev/null http://127.0.0.1:8333/ 2>&1 | grep -q 'HTTP/'"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  mlflow:
+    build: ./mlflow
+    image: treadops/mlflow:3.17.2
+    depends_on:
+      postgres: {condition: service_healthy}
+      object-store: {condition: service_healthy}
+    environment:
+      MLFLOW_S3_ENDPOINT_URL: http://object-store:8333
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
+      MLFLOW_SERVER_ALLOWED_HOSTS: "mlflow,mlflow:5000,localhost,localhost:*,127.0.0.1,127.0.0.1:*"
+    command: >
+      mlflow server --host 0.0.0.0 --port 5000
+      --backend-store-uri postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/mlflow
+      --artifacts-destination s3://mlflow-artifacts --serve-artifacts
+    ports: ["127.0.0.1:${MLFLOW_HOST_PORT:-55000}:5000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  # ---- application (CPU profile) --------------------------------------------------------------
+  migrate:
+    profiles: [app]
+    build: {context: .., dockerfile: infra/docker/python.Dockerfile}
+    image: treadops/app:${APP_IMAGE_TAG:-local}
+    environment: *app-env
+    depends_on:
+      postgres: {condition: service_healthy}
+      object-store: {condition: service_healthy}
+    command: ["sh", "-c", "alembic upgrade head && python -m treadops_api.cli ensure-bucket"]
+    restart: "no"
+
+  api:
+    profiles: [app]
+    image: treadops/app:${APP_IMAGE_TAG:-local}
+    environment: *app-env
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+    command: ["uvicorn", "treadops_api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz')"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  dispatcher:
+    profiles: [app]
+    image: treadops/app:${APP_IMAGE_TAG:-local}
+    environment: *app-env
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+    command: ["python", "-m", "treadops_worker.dispatcher"]
+
+  inference-worker:
+    profiles: [app]
+    image: treadops/app:${APP_IMAGE_TAG:-local}
+    environment: *app-env
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+    command: ["celery", "-A", "treadops_worker.celery_app", "worker", "-Q", "inference", "-c", "1",
+              "-n", "inference@%h", "--prefetch-multiplier", "1", "--loglevel", "INFO"]
+    deploy:
+      resources:
+        limits: {memory: 2g}
+
+  ops-worker:
+    profiles: [app]
+    image: treadops/app:${APP_IMAGE_TAG:-local}
+    environment: *app-env
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+    command: ["celery", "-A", "treadops_worker.celery_app", "worker", "-Q", "ops", "-c", "1",
+              "-n", "ops@%h", "--prefetch-multiplier", "1", "--loglevel", "INFO"]
+
+  training-worker-cpu:
+    profiles: [app]
+    image: treadops/app:${APP_IMAGE_TAG:-local}
+    environment: *app-env
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    command: ["celery", "-A", "treadops_worker.celery_app", "worker", "-Q", "training", "-c", "1",
+              "-n", "training@%h", "--prefetch-multiplier", "1", "--loglevel", "INFO"]
+    volumes: [trainruns:/app/runs]
+
+  training-worker-gpu:
+    profiles: [gpu]
+    image: treadops/app:${APP_IMAGE_TAG:-local}
+    environment: {<<: *app-env, TRAIN_DEVICE: "0"}
+    command: ["celery", "-A", "treadops_worker.celery_app", "worker", "-Q", "training", "-c", "1",
+              "-n", "training-gpu@%h", "--prefetch-multiplier", "1"]
+    deploy:
+      resources:
+        reservations:
+          devices: [{driver: nvidia, count: 1, capabilities: [gpu]}]
+
+  web:
+    profiles: [app]
+    build: {context: ../apps/web, dockerfile: ../../infra/docker/web.Dockerfile}
+    image: treadops/web:${APP_IMAGE_TAG:-local}
+    environment:
+      API_INTERNAL_URL: http://api:8000
+      APP_ORIGIN: ${APP_ORIGIN:-http://localhost:3000}
+      SESSION_COOKIE_SECURE: "false"
+    depends_on:
+      api: {condition: service_healthy}
+    ports: ["${WEB_PORT:-3000}:3000"]
+
+  prometheus:
+    profiles: [metrics]
+    image: prom/prometheus:v3.5.0
+    volumes: [./prometheus.yml:/etc/prometheus/prometheus.yml:ro]
+    ports: ["127.0.0.1:59090:9090"]
+
+volumes:
+  pgdata:
+  redisdata:
+  s3data:
+  trainruns:
