@@ -109,9 +109,9 @@ stages:
       size: 566
     - path: data/yolo/dev
       hash: md5
-      md5: 7315ca1b24aa2a58ce06878dcb06e978.dir
-      size: 310544632
-      nfiles: 1278
+      md5: de784e0b37336acf7ccc9a4aa66a4158.dir
+      size: 310393959
+      nfiles: 1276
     - path: packages/treadops_ml/treadops_ml/preprocess.py
       hash: md5
       md5: cf7100aa4a6dcbba3d0b02ffd905a1f5
@@ -127,6 +127,6 @@ stages:
     outs:
     - path: artifacts/native
       hash: md5
-      md5: 3d2715f45f56f5022d373cdec4544618.dir
-      size: 3258515
+      md5: 0d5b618aab8fa586ff73fd905c945950.dir
+      size: 3258537
       nfiles: 3

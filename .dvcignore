@@ -1,3 +1,6 @@
 # Add patterns of files dvc should ignore, which could improve
 # the performance. Learn more at
 # https://dvc.org/doc/user-guide/dvcignore
+
+# Ultralytics writes image-verification caches next to the classification root; they are not data.
+data/yolo/dev/*.cache

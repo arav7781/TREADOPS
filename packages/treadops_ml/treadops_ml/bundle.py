@@ -28,6 +28,16 @@ REQUIRED_FILES = ("best.pt", "class_mapping.json", "preprocess.json", "calibrati
 _PREDICT_LOCK = threading.Lock()
 
 
+def tensor_input_only(model):
+    """Serve prepared tensors only. Checkpoints trained with FullImageTrainer pickle our EvalTransform as
+    model.transforms; Ultralytics' classify predictor introspects it as a torchvision Compose. Tensor inputs never
+    use those transforms, so they are removed rather than re-applied (no default centre crop can sneak in)."""
+    inner = getattr(model, "model", None)
+    if inner is not None and hasattr(inner, "transforms"):
+        inner.transforms = None
+    return model
+
+
 def native_raw_probs(model, x: np.ndarray, device: str, imgsz: int, batch: int = 32) -> np.ndarray:
     """Run an Ultralytics classify model on prepared (N,3,S,S) tensors; no Ultralytics transforms applied."""
     import torch
@@ -115,7 +125,7 @@ class Bundle:
         else:
             from ultralytics import YOLO
 
-            self._model = YOLO(str(self.root / "best.pt"), task="classify")
+            self._model = tensor_input_only(YOLO(str(self.root / "best.pt"), task="classify"))
             names = {str(k): v for k, v in self._model.names.items()}
         self._verify_names({int(k): v for k, v in names.items()})
 

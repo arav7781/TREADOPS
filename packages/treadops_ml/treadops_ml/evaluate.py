@@ -43,7 +43,9 @@ class NativeRunner:
     def __init__(self, weights: Path, device: str = "cpu", imgsz: int = 224):
         from ultralytics import YOLO
 
-        self.model = YOLO(str(weights), task="classify")
+        from .bundle import tensor_input_only
+
+        self.model = tensor_input_only(YOLO(str(weights), task="classify"))
         self.device = device
         self.contract = PreprocessContract(imgsz=imgsz)
         self.names = {int(k): v for k, v in self.model.names.items()}
