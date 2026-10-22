@@ -1,0 +1,8 @@
+schema_version: 1
+recipe: configs/recipes/nano_224.yaml
+data_root: data/yolo/dev
+split_manifest: data/manifests/split_manifest.json
+out_dir: artifacts/native
+runs_dir: runs/treadops
+device: auto                      # auto -> TRAIN_DEVICE env, else mps/cuda/cpu
+mlflow_experiment: treadops-yolo-classify

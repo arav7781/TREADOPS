@@ -1,0 +1,5 @@
+schema_version: 1
+orphan_grace_hours: 24            # unreferenced objects older than this may be deleted
+gc_dry_run_default: true
+keep_previous_deployments: 3
+log_retention_days: 14
