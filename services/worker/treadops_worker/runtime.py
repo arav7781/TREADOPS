@@ -103,9 +103,26 @@ def beat(queue: str, paused: bool = False, info: dict | None = None) -> None:
                   "info": info or {}}))
 
 
+def prewarm_active() -> str | None:
+    """Load the bundle the serving pointer names, so readiness reflects a warm model before traffic arrives."""
+    from treadops_api.services.inspections import active_deployment
+
+    with session_scope() as db:
+        _ptr, dep = active_deployment(db)
+        if dep is None:
+            return None
+        sha, uri = dep.bundle_sha256, dep.model_version.bundle_uri
+    if sha not in bundles().loaded():
+        bundles().get(sha, uri)
+    return sha
+
+
 def start_heartbeat(queue: str, interval: float = 10.0) -> threading.Thread:
     def loop():
         while True:
+            if "inference" in queue:
+                with contextlib.suppress(Exception):
+                    prewarm_active()
             with contextlib.suppress(Exception):
                 beat(queue, info={"pid": os.getpid()})
             time.sleep(interval)
