@@ -26,6 +26,10 @@ canonical:
 label_map:                        # archive folder (lower-cased) -> semantic label
   defective: defective
   good: good
-duplicates:
-  phash_hamming_max: 6            # exact-ish perceptual duplicates are grouped automatically
-  embedding_cosine_min: 0.97      # near-duplicate candidates; threshold set after manual review (duplicate_review.csv)
+duplicates:                       # rules set after a visual review of candidate pairs (docs/adr/0003-*.md)
+  phash_hamming_max: 6
+  phash_requires_cosine_min: 0.85 # pHash alone produced false matches between different tyres
+  embedding_cosine_min: 0.90      # 0.90-0.98 pairs were the same physical tyre re-photographed
+  sequence_index_distance_max: 3  # publisher capture order: adjacent shots of one tyre ...
+  sequence_cosine_min: 0.80       # ... grouped when also visually similar
+  review_floor: 0.86              # pairs above this (or near pHash) are listed in duplicate_review.csv
