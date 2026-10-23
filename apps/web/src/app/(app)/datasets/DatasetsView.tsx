@@ -81,7 +81,7 @@ export function DatasetsView() {
     mutationFn: () => api<{ job_id: string }>("/v1/datasets/snapshots", { method: "POST", json: { description: desc || null, include_verified_uploads: includeUploads } }),
     onSuccess: (r) => setJob(r.job_id),
   });
-  if (q.isError) return <ErrorState error={q.error} onRetry={() => q.refetch()} />;
+  if (q.isError) return <><PageHeader eyebrow="Data engineering" title="Datasets" /><ErrorState error={q.error} onRetry={() => q.refetch()} /></>;
   const d = q.data;
   if (!d) return <SkeletonRows rows={8} />;
   const src = d.source;

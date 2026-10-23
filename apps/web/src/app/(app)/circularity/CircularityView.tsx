@@ -18,7 +18,7 @@ const PATHWAYS = [
 
 export function CircularityView() {
   const q = useQuery({ queryKey: qk.ledger, queryFn: () => api<Ledger>("/v1/circularity/ledger"), refetchInterval: 30_000 });
-  if (q.isError) return <ErrorState error={q.error} onRetry={() => q.refetch()} />;
+  if (q.isError) return <><PageHeader eyebrow="Sustainability" title="Casing circularity ledger" /><ErrorState error={q.error} onRetry={() => q.refetch()} /></>;
   const l = q.data;
   if (!l) return <SkeletonRows rows={8} />;
   const verifiedTotal = Object.values(l.verified).reduce((a, b) => a + b, 0);

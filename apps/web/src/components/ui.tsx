@@ -15,7 +15,7 @@ export function Card({ children, className, title, subtitle, actions, as: As = "
   as?: "section" | "div" | "article";
 }) {
   return (
-    <As className={clsx("card p-5", className)}>
+    <As className={clsx("card min-w-0 p-5", className)}>
       {(title || actions) && (
         <header className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">

@@ -154,18 +154,18 @@ function EvidencePanel({ model, generation, isAdmin, isMl }: { model: ModelView;
           <p role="note" className="mb-4 rounded-xl bg-warn-soft p-3 text-ink">Promotion is blocked: overall gate status is <strong>{gateLabel(g.status)}</strong>.</p>
         )}
         <div className="grid gap-6 lg:grid-cols-2">
-          <div>
+          <div className="min-w-0">
             <h3 className="mb-2 font-bold text-ink">Hard gates</h3>
             <ul className="space-y-2">
               {g.hard_gates.map((h) => (
-                <li key={h.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-surface-muted px-3 py-2">
+                <li key={h.id} className="flex min-w-0 flex-wrap items-center justify-between gap-2 rounded-xl bg-surface-muted px-3 py-2">
                   <span className="font-semibold">{humanize(h.id)}</span><GateStatus status={h.status} />
-                  {h.detail !== undefined && <span className="mono w-full truncate text-xs text-muted" title={JSON.stringify(h.detail)}>{typeof h.detail === "string" ? h.detail : JSON.stringify(h.detail)}</span>}
+                  {h.detail !== undefined && <span className="mono block w-full min-w-0 max-w-full truncate text-xs text-muted" title={JSON.stringify(h.detail)}>{typeof h.detail === "string" ? h.detail : JSON.stringify(h.detail)}</span>}
                 </li>
               ))}
             </ul>
           </div>
-          <div>
+          <div className="min-w-0">
             <h3 className="mb-2 font-bold text-ink">Quality targets</h3>
             <ul className="space-y-2">
               {g.quality_targets.map((t) => (
@@ -258,7 +258,7 @@ export function ModelsView() {
   const [{ model }, setUrl] = useUrlState(["model"] as const);
   const q = useQuery({ queryKey: qk.models, queryFn: () => api<ModelsResponse>("/v1/models"), refetchInterval: 15_000 });
   const deps = useQuery({ queryKey: qk.deployments, queryFn: () => api<DeploymentsResponse>("/v1/deployments"), refetchInterval: 15_000 });
-  if (q.isError) return <ErrorState error={q.error} onRetry={() => q.refetch()} />;
+  if (q.isError) return <><PageHeader eyebrow="Model lifecycle" title="Models" /><ErrorState error={q.error} onRetry={() => q.refetch()} /></>;
   const d = q.data;
   if (!d) return <SkeletonRows rows={8} />;
   const selected = d.items.find((m) => m.id === model) ?? d.challenger ?? d.active ?? d.items[0];
