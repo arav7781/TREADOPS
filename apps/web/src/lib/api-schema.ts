@@ -89,6 +89,96 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/cameras": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Cameras */
+        get: operations["list_cameras_v1_cameras_get"];
+        put?: never;
+        /** Create */
+        post: operations["create_v1_cameras_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cameras/probe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Probe
+         * @description Connect to a stream before saving it; returns one frame as a short-lived signed snapshot.
+         */
+        post: operations["probe_v1_cameras_probe_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cameras/{camera_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete */
+        delete: operations["delete_v1_cameras__camera_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update */
+        patch: operations["update_v1_cameras__camera_id__patch"];
+        trace?: never;
+    };
+    "/v1/cameras/{camera_id}/inspect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Inspect */
+        post: operations["inspect_v1_cameras__camera_id__inspect_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cameras/{camera_id}/snapshot": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Snapshot */
+        get: operations["snapshot_v1_cameras__camera_id__snapshot_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/circularity/ledger": {
         parameters: {
             query?: never;
@@ -840,6 +930,67 @@ export interface components {
              */
             video?: string | null;
         };
+        /** CameraIn */
+        CameraIn: {
+            /**
+             * Capture Mode
+             * @default on_change
+             */
+            capture_mode: string;
+            /**
+             * Change Threshold
+             * @default 0.04
+             */
+            change_threshold: number;
+            /**
+             * Enabled
+             * @default true
+             */
+            enabled: boolean;
+            /**
+             * Interval S
+             * @default 5
+             */
+            interval_s: number;
+            /** Line Id */
+            line_id?: string | null;
+            /**
+             * Min Sharpness
+             * @default 15
+             */
+            min_sharpness: number;
+            /** Name */
+            name: string;
+            /**
+             * Simulated
+             * @description Test stream (e.g. a looped video): its inspections are labelled simulated
+             * @default false
+             */
+            simulated: boolean;
+            /** Stream Url */
+            stream_url: string;
+        };
+        /** CameraPatch */
+        CameraPatch: {
+            /** Capture Mode */
+            capture_mode?: string | null;
+            /** Change Threshold */
+            change_threshold?: number | null;
+            /** Enabled */
+            enabled?: boolean | null;
+            /** Interval S */
+            interval_s?: number | null;
+            /** Line Id */
+            line_id?: string | null;
+            /** Min Sharpness */
+            min_sharpness?: number | null;
+            /** Name */
+            name?: string | null;
+            /** Simulated */
+            simulated?: boolean | null;
+            /** Stream Url */
+            stream_url?: string | null;
+        };
         /** CancelIn */
         CancelIn: {
             /**
@@ -866,6 +1017,11 @@ export interface components {
             email: string;
             /** Password */
             password: string;
+        };
+        /** ProbeIn */
+        ProbeIn: {
+            /** Stream Url */
+            stream_url: string;
         };
         /** ReleaseIn */
         ReleaseIn: {
@@ -1083,6 +1239,241 @@ export interface operations {
                 authorization?: string | null;
             };
             path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_cameras_v1_cameras_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_v1_cameras_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CameraIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    probe_v1_cameras_probe_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProbeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_v1_cameras__camera_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                camera_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_v1_cameras__camera_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                camera_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CameraPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    inspect_v1_cameras__camera_id__inspect_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                camera_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    snapshot_v1_cameras__camera_id__snapshot_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                camera_id: string;
+            };
             cookie?: never;
         };
         requestBody?: never;

@@ -15,6 +15,7 @@ from . import errors
 from .routers import (
     audit,
     auth,
+    cameras,
     circularity,
     copilot,
     datasets,
@@ -79,7 +80,7 @@ def create_app() -> FastAPI:
         return response
 
     for r in (health, auth, inspections, media, jobs, datasets, training, models, deployments, monitoring, replays,
-              audit, metrics, circularity, copilot, llmops):
+              audit, metrics, circularity, copilot, llmops, cameras):
         app.include_router(r.router)
     return app
 

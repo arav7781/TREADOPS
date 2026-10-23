@@ -17,11 +17,12 @@ cmd_for() {
     inference) echo "$PY/celery -A treadops_worker.celery_app worker -Q inference -n inference@%h --pool=solo --loglevel INFO" ;;
     ops) echo "$PY/celery -A treadops_worker.celery_app worker -Q ops -n ops@%h --pool=threads --concurrency 2 --loglevel INFO" ;;
     training) echo "env TRAIN_DEVICE=${TRAIN_DEVICE_DEV:-mps} $PY/celery -A treadops_worker.celery_app worker -Q training -n training@%h --pool=solo --loglevel INFO" ;;
+    cameras) echo "$PY/python -m treadops_worker.cameras" ;;
     web) echo "npm --prefix apps/web run dev -- --port $WEB_PORT" ;;
     *) echo "unknown service $1" >&2; return 1 ;;
   esac
 }
-ALL=(api dispatcher inference ops training web)
+ALL=(api dispatcher inference ops training cameras web)
 
 start() {
   local s=$1 pidf="$RUN/$1.pid"

@@ -53,6 +53,7 @@ These are the controls as implemented; see `services/api/treadops_api/security.p
 | Copilot | Input guardrails (prompt injection, off-topic, PII redaction) and output guardrails (no safety certification, triage consistency, numeric grounding against tool outputs, system-prompt leak) |
 | Secrets | `make env` generates secrets locally into `.env`, which is git-ignored; CI generates throw-away secrets per run |
 | Audit | Promotions, rollbacks, reviews and alert transitions are recorded with actor, reason and correlation ID |
+| Cameras | Stream URLs (which may embed camera credentials) are encrypted at rest (Fernet, key derived from `JWT_SECRET`) and only ever returned masked (`rtsp://user:•••@host`); only `rtsp`, `rtsps`, `http` and `https` are accepted (`file://` only when `CAMERA_ALLOW_FILE_URLS=true` for tests); adding, changing and removing cameras needs the ML-engineer role and is audited |
 
 ## Known limitations
 
@@ -60,6 +61,10 @@ These are the controls as implemented; see `services/api/treadops_api/security.p
 - **Local stack is plain HTTP.** Terminate TLS in front of the web app and set `SESSION_COOKIE_SECURE=true`.
 - **Demo accounts share one password** (`DEMO_PASSWORD` in `.env`). Change or remove them before sharing a
   deployment.
-- `JWT_SECRET` signs both sessions and media URLs; rotating it signs everyone out and invalidates open media links.
+- `JWT_SECRET` signs sessions and media URLs and derives the camera-URL encryption key; rotating it signs everyone
+  out, invalidates open media links and means camera stream URLs must be entered again.
+- A camera URL makes the connector (and the "test connection" call) open a network connection to that host. That
+  is the point of the feature, but it also means an ML engineer can make the server reach internal addresses;
+  restrict that role accordingly and run the connector on a network segment that can only see the cameras.
 - LLM provider credentials (`LLM_API_KEY`) live in `.env`; prompts sent to an external provider leave your network.
   PII is redacted first, but review your provider's data policy.

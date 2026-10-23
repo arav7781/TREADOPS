@@ -41,6 +41,7 @@ dependencies = [
   "httpx",
   "openai>=1.55",
   "langgraph==1.2.16",
+  "cryptography>=50,<51",
 ]
 
 [dependency-groups]

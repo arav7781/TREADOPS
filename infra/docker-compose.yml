@@ -140,6 +140,15 @@ services:
       resources:
         limits: {memory: 2g}
 
+  camera-connector:
+    profiles: [app]
+    image: treadops/app:${APP_IMAGE_TAG:-local}
+    environment: *app-env
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    command: ["python", "-m", "treadops_worker.cameras"]
+    restart: unless-stopped
+
   ops-worker:
     profiles: [app]
     image: treadops/app:${APP_IMAGE_TAG:-local}

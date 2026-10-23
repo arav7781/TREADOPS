@@ -37,7 +37,7 @@ from ..settings import get_settings
 from ..storage import Storage, StorageUnavailable
 
 ENV = "local"
-SOURCES = {"upload", "replay", "copilot", "api"}
+SOURCES = {"upload", "replay", "copilot", "api", "camera"}
 METADATA_ORIGINS = {"simulated", "user_provided", "observed"}
 TYRE_CATEGORIES = {"passenger", "light_truck", "truck_bus", "two_wheeler", "unknown"}
 

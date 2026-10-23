@@ -551,3 +551,41 @@ class ChatFeedback(Base):
         UniqueConstraint("message_id", "user_id", name="uq_feedback_once"),
         CheckConstraint("score in (-1, 1)", name="ck_feedback_score"),
     )
+
+
+class Camera(Base):
+    """A line camera (RTSP or other FFmpeg-readable stream). The stream URL can carry credentials, so it is stored
+    encrypted and only ever returned masked."""
+
+    __tablename__ = "cameras"
+    id: Mapped[uuid.UUID] = mapped_column(UUIDPK, primary_key=True, default=uid)
+    name: Mapped[str] = mapped_column(String(80), unique=True)
+    code: Mapped[str] = mapped_column(String(64), unique=True)        # written to inspections.camera_id
+    line_id: Mapped[str | None] = mapped_column(String(64))
+    stream_url_enc: Mapped[str] = mapped_column(Text)
+    stream_url_masked: Mapped[str] = mapped_column(String(512))
+    simulated: Mapped[bool] = mapped_column(Boolean, default=False)   # test streams label inspections "simulated"
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    capture_mode: Mapped[str] = mapped_column(String(16), default="on_change")
+    interval_s: Mapped[float] = mapped_column(Float, default=5.0)
+    change_threshold: Mapped[float] = mapped_column(Float, default=0.04)
+    min_sharpness: Mapped[float] = mapped_column(Float, default=15.0)
+    state: Mapped[str] = mapped_column(String(16), default="idle")
+    last_error: Mapped[str | None] = mapped_column(Text)
+    last_frame_at: Mapped[datetime | None] = mapped_column(TS)
+    last_capture_at: Mapped[datetime | None] = mapped_column(TS)
+    fps: Mapped[float | None] = mapped_column(Float)
+    frame_width: Mapped[int | None] = mapped_column(Integer)
+    frame_height: Mapped[int | None] = mapped_column(Integer)
+    frames_read: Mapped[int] = mapped_column(BigInteger, default=0)
+    captures: Mapped[int] = mapped_column(Integer, default=0)
+    created_by: Mapped[uuid.UUID | None] = mapped_column(UUIDPK, ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(TS, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(TS, default=utcnow, onupdate=utcnow)
+
+    __table_args__ = (
+        CheckConstraint("capture_mode in ('interval','on_change')", name="ck_camera_capture_mode"),
+        CheckConstraint("state in ('idle','connecting','streaming','error','disabled')", name="ck_camera_state"),
+        CheckConstraint("interval_s >= 1 and interval_s <= 3600", name="ck_camera_interval"),
+    )
+

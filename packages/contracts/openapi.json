@@ -158,6 +158,195 @@
         "title": "Body_send_v1_copilot_messages_post",
         "type": "object"
       },
+      "CameraIn": {
+        "properties": {
+          "capture_mode": {
+            "default": "on_change",
+            "pattern": "^(interval|on_change)$",
+            "title": "Capture Mode",
+            "type": "string"
+          },
+          "change_threshold": {
+            "default": 0.04,
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Change Threshold",
+            "type": "number"
+          },
+          "enabled": {
+            "default": true,
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "interval_s": {
+            "default": 5.0,
+            "maximum": 3600.0,
+            "minimum": 1.0,
+            "title": "Interval S",
+            "type": "number"
+          },
+          "line_id": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Line Id"
+          },
+          "min_sharpness": {
+            "default": 15.0,
+            "maximum": 100000.0,
+            "minimum": 0.0,
+            "title": "Min Sharpness",
+            "type": "number"
+          },
+          "name": {
+            "maxLength": 80,
+            "minLength": 2,
+            "title": "Name",
+            "type": "string"
+          },
+          "simulated": {
+            "default": false,
+            "description": "Test stream (e.g. a looped video): its inspections are labelled simulated",
+            "title": "Simulated",
+            "type": "boolean"
+          },
+          "stream_url": {
+            "maxLength": 1000,
+            "minLength": 8,
+            "title": "Stream Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "stream_url"
+        ],
+        "title": "CameraIn",
+        "type": "object"
+      },
+      "CameraPatch": {
+        "properties": {
+          "capture_mode": {
+            "anyOf": [
+              {
+                "pattern": "^(interval|on_change)$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capture Mode"
+          },
+          "change_threshold": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change Threshold"
+          },
+          "enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enabled"
+          },
+          "interval_s": {
+            "anyOf": [
+              {
+                "maximum": 3600.0,
+                "minimum": 1.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interval S"
+          },
+          "line_id": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Line Id"
+          },
+          "min_sharpness": {
+            "anyOf": [
+              {
+                "maximum": 100000.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Sharpness"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "minLength": 2,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "simulated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulated"
+          },
+          "stream_url": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "minLength": 8,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stream Url"
+          }
+        },
+        "title": "CameraPatch",
+        "type": "object"
+      },
       "CancelIn": {
         "properties": {
           "reason": {
@@ -228,6 +417,21 @@
           "password"
         ],
         "title": "LoginIn",
+        "type": "object"
+      },
+      "ProbeIn": {
+        "properties": {
+          "stream_url": {
+            "maxLength": 1000,
+            "minLength": 8,
+            "title": "Stream Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "stream_url"
+        ],
+        "title": "ProbeIn",
         "type": "object"
       },
       "ReleaseIn": {
@@ -721,6 +925,397 @@
         "summary": "Logout",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/v1/cameras": {
+      "get": {
+        "operationId": "list_cameras_v1_cameras_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Cameras",
+        "tags": [
+          "cameras"
+        ]
+      },
+      "post": {
+        "operationId": "create_v1_cameras_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CameraIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create",
+        "tags": [
+          "cameras"
+        ]
+      }
+    },
+    "/v1/cameras/probe": {
+      "post": {
+        "description": "Connect to a stream before saving it; returns one frame as a short-lived signed snapshot.",
+        "operationId": "probe_v1_cameras_probe_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProbeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Probe",
+        "tags": [
+          "cameras"
+        ]
+      }
+    },
+    "/v1/cameras/{camera_id}": {
+      "delete": {
+        "operationId": "delete_v1_cameras__camera_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "camera_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Camera Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete",
+        "tags": [
+          "cameras"
+        ]
+      },
+      "patch": {
+        "operationId": "update_v1_cameras__camera_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "camera_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Camera Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CameraPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update",
+        "tags": [
+          "cameras"
+        ]
+      }
+    },
+    "/v1/cameras/{camera_id}/inspect": {
+      "post": {
+        "operationId": "inspect_v1_cameras__camera_id__inspect_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "camera_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Camera Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Inspect",
+        "tags": [
+          "cameras"
+        ]
+      }
+    },
+    "/v1/cameras/{camera_id}/snapshot": {
+      "get": {
+        "operationId": "snapshot_v1_cameras__camera_id__snapshot_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "camera_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Camera Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Snapshot",
+        "tags": [
+          "cameras"
         ]
       }
     },
