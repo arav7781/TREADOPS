@@ -55,6 +55,7 @@ class ToolContext:
     frame_times: list[float] = field(default_factory=list)  # seconds into the clip for each frame
     video_source: str | None = None                          # "clip" or "camera"
     frame_inspections: list[uuid.UUID] = field(default_factory=list)
+    session_inspections: list[dict[str, Any]] = field(default_factory=list)  # earlier in this chat, newest first
     emit: Callable[[str, dict[str, Any]], None] = lambda *_: None
     results: list[dict[str, Any]] = field(default_factory=list)
 
@@ -80,6 +81,10 @@ SCHEMAS = [
     _schema("get_preprocessing_trace", "Explain each preprocessing stage (ingest, canonical, letterbox, tensor, "
             "quality, inference, attribution) of an inspection, with timings.",
             {"inspection_id": {"type": "string"}}, ["inspection_id"]),
+    _schema("show_attribution_heatmap", "Show an inspection's occlusion-attribution heatmap in the chat (the user "
+            "sees the heatmap image, the pipeline and the result) and return what it measured. Use when the user "
+            "asks to see the heatmap, the attribution or which region drove the decision.",
+            {"inspection_id": {"type": "string", "description": "inspection UUID"}}, ["inspection_id"]),
     _schema("get_model_status", "Active model version, gate status and measured evidence (gate cohort and "
             "locked test metrics, latency)."),
     _schema("get_drift_status", "Latest monitoring window (descriptor PSI, embedding drift, labelled quality) "
@@ -104,7 +109,8 @@ SCHEMAS = [
 
 
 def _compact(insp: Inspection, pred: Prediction | None, stages: list[InspectionStage]) -> dict[str, Any]:
-    out: dict[str, Any] = {"inspection_id": str(insp.id), "status": insp.status,
+    out: dict[str, Any] = {"inspection_id": str(insp.id), "status": insp.status, "source": insp.source,
+                           "created_at": insp.created_at.isoformat() if insp.created_at else None,
                            "model": {"family": insp.model_tuple.get("model_family"),
                                      "registry_version": insp.model_tuple.get("registry_version"),
                                      "bundle_sha256": insp.model_tuple.get("bundle_sha256", "")[:12],
@@ -174,8 +180,11 @@ def _submit_photo(ctx: ToolContext) -> dict[str, Any] | None:
 def classify_tyre_image(ctx: ToolContext) -> dict[str, Any]:
     if ctx.inspection_id is None:
         if not ctx.image_bytes:
-            return {"error": "no_attachment", "message": "No photo is attached to this message. Ask the user to "
-                                                          "upload a tyre photo."}
+            earlier = [i["inspection_id"] for i in ctx.session_inspections]
+            return {"error": "no_attachment", "message": "No photo is attached to this message. "
+                    + ("Earlier inspections in this conversation can be used with get_inspection, "
+                       "get_preprocessing_trace or show_attribution_heatmap." if earlier
+                       else "Ask the user to upload a tyre photo."), "earlier_inspections": earlier}
         failure = _submit_photo(ctx)
         if failure is not None:
             return failure
@@ -374,6 +383,13 @@ def classify_tyre_video(ctx: ToolContext) -> dict[str, Any]:
         time.sleep(0.5)
 
 
+def _show(ctx: ToolContext, inspection_id: uuid.UUID, focus: str | None) -> None:
+    """Put an existing inspection on screen in this answer (its pipeline and result), opened at `focus`."""
+    ctx.emit("inspection_ref", {"inspection_id": str(inspection_id), "focus": focus,
+                                "message": f"showing inspection {str(inspection_id)[:8]}"
+                                           + (f" at its {focus} stage" if focus else "")})
+
+
 def get_inspection(ctx: ToolContext, inspection_id: str) -> dict[str, Any]:
     try:
         iid = uuid.UUID(inspection_id)
@@ -381,9 +397,13 @@ def get_inspection(ctx: ToolContext, inspection_id: str) -> dict[str, Any]:
         return {"error": "invalid_id"}
     db = new_session()
     try:
-        return _load(db, iid) or {"error": "not_found"}
+        res = _load(db, iid)
     finally:
         db.close()
+    if res is None:
+        return {"error": "not_found"}
+    _show(ctx, iid, "classified")
+    return res
 
 
 def get_preprocessing_trace(ctx: ToolContext, inspection_id: str) -> dict[str, Any]:
@@ -395,11 +415,47 @@ def get_preprocessing_trace(ctx: ToolContext, inspection_id: str) -> dict[str, A
     try:
         stages = db.execute(select(InspectionStage).where(InspectionStage.inspection_id == iid)
                             .order_by(InspectionStage.stage_index)).scalars().all()
-        return {"inspection_id": inspection_id, "stages": [
-            {"index": s.stage_index, "title": s.title, "duration_ms": round(s.duration_ms, 1), "log": s.log}
-            for s in stages]} if stages else {"error": "not_found_or_not_processed"}
     finally:
         db.close()
+    if not stages:
+        return {"error": "not_found_or_not_processed"}
+    _show(ctx, iid, None)
+    return {"inspection_id": inspection_id, "stages": [
+        {"index": s.stage_index, "title": s.title, "duration_ms": round(s.duration_ms, 1), "log": s.log}
+        for s in stages]}
+
+
+def show_attribution_heatmap(ctx: ToolContext, inspection_id: str) -> dict[str, Any]:
+    try:
+        iid = uuid.UUID(inspection_id)
+    except ValueError:
+        return {"error": "invalid_id"}
+    db = new_session()
+    try:
+        pred = db.execute(select(Prediction).where(Prediction.inspection_id == iid)).scalar_one_or_none()
+        stage = db.execute(select(InspectionStage).where(InspectionStage.inspection_id == iid,
+                                                         InspectionStage.name == "attribution")).scalar_one_or_none()
+    finally:
+        db.close()
+    if pred is None or stage is None or not pred.attribution:
+        return {"error": "no_heatmap", "message": "This inspection has no attribution heatmap (not found or not "
+                                                  "processed yet)."}
+    _show(ctx, iid, "attribution")
+    a = pred.attribution
+    cell = a.get("strongest_cell")
+    return {"inspection_id": str(iid), "shown_in_chat": True, "method": a.get("method"), "grid": a.get("grid"),
+            "strongest_cell": {"row": cell[0] + 1, "column": cell[1] + 1} if cell else None,
+            "max_delta": round(float(a.get("max_delta", 0.0)), 3),
+            "min_delta": round(float(a.get("min_delta", 0.0)), 3),
+            "p_defective": round(pred.p_defective, 4), "triage_label": TRIAGE_LABEL[pred.triage],
+            "verdict_label": VERDICT_LABEL[verdict_of(pred.binary_defective, pred.triage, pred.quality_status)],
+            "how_to_read": "Each cell of the grid over the model input was hidden in turn; delta is the drop in the "
+                           "defective-vs-good logit margin. Red = regions supporting 'defective' (max_delta is the "
+                           "strongest), blue = regions supporting 'good' (negative delta). Rows and columns count "
+                           "from the top left.",
+            "note": "attribution heatmap, not a defect location or segmentation: the strongest cell shows what the "
+                    "classifier weighed (it can be background or the rim) and must not be presented as where the "
+                    "damage is, or as agreeing with a visible defect"}
 
 
 def get_model_status(ctx: ToolContext) -> dict[str, Any]:
@@ -477,6 +533,7 @@ IMPLS: dict[str, Callable[..., dict[str, Any]]] = {
     "classify_tyre_video": classify_tyre_video,
     "get_inspection": get_inspection,
     "get_preprocessing_trace": get_preprocessing_trace,
+    "show_attribution_heatmap": show_attribution_heatmap,
     "get_model_status": get_model_status,
     "get_drift_status": get_drift_status,
     "estimate_circularity_impact": estimate_circularity_impact,

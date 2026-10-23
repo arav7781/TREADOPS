@@ -88,7 +88,10 @@ export function useAnswerStream(sessionId: string | null, messageId: string | un
         const events = m.attachments.events ?? [];
         if (received <= events.length) return m;
         const ids = ev.kind === "inspection" && ev.frame !== undefined && ev.inspection_id
-          ? { inspection_ids: [...(m.attachments.inspection_ids ?? []), ev.inspection_id] } : {};
+          ? { inspection_ids: [...(m.attachments.inspection_ids ?? []), ev.inspection_id] }
+          : ev.kind === "inspection_ref" && ev.inspection_id
+            ? { inspection_refs: [...(m.attachments.inspection_refs ?? []).filter((r) => r.id !== ev.inspection_id),
+              { id: ev.inspection_id, focus: ev.focus ?? null }] } : {};
         return { ...m, attachments: { ...m.attachments, ...ids, events: [...events, ev] } };
       });
     });
@@ -198,6 +201,8 @@ const STEP: Record<string, { icon: typeof Brain; tone: string }> = {
   guard_output: { icon: ShieldCheck, tone: "text-accent-ink" },
 };
 
+const noop = () => {};
+
 export function eventText(e: ChatEvent): string {
   switch (e.kind) {
     case "tool_call":
@@ -214,6 +219,7 @@ export function eventText(e: ChatEvent): string {
 const TOOL_LABEL: Record<string, string> = {
   classify_tyre_image: "the YOLO inspection", search_knowledge: "a knowledge-base search",
   get_inspection: "an inspection lookup", get_preprocessing_trace: "the preprocessing trace",
+  show_attribution_heatmap: "the attribution heatmap",
 };
 
 /** What Bib is doing right now, in plain words, from its latest recorded step. */
@@ -226,6 +232,7 @@ export function statusLine(e: ChatEvent | undefined): string {
     case "plan": return "Planning the next step";
     case "tool_call": return `Running ${tool}`;
     case "inspection": return "YOLO inspection created, waiting for the worker";
+    case "inspection_ref": return `Showing inspection ${e.inspection_id?.slice(0, 8) ?? ""}`;
     case "tool_progress": return e.message ?? `Running ${tool}`;
     case "stage": return `Stage ${e.stage}: ${e.title}`;
     case "tool_result": return `Finished ${tool}`;
@@ -394,12 +401,14 @@ function ChatResult({ d, canReview }: { d: InspectionDetail; canReview: boolean 
 }
 
 /** The YOLO run the agent's tool started: stage images, the worker's log and the final classified result. */
-function InspectionInChat({ id, canReview, animate, revealed, onRevealed }: {
+function InspectionInChat({ id, canReview, animate, revealed, onRevealed, focus }: {
   id: string;
   canReview: boolean;
   animate: boolean;
   revealed: boolean;
   onRevealed: () => void;
+  /** Set for an inspection a tool looked up (not created this turn): open the theatre at this stage. */
+  focus?: string | null;
 }) {
   const q = useInspection(id);
   useEffect(() => { if (q.isError) onRevealed(); }, [q.isError, onRevealed]);
@@ -419,7 +428,7 @@ function InspectionInChat({ id, canReview, animate, revealed, onRevealed }: {
     <section className="mt-3 space-y-3" aria-label="YOLO inspection pipeline">
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <ScanLine aria-hidden className="h-4 w-4 text-primary" />
-        <span className="font-semibold text-ink">YOLO pipeline</span>
+        <span className="font-semibold text-ink">{focus === undefined ? "YOLO pipeline" : "Inspection on record"}</span>
         <StatusBadge status={d?.status ?? "queued"} />
         {d && <span className="mono text-muted">{d.deployment.model_family} v{d.deployment.registry_version ?? "?"} · gen {d.deployment.generation ?? "?"} · {id.slice(0, 8)}</span>}
         <button type="button" onClick={() => setShowLog(!logOpen)} aria-expanded={logOpen}
@@ -427,7 +436,7 @@ function InspectionInChat({ id, canReview, animate, revealed, onRevealed }: {
           <Terminal aria-hidden className="h-4 w-4" /> {logOpen ? "Hide log" : "Show log"}
         </button>
       </div>
-      <StageTheatre stages={d?.stages ?? []} running={running} stepMs={animate ? 1500 : 0} onRevealed={onRevealed}
+      <StageTheatre key={focus ?? "latest"} stages={d?.stages ?? []} running={running} stepMs={animate ? 1500 : 0} onRevealed={onRevealed} focus={focus}
         thresholds={policy ? { low: policy.triage_low, high: policy.triage_high, binary: policy.binary_threshold } : null} />
       {logOpen && <PipelineConsole stages={d?.stages ?? []} timeline={d?.timeline} status={d?.status ?? "queued"} error={d?.job?.error_message ?? null} />}
       {d?.status === "failed" && <ErrorState error={new Error(d.job?.error_message ?? "The inspection job failed.")} title={`Inspection failed (${d.job?.error_code ?? "error"})`} />}
@@ -562,6 +571,9 @@ function AssistantMessage({ m, onSuggest, canReview, onRetry }: {
         {isVideo ? (frameIds.length > 0 && <VideoInChat ids={frameIds} events={a.events ?? []} result={a.video_result} canReview={canReview}
           animate={live} revealed={revealed} onRevealed={markRevealed} />)
           : a.inspection_id && <InspectionInChat id={a.inspection_id} canReview={canReview} animate={live} revealed={revealed} onRevealed={markRevealed} />}
+        {(a.inspection_refs ?? []).filter((r) => r.id !== a.inspection_id).map((r) => (
+          <InspectionInChat key={r.id} id={r.id} focus={r.focus} canReview={canReview} animate={false} revealed onRevealed={noop} />
+        ))}
         {!pending && !showAnswer && (
           <p className="flex items-center gap-2 text-sm text-muted"><Loader2 aria-hidden className="h-4 w-4 animate-spin" /> {ASSISTANT_NAME} is walking through the pipeline…</p>
         )}

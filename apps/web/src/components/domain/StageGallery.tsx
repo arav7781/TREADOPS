@@ -125,10 +125,12 @@ export function StageGallery({ stages, running, animate = true }: { stages: Stag
  * changed (before → after, pixel detail, quality chart, probability dial), with its recorded facts and log lines.
  * The filmstrip fills up as stages arrive; any finished stage can be revisited.
  */
-export function StageTheatre({ stages, running, stepMs = 1600, onRevealed, thresholds = null }: {
+export function StageTheatre({ stages, running, stepMs = 1600, onRevealed, thresholds = null, focus = null }: {
   stages: Stage[];
   running: boolean;
   stepMs?: number;
+  /** Stage name to open at (e.g. "attribution") instead of the latest one. */
+  focus?: string | null;
   /** Called once every recorded stage has been shown and the job is finished. */
   onRevealed?: () => void;
   thresholds?: Thresholds | null;
@@ -140,7 +142,7 @@ export function StageTheatre({ stages, running, stepMs = 1600, onRevealed, thres
     if (!running && shown >= ordered.length) onRevealed?.();
   }, [running, shown, ordered.length, onRevealed]);
   const visible = ordered.slice(0, shown);
-  const [picked, setPicked] = useState<number | null>(null);
+  const [picked, setPicked] = useState<number | null>(() => STAGE_PLAN.find((p) => p.name === focus)?.index ?? null);
   const byIndex = new Map(visible.map((s) => [s.index, s]));
   const latest = visible[visible.length - 1];
   const current = (picked !== null && byIndex.get(picked)) || latest;

@@ -111,8 +111,8 @@ resolvable ✅.
 2.07 across consecutive windows; alerts opened only after two windows above 0.20 and duplicates merged. Mean
 p(defective) fell 0.53 → 0.44 as images darkened, matching the stress-test recall drop.
 
-**Tests:** 92 unit, 9 data/ML (on the real data and artifacts) and 34 integration tests against real
-PostgreSQL/Redis/object storage (API-01..04, JOB-01..04, REL-01..04, DB-01, cameras, vision second opinion and regressions), 46 web
+**Tests:** 95 unit, 9 data/ML (on the real data and artifacts) and 35 integration tests against real
+PostgreSQL/Redis/object storage (API-01..04, JOB-01..04, REL-01..04, DB-01, cameras, vision second opinion, chat context and regressions), 46 web
 component tests and 22 Playwright journeys against the live stack and the configured LLM (including video upload and
 live-camera recording through Chromium's fake camera) — all passing; GitHub CI (lint, mypy, contract diff,
 migrations, tests, web build, Docker images) is green.

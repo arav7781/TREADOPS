@@ -38,6 +38,15 @@ test("a photo turn runs the YOLO tool and shows its stages, steps and result ins
   await expect(page.getByTestId("chat-result").getByText(/^(Damaged|Not damaged|Uncertain)$/).first()).toBeVisible({ timeout: 120_000 });
   await expect(page.locator('[data-role="assistant"]').last().getByText(/\b(Damaged|Not damaged|Uncertain)\b/).first()).toBeVisible({ timeout: 120_000 });
   await expect(page.getByText(/qualified inspector/).first()).toBeVisible();
+
+  // A follow-up about the same tyre needs no new upload: Bib shows the stored inspection at its heatmap.
+  await expect(page.locator('[aria-busy="true"]')).toHaveCount(0, { timeout: 120_000 });
+  await page.getByLabel("Message", { exact: true }).fill("Show me the attribution heatmap for this inspection.");
+  await page.getByRole("button", { name: "Send" }).click();
+  const followUp = page.locator('[data-role="assistant"]').nth(1);
+  await expect(followUp.getByText("Inspection on record")).toBeVisible({ timeout: 120_000 });
+  await expect(followUp.locator('[data-stage="attribution"] button')).toHaveAttribute("aria-pressed", "true");
+  await expect(followUp.getByText(/no longer|re-upload/i)).toHaveCount(0);
 });
 
 test("the old copilot URL lands on the merged chat", async ({ page }) => {

@@ -751,6 +751,7 @@ export interface ChatEvent {
   duration_ms?: number;
   grounding?: { checked: number; ungrounded: number[]; pass: boolean };
   frame?: number;
+  focus?: string | null;
   time_s?: number | null;
   verdict?: string;
   triage?: string;
@@ -811,6 +812,8 @@ export interface ChatMessage {
     status?: "pending" | "complete" | "error";
     events?: ChatEvent[];
     inspection_id?: string | null;
+    /** Existing inspections a tool looked up for this answer, shown opened at `focus` (e.g. "attribution"). */
+    inspection_refs?: { id: string; focus: string | null }[];
     mode?: string;
     tools?: string[];
     guardrails?: string[];

@@ -66,5 +66,11 @@ First complete version of the blueprint: data to model to release to monitoring,
 - Certification rewrites spliced "[requires inspector clearance]" into sentences ("certified recycling", negations
   far from the word); a real claim now replaces its whole sentence, and "certified inspector/recycler" is allowed.
 - Camera "not damaged" counts included uncertain tyres.
+- Follow-up questions lost the conversation's tyre ("the original photo is no longer in this thread"): each turn
+  now gets the session's earlier inspections, Bib can show a stored inspection's heatmap in the chat
+  (`show_attribution_heatmap`), and figures quoted from those inspections count as grounded.
+- PII redaction turned the digits of inspection UUIDs into `[PHONE]`; IDs and hashes are now exempt, and card
+  numbers are redacted whole instead of as a partial phone number.
+- Grounding flagged negative tool values (e.g. min delta -0.504) quoted with their sign.
 - Pages kept a broken layout after leaving the chat (Next keeps the previous route alive in a hidden `<Activity>`).
 - Horizontal overflow at phone widths; hydration mismatches in shell-shared queries.

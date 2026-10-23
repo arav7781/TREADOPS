@@ -14,12 +14,15 @@ from typing import Any
 
 from treadops_ml.common import load_yaml
 
-PII_PATTERNS = {
+PII_PATTERNS = {  # card before phone: a phone match would otherwise take a card's first digits
     "email": re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b"),
+    "card_number": re.compile(r"\b(?:\d[ -]?){13,16}\b"),
     "phone": re.compile(r"(?<!\d)(?:\+?\d{1,3}[\s-]?)?(?:\d[\s-]?){9,11}\d(?!\d)"),
     "vehicle_registration": re.compile(r"\b[A-Z]{2}[ -]?\d{1,2}[ -]?[A-Z]{1,3}[ -]?\d{4}\b"),
-    "card_number": re.compile(r"\b(?:\d[ -]?){13,16}\b"),
 }
+# Inspection IDs and hashes are not PII: the digits between a UUID's hyphens look like a phone number.
+IDENTIFIER = re.compile(r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b"
+                        r"|\b(?=[0-9a-f]*[a-f])[0-9a-f]{12,64}\b", re.IGNORECASE)
 NUMBER = re.compile(r"(?<![\w.])(\d{1,3}(?:\.\d+)?)\s?%|(?<![\w.])(0\.\d{2,})(?![\d])")
 TRIAGE_WORDS = {
     "good_candidate": ("retread candidate", "good candidate", "good_candidate"),
@@ -65,9 +68,12 @@ class InputVerdict:
 def redact(text: str) -> tuple[str, dict[str, int]]:
     counts: dict[str, int] = {}
     for name, pat in PII_PATTERNS.items():
-        text, n = pat.subn(f"[{name.upper()}]", text)
-        if n:
-            counts[name] = n
+        keep = [m.span() for m in IDENTIFIER.finditer(text)]
+        hits = [m for m in pat.finditer(text) if not any(m.start() < e and s < m.end() for s, e in keep)]
+        for m in reversed(hits):  # right to left so earlier offsets stay valid
+            text = text[: m.start()] + f"[{name.upper()}]" + text[m.end():]
+        if hits:
+            counts[name] = len(hits)
     return text, counts
 
 
@@ -119,8 +125,8 @@ def allowed_numbers(tool_results: list[dict[str, Any]]) -> list[float]:
     def walk(o):
         if isinstance(o, bool):
             return
-        if isinstance(o, int | float):
-            vals.append(float(o))
+        if isinstance(o, int | float):  # figures in the answer are read without their sign, so compare magnitudes
+            vals.append(abs(float(o)))
         elif isinstance(o, str):  # figures quoted from stage logs ("r=0.2188", "scale 0.341") are tool output too
             vals.extend(float(x) for x in re.findall(r"(?<![\w.])\d+(?:\.\d+)?", o))
         elif isinstance(o, dict):

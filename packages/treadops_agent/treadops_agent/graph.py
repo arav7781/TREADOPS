@@ -102,9 +102,22 @@ def summarize(name: str, res: dict[str, Any]) -> str:
                          for c in res.get("cameras", [])) + f" (last {res.get('hours')} h)"
     if name == "inspect_camera" and res.get("triage"):
         return f"{res.get('camera')}: {verdict_label(res)} ({res['triage_label']}), p(defective) {res['p_defective']:.4f}"
+    if name == "show_attribution_heatmap" and res.get("shown_in_chat"):
+        return f"heatmap of inspection {str(res.get('inspection_id', ''))[:8]} shown in the chat"
     if name == "get_inspection":
         return f"inspection {str(res.get('inspection_id', ''))[:8]}: {res.get('triage_label', res.get('status'))}"
     return "done"
+
+
+def session_context(inspections: list[dict[str, Any]], has_attachment: bool) -> str:
+    """Earlier inspections of this conversation for the model: follow-ups refer to them without repeating the ID."""
+    which = ("This message has its own attachment, so 'this tyre' means the new one; these are earlier tyres."
+             if has_attachment else "'This tyre', 'this inspection' or 'the photo' means the first one listed "
+             "unless the user says otherwise. Do not ask for the photo again and do not call classify_tyre_image "
+             "without a new attachment.")
+    return ("Inspections earlier in this conversation, newest first (stored results; quote them directly, or pass "
+            "the inspection_id to get_inspection, get_preprocessing_trace or show_attribution_heatmap). "
+            f"{which}\n{json.dumps(inspections, separators=(',', ':'))}")
 
 
 def _normalised(raw: Any) -> str:
@@ -135,6 +148,9 @@ def build(*, llm, model: str | None, ctx: tools.ToolContext, tracer: Tracer, sys
         elif state["has_attachment"]:
             user_content += "\n\n[A tyre photo is attached to this message.]"
         msgs = [{"role": "system", "content": system_prompt}, *history, {"role": "user", "content": user_content}]
+        if ctx.session_inspections:
+            msgs.insert(1, {"role": "system", "content": session_context(ctx.session_inspections,
+                                                                          state["has_attachment"])})
         if v.certification_request:
             msgs.insert(1, {"role": "system", "content": "The user is asking for a safety or certification "
                             "judgement. Explain that the model cannot certify tyres and route to an inspector."})
@@ -210,7 +226,8 @@ def build(*, llm, model: str | None, ctx: tools.ToolContext, tracer: Tracer, sys
             return {"llm_error": "empty answer", "final_text": "The language model returned an empty answer. "
                                                               "Nothing was decided; please ask again."}
         with tracer.span("guard_output", "guard"):
-            v = guardrails.check_output(body, tool_results=[r["result"] for r in ctx.results],
+            v = guardrails.check_output(body, tool_results=[*ctx.session_inspections,
+                                                            *[r["result"] for r in ctx.results]],
                                         system_prompt=system_prompt, classification=cls,
                                         fallback_summary=guardrail_summary(cls) if cls else None)
             tracer.guard_events += v.events

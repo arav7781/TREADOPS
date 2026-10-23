@@ -145,6 +145,9 @@ def _emit_factory(message_id: uuid.UUID):
                 sess = db.get(ChatSession, m.session_id)
                 if sess is not None:
                     sess.inspection_id = uuid.UUID(data["inspection_id"])
+            elif kind == "inspection_ref":  # a tool looked up an existing inspection: show it in this answer
+                refs = [r for r in m.attachments.get("inspection_refs", []) if r["id"] != data["inspection_id"]]
+                extra["inspection_refs"] = [*refs, {"id": data["inspection_id"], "focus": data.get("focus")}]
             m.attachments = {**m.attachments, **extra, "events": [*m.attachments.get("events", []), ev][-80:]}
             flag_modified(m, "attachments")
     return emit
@@ -159,6 +162,27 @@ def _history(db, session_id: uuid.UUID, exclude: uuid.UUID) -> list[dict[str, An
         rows = rows[1:]
     return [{"role": m.role, "content": m.content[:2000]} for m in reversed(rows)
             if m.role in ("user", "assistant") and m.content][-8:]
+
+
+def _session_inspections(db, session_id: uuid.UUID, exclude: uuid.UUID, limit: int = 3) -> list[dict[str, Any]]:
+    """Inspections shown earlier in this conversation, newest first, as stored results. Follow-up questions ("show
+    the heatmap for this tyre") refer to them; the answer text alone is not enough (it can be redacted or vague)."""
+    rows = db.execute(select(ChatMessage).where(ChatMessage.session_id == session_id, ChatMessage.id != exclude,
+                                                ChatMessage.role == "assistant")
+                      .order_by(ChatMessage.created_at.desc()).limit(20)).scalars().all()
+    ids: list[str] = []
+    for m in rows:
+        a = m.attachments or {}
+        found = [a.get("inspection_id"), (a.get("video_result") or {}).get("decisive_inspection_id"),
+                 *[r.get("id") for r in reversed(a.get("inspection_refs", []))]]
+        ids += [i for i in found if i and i not in ids]
+    out = []
+    for i in ids[:limit]:
+        res = tools._load(db, uuid.UUID(i))
+        if res is not None:
+            res.pop("stages", None)
+            out.append(res)
+    return out
 
 
 def _run_safely(message_id: uuid.UUID, actor, text: str, image: bytes | None, frames: list[bytes] | None = None,
@@ -183,13 +207,14 @@ def run_turn(message_id: uuid.UUID, actor, text: str, image: bytes | None, frame
         msg = must_get(db, ChatMessage, message_id)
         session_id = msg.session_id
         history = _history(db, session_id, message_id)
+        earlier = _session_inspections(db, session_id, message_id)
     finally:
         db.close()
     emit = _emit_factory(message_id)
     tracer = Tracer(session_id=session_id, user_id=actor.id, prompt_version=version, prompt_sha=sha)
     ctx = tools.ToolContext(actor=actor, image_bytes=image, idempotency_key=f"copilot:{message_id}", emit=emit,
                             frames=list(frames or []), frame_times=list((video or {}).get("times", [])),
-                            video_source=(video or {}).get("source"))
+                            video_source=(video or {}).get("source"), session_inspections=earlier)
     llm, model = _client()
     if llm is None:  # configuration changed after the turn was accepted
         raise RuntimeError("llm_not_configured")
