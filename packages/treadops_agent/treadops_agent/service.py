@@ -61,7 +61,8 @@ def start_turn(db, *, actor, session_id: uuid.UUID | None, text: str, image: byt
         title = (text[:60] or "Tyre photo inspection")
         sess = ChatSession(user_id=actor.id, title=redact(title)[0])
         db.add(sess)
-        db.flush()
+    # Commit before acceptance: it releases its connection (rolls back the open transaction) before image work.
+    db.commit()
     inspection_id = None
     assistant_id = uuid.uuid4()
     if image is not None:

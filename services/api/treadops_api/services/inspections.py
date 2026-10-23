@@ -134,7 +134,9 @@ def accept(
     # Pin the deployment tuple at acceptance, then release the pooled connection: image processing is CPU-bound
     # and must not hold a database connection (a burst of uploads would otherwise exhaust the pool).
     dep_id, dep_generation, pinned = dep.id, dep.generation, model_tuple(dep)
-    db.rollback()
+    if db.new or db.dirty or db.deleted:
+        raise RuntimeError("accept() needs a session without pending changes; commit them first")
+    db.rollback()  # nothing of the caller's is pending (checked above); this only returns the connection
 
     try:
         ing = ingest(raw, _limits(), PreprocessContract())

@@ -151,3 +151,17 @@ def test_aggregate_endpoints_return_200_with_data(client):
         r = client.get(path, headers=h)
         assert r.status_code == 200, (path, r.text[:300])
     assert "psi_alert_candidate" in client.get("/v1/monitoring/windows", headers=h).json()["thresholds"]
+
+
+@requires_bundle
+def test_copilot_turn_with_photo_is_accepted(client):
+    """Regression: a new chat session was rolled back by the acceptance path (FK violation, 500)."""
+    import_and_activate(fixture_bundle(), admin_id())
+    h = login(client, "inspector")
+    r = client.post("/v1/copilot/messages", headers=h, data={"message": "Can this casing be retreaded?"},
+                    files={"file": ("t.jpg", jpeg(51), "image/jpeg")})
+    assert r.status_code == 202, r.text
+    body = r.json()
+    assert body["inspection_id"] and body["session_id"]
+    s = client.get(f"/v1/copilot/sessions/{body['session_id']}", headers=h).json()
+    assert [m["role"] for m in s["messages"]] == ["user", "assistant"]
