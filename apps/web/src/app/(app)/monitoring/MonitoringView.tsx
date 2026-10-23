@@ -37,9 +37,12 @@ function AlertReview({ alert, canReview }: { alert: DriftAlert; canReview: boole
         Value {alert.details.value?.toFixed(3) ?? "n/a"} vs threshold {alert.details.threshold ?? "n/a"}. {alert.recommendation}
       </p>
       {alert.details.sample_inspection_ids && (
-        <p className="mt-1 text-sm">Samples: {alert.details.sample_inspection_ids.map((id) => (
-          <Link key={id} href={`/inspections/${id}`} className="mono mr-2 text-primary-ink hover:underline">{id.slice(0, 8)}</Link>
-        ))}</p>
+        <p className="mt-1 flex flex-wrap gap-x-2 gap-y-1 text-sm">
+          <span>Samples:</span>
+          {alert.details.sample_inspection_ids.map((id) => (
+            <Link key={id} href={`/inspections/${id}`} className="mono text-primary-ink hover:underline">{id.slice(0, 8)}</Link>
+          ))}
+        </p>
       )}
       {alert.reviews.length > 0 && (
         <ol className="mt-2 space-y-1 text-sm text-ink-soft">
