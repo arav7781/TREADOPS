@@ -2,12 +2,12 @@
 
 import { useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
-import { ArrowDown, Camera, ChevronDown, History, ImagePlus, MessageSquare, Plus, ScanLine, Search, ShieldCheck, Sparkles, X } from "lucide-react";
+import { ArrowDown, Camera, ChevronDown, History, ImagePlus, MessageSquare, Plus, Search, ShieldCheck, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { BibAvatar, ChatThread, Composer, CopilotModeBadge, useCopilotSession, usePhotoPicker, useSendTurn } from "@/components/domain/ChatThread";
+import { ChatThread, Composer, CopilotModeBadge, useCopilotSession, usePhotoPicker, useSendTurn } from "@/components/domain/ChatThread";
 import { useMe } from "@/components/AppShell";
-import { ArrowDot, Button, ErrorState, SkeletonRows, TreadArc } from "@/components/ui";
+import { Button, ErrorState, SkeletonRows } from "@/components/ui";
 import { api } from "@/lib/api";
 import { ASSISTANT_DISCLAIMER, ASSISTANT_NAME } from "@/lib/brand";
 import { ago } from "@/lib/format";
@@ -23,12 +23,6 @@ const STARTERS = [
   "How much CO2 does retreading 25 truck casings save?",
   "Is there any drift right now?",
   "What visual cues mean a casing should not be retreaded?",
-];
-
-const HOW_TO = [
-  { icon: Camera, title: "Attach a tyre photo", text: "Use the photo button, drop it on this window or paste it. Fill the frame, avoid glare, one tyre per photo." },
-  { icon: ScanLine, title: "Watch the pipeline", text: `${ASSISTANT_NAME} runs the deployed YOLO model as a tool. Every preprocessing stage appears here with its real timing.` },
-  { icon: Sparkles, title: "Get the decision", text: "Triage, calibrated probability, the circular pathway and next steps. An inspector confirms the disposition." },
 ];
 
 const GRAPH = [
@@ -155,62 +149,21 @@ function HistorySidebar({ rows, error, onRetry, active, onPick, onNew }: {
 
 function Welcome({ canAttach, blockedReason, onAsk }: { canAttach: boolean; blockedReason: string | null; onAsk: (s: string) => void }) {
   return (
-    <div className="mx-auto max-w-4xl">
-      <div className="relative overflow-hidden rounded-3xl bg-black px-6 pb-16 pt-9 text-white sm:px-10">
-        <TreadArc className="-right-10 -top-16 h-80 w-80 text-white/[0.09]" />
-        <div className="relative flex items-start gap-4">
-          <div className="pop-in hidden sm:block"><BibAvatar size="lg" /></div>
-          <div className="min-w-0">
-            <p className="text-sm font-bold uppercase tracking-[0.16em] text-brand-yellow">{ASSISTANT_NAME} · casing copilot</p>
-            <h2 className="headline mt-2 text-3xl sm:text-5xl">Hey, I&apos;m {ASSISTANT_NAME}.<br /><span className="headline-light">Here to help you inspect</span></h2>
-            <p className="mt-3 max-w-xl text-white/80">
-              Send me a tyre photo: I run the YOLO inspection step by step, explain the result and suggest what to do
-              with the casing. Or ask about the model, drift and circularity.
-            </p>
-          </div>
-        </div>
-      </div>
-      <div className="relative mx-3 -mt-10 rounded-3xl bg-navy p-3 shadow-xl sm:mx-6 sm:p-5">
-        <p className="mb-3 inline-flex items-center gap-2 border-b-2 border-white px-1 pb-2 font-semibold text-white">
-          <ScanLine aria-hidden className="h-5 w-5" /> Start here
-        </p>
-        <div className="grid overflow-hidden rounded-2xl bg-white sm:grid-cols-2 sm:divide-x sm:divide-line">
-          {canAttach ? (
-            <label htmlFor="chat-photo" className="group flex cursor-pointer items-center gap-4 px-5 py-4 hover:bg-surface-muted">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-primary text-primary"><Camera aria-hidden className="h-5 w-5" /></span>
-              <span className="min-w-0 flex-1"><span className="block text-sm text-ink-soft">Inspect</span><span className="block text-lg font-bold text-ink">A tyre photo</span></span>
-              <ArrowDot />
-            </label>
-          ) : (
-            <div className="flex items-center gap-4 px-5 py-4 opacity-70">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-line-strong text-muted"><Camera aria-hidden className="h-5 w-5" /></span>
-              <span className="min-w-0 flex-1"><span className="block text-sm text-ink-soft">Inspect a tyre photo</span><span className="block text-sm font-semibold text-warn">{blockedReason ?? "Loading…"}</span></span>
-            </div>
-          )}
-          <button type="button" onClick={() => document.getElementById("chat-text")?.focus()}
-            className="group flex items-center gap-4 border-t border-line px-5 py-4 text-left hover:bg-surface-muted sm:border-t-0">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-primary text-primary"><MessageSquare aria-hidden className="h-5 w-5" /></span>
-            <span className="min-w-0 flex-1"><span className="block text-sm text-ink-soft">Ask about</span><span className="block text-lg font-bold text-ink">The model &amp; circularity</span></span>
-            <ArrowDot />
-          </button>
-        </div>
-      </div>
-      <ol className="mt-6 grid overflow-hidden rounded-2xl bg-primary text-white sm:grid-cols-3 sm:divide-x sm:divide-white/30">
-        {HOW_TO.map(({ title, text }, i) => (
-          <li key={title} className="stage-in px-5 py-5" style={{ animationDelay: `${i * 90}ms` }}>
-            <span className="headline block text-lg">{i + 1}. {title}</span>
-            <span className="mt-1 block text-sm text-white/80">{text}</span>
-          </li>
+    <div className="mx-auto flex min-h-[52vh] max-w-2xl flex-col items-center justify-center gap-6 text-center">
+      <h2 className="text-primary">
+        <span className="headline block text-4xl sm:text-5xl">Hey, I&apos;m {ASSISTANT_NAME}</span>
+        <span className="headline headline-light block text-3xl sm:text-4xl">Here to help you inspect</span>
+      </h2>
+      <p className="max-w-md text-ink-soft">
+        {canAttach
+          ? <>Attach a tyre photo <ImagePlus aria-label="with the photo button" className="mx-0.5 inline h-4 w-4 align-[-2px] text-primary" /> or drop it here. I&apos;ll run the YOLO inspection step by step and suggest what to do with the casing.</>
+          : <>Ask about the model, drift or circularity.{blockedReason ? <span className="mt-1 block text-sm text-warn">{blockedReason}</span> : null}</>}
+      </p>
+      <div className="flex flex-wrap justify-center gap-2">
+        {STARTERS.slice(0, 3).map((s) => (
+          <button key={s} type="button" onClick={() => onAsk(s)}
+            className="rounded-full border border-line-strong bg-surface px-3.5 py-1.5 text-sm text-ink-soft transition hover:border-ink hover:text-ink">{s}</button>
         ))}
-      </ol>
-      <div className="mt-6 pb-2">
-        <p className="mb-2 text-sm font-bold uppercase tracking-[0.12em] text-muted">Popular questions</p>
-        <div className="flex flex-wrap gap-2">
-          {STARTERS.map((s) => (
-            <button key={s} type="button" onClick={() => onAsk(s)}
-              className="rounded-lg border border-ink/70 bg-surface px-3.5 py-2 text-sm font-semibold text-ink transition hover:bg-brand-yellow">{s}</button>
-          ))}
-        </div>
       </div>
     </div>
   );
@@ -269,17 +222,15 @@ export function BibView() {
         onDragOver={(e) => e.preventDefault()}
         onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false); }}
         onDrop={(e) => { e.preventDefault(); setDragging(false); photo.pick(e.dataTransfer.files?.[0]); }}>
-        <header className="flex items-center gap-3 border-b border-line bg-surface px-4 py-2.5 lg:px-6">
+        <header className="flex h-14 items-center gap-3 border-b border-line bg-surface px-4 lg:px-6">
           <button type="button" onClick={() => setDrawer(true)} aria-label="Show conversations" className="rounded-full p-2 text-ink-soft hover:bg-surface-muted md:hidden">
             <History className="h-5 w-5" />
           </button>
-          <BibAvatar />
-          <div className="min-w-0 flex-1">
-            <h1 className="headline truncate text-xl text-ink">{ASSISTANT_NAME} · casing copilot</h1>
-            <p className="truncate text-sm text-muted">{title ?? "LangGraph agent · YOLO inspection tool · guarded and traced"}</p>
+          <div className="flex min-w-0 flex-1 items-baseline gap-3">
+            <h1 className="headline shrink-0 text-lg text-primary">{ASSISTANT_NAME} · casing copilot</h1>
+            {title && <p className="truncate text-sm text-muted">{title}</p>}
           </div>
           <span className="hidden lg:inline-flex"><CopilotModeBadge /></span>
-          <Button variant="secondary" className="hidden sm:inline-flex" onClick={startNew}><Plus aria-hidden className="h-4 w-4" /> New</Button>
         </header>
 
         <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
@@ -287,24 +238,22 @@ export function BibView() {
             {!session ? <Welcome canAttach={!photoBlocked} blockedReason={me.data ? photoBlocked : null} onAsk={(s) => ask(s)} />
               : thread.isError ? <ErrorState error={thread.error} onRetry={() => thread.refetch()} />
                 : !thread.data ? <SkeletonRows rows={4} />
-                  : <ChatThread messages={thread.data.messages} canReview={isInspector} autoScroll={false} onSuggest={(s) => ask(s)} />}
+                  : <ChatThread messages={thread.data.messages} canReview={isInspector} autoScroll={false} sessionId={session} onSuggest={(s) => ask(s)} />}
           </div>
         </div>
 
         {!atBottom && (
-          <button type="button" onClick={jump} className="pop-in absolute bottom-36 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-black px-4 py-2 text-sm font-semibold text-white shadow-lg">
-            <ArrowDown aria-hidden className="h-4 w-4" /> Latest
+          <button type="button" onClick={jump} aria-label="Jump to the latest message"
+            className="pop-in absolute bottom-32 right-5 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-line-strong bg-surface text-ink shadow-md hover:bg-surface-muted">
+            <ArrowDown aria-hidden className="h-5 w-5" />
           </button>
         )}
 
-        <div className="border-t border-line bg-surface/95 px-4 pb-3 pt-3 backdrop-blur lg:px-6">
+        <div className="px-4 pb-3 pt-2 lg:px-6">
           <div className="mx-auto w-full max-w-4xl">
             <Composer busy={send.isPending} photo={photo} progress={progress} error={send.error} onSend={(t, f) => ask(t, f)} />
-            <p className="mt-2 hidden text-center text-xs text-muted sm:block">
-              Triage aid only: a qualified inspector gives final clearance. {ASSISTANT_DISCLAIMER}
-            </p>
-            <p className="mt-1.5 text-center text-xs text-muted sm:hidden" title={ASSISTANT_DISCLAIMER}>
-              Triage aid only · independent prototype, not affiliated with Michelin
+            <p className="mt-1.5 text-center text-xs text-muted" title={ASSISTANT_DISCLAIMER}>
+              Triage aid only · a qualified inspector gives final clearance · not affiliated with Michelin
             </p>
           </div>
         </div>

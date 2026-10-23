@@ -54,8 +54,74 @@ export function useCopilotSession(sessionId: string | null) {
     queryFn: () => api<ChatSessionDetail>(`/v1/copilot/sessions/${sessionId}`),
     enabled: Boolean(sessionId),
     refetchInterval: pollWhile<ChatSessionDetail>(
-      (d) => !d || d.messages.some((m) => m.role === "assistant" && m.attachments?.status === "pending"), 1000),
+      (d) => !d || d.messages.some((m) => m.role === "assistant" && m.attachments?.status === "pending"), 3000),
   });
+}
+
+/**
+ * Live answer over server-sent events: each step the agent records is merged into the cached session the moment it
+ * arrives, and `done` swaps in the final, guardrail-checked message. The slower polling above stays on as a
+ * fallback if the stream cannot connect.
+ */
+export function useAnswerStream(sessionId: string | null, messageId: string | undefined, pending: boolean) {
+  const qc = useQueryClient();
+  useEffect(() => {
+    if (!sessionId || !messageId || !pending || typeof EventSource === "undefined") return;
+    const key = qk.copilotSession(sessionId);
+    const patch = (fn: (m: ChatMessage) => ChatMessage) =>
+      qc.setQueryData<ChatSessionDetail>(key, (d) => d && { ...d, messages: d.messages.map((m) => (m.id === messageId ? fn(m) : m)) });
+    const es = new EventSource(`/api/v1/copilot/messages/${messageId}/stream`);
+    let received = 0; // the stream replays from the first step; skip what the cache already holds
+    es.addEventListener("step", (e) => {
+      received += 1;
+      const ev = JSON.parse((e as MessageEvent).data) as ChatEvent;
+      patch((m) => {
+        const events = m.attachments.events ?? [];
+        return received <= events.length ? m : { ...m, attachments: { ...m.attachments, events: [...events, ev] } };
+      });
+    });
+    es.addEventListener("inspection", (e) => {
+      const { inspection_id } = JSON.parse((e as MessageEvent).data) as { inspection_id: string };
+      patch((m) => ({ ...m, attachments: { ...m.attachments, inspection_id } }));
+    });
+    es.addEventListener("done", (e) => {
+      const final = JSON.parse((e as MessageEvent).data) as ChatMessage;
+      patch(() => final);
+      es.close();
+      qc.invalidateQueries({ queryKey: qk.copilotSessions });
+    });
+    es.addEventListener("timeout", () => es.close());
+    es.onerror = () => es.close(); // polling takes over
+    return () => es.close();
+  }, [sessionId, messageId, pending, qc]);
+}
+
+/** Close any markdown emphasis or code span left open by a partial reveal, so it renders cleanly mid-stream. */
+function balance(text: string): string {
+  let out = text;
+  if ((out.match(/\*\*/g)?.length ?? 0) % 2) out += "**";
+  if ((out.match(/`/g)?.length ?? 0) % 2) out += "`";
+  return out;
+}
+
+/** Reveal a finished answer word by word (~250 characters per second). Off for history and reduced motion. */
+function useTypewriter(text: string, enabled: boolean): number {
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    if (!enabled) return;
+    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    const start = performance.now();
+    let raf = 0;
+    const tick = (t: number) => {
+      const k = reduced ? text.length : Math.min(text.length, Math.floor(((t - start) / 1000) * 250));
+      const cut = k >= text.length ? text.length : Math.max(0, text.lastIndexOf(" ", k));
+      setN(cut);
+      if (cut < text.length) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [text, enabled]);
+  return enabled ? n : text.length;
 }
 
 export function useSendTurn(onStarted: (r: ChatTurnStarted) => void) {
@@ -145,15 +211,15 @@ export function AgentTimeline({ events, pending, defaultOpen = false }: { events
     else rows.push([e]);
   }
   return (
-    <div className="rounded-xl border border-line bg-surface-muted/60">
+    <div className="border-l-2 border-line pl-3">
       <button type="button" onClick={() => setOpen((o) => !o)} disabled={pending} aria-expanded={expanded}
-        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-semibold text-ink-soft">
+        className="flex w-full items-center gap-2 py-1 text-left text-sm font-medium text-muted hover:text-ink">
         {pending ? <Loader2 aria-hidden className="h-4 w-4 animate-spin text-primary" /> : <CheckCircle2 aria-hidden className="h-4 w-4 text-good" />}
         {pending ? `${ASSISTANT_NAME} is working…` : `Agent steps · ${events.length} events · ${total.toFixed(1)} s`}
         {!pending && <ChevronDown aria-hidden className={clsx("ml-auto h-4 w-4 transition", open && "rotate-180")} />}
       </button>
       {expanded && (
-        <ol className="space-y-1 border-t border-line px-3 py-2 text-[13px]" aria-live="polite" aria-label="Agent steps">
+        <ol className="space-y-1 py-1 text-[13px]" aria-live="polite" aria-label="Agent steps">
           {rows.map((group, i) => {
             const e = group[group.length - 1];
             const meta = STEP[e.kind];
@@ -273,6 +339,14 @@ function InspectionInChat({ id, canReview, animate, revealed, onRevealed }: {
 }) {
   const q = useInspection(id);
   useEffect(() => { if (q.isError) onRevealed(); }, [q.isError, onRevealed]);
+  const mvId = q.data?.deployment.model_version_id;
+  const evidence = useQuery({
+    queryKey: qk.evidence(mvId ?? "none"),
+    queryFn: () => api<Evidence>(`/v1/models/${mvId}/evidence`),
+    enabled: Boolean(mvId),
+    staleTime: 300_000,
+  });
+  const policy = evidence.data?.policy;
   const [logOpen, setShowLog] = useState(false); // the theatre already shows each stage's log lines
   if (q.isError) return <div className="mt-3"><ErrorState error={q.error} onRetry={() => q.refetch()} /></div>;
   const d = q.data;
@@ -289,7 +363,8 @@ function InspectionInChat({ id, canReview, animate, revealed, onRevealed }: {
           <Terminal aria-hidden className="h-4 w-4" /> {logOpen ? "Hide log" : "Show log"}
         </button>
       </div>
-      <StageTheatre stages={d?.stages ?? []} running={running} stepMs={animate ? 850 : 0} onRevealed={onRevealed} />
+      <StageTheatre stages={d?.stages ?? []} running={running} stepMs={animate ? 1500 : 0} onRevealed={onRevealed}
+        thresholds={policy ? { low: policy.triage_low, high: policy.triage_high, binary: policy.binary_threshold } : null} />
       {logOpen && <PipelineConsole stages={d?.stages ?? []} timeline={d?.timeline} status={d?.status ?? "queued"} error={d?.job?.error_message ?? null} />}
       {d?.status === "failed" && <ErrorState error={new Error(d.job?.error_message ?? "The inspection job failed.")} title={`Inspection failed (${d.job?.error_code ?? "error"})`} />}
       {d?.status === "succeeded" && revealed && <ChatResult d={d} canReview={canReview} />}
@@ -325,18 +400,24 @@ function AssistantMessage({ m, onSuggest, canReview, latest }: { m: ChatMessage;
   const [revealed, setRevealed] = useState(!pending);
   const markRevealed = useCallback(() => setRevealed(true), []);
   const showAnswer = !pending && (!a.inspection_id || revealed);
+  const typed = useTypewriter(m.content, live && showAnswer && a.status !== "error");
+  const typing = showAnswer && typed < m.content.length;
   return (
     <div className="flex gap-3" data-role="assistant">
       <BibAvatar />
-      <div className="min-w-0 flex-1 space-y-3 rounded-2xl rounded-tl-sm border border-line bg-surface px-4 py-3">
-        <p className="headline text-base text-ink">{ASSISTANT_NAME}</p>
+      <div className="min-w-0 flex-1 space-y-3 pt-1">
+        <p className="headline text-base text-primary">{ASSISTANT_NAME}</p>
         <AgentTimeline events={a.events ?? []} pending={pending} defaultOpen={latest} />
         {a.inspection_id && <InspectionInChat id={a.inspection_id} canReview={canReview} animate={live} revealed={revealed} onRevealed={markRevealed} />}
         {!pending && !showAnswer && (
           <p className="flex items-center gap-2 text-sm text-muted"><Loader2 aria-hidden className="h-4 w-4 animate-spin" /> {ASSISTANT_NAME} is walking through the pipeline…</p>
         )}
-        {!showAnswer ? null : a.status === "error" ? <p className="text-bad">{m.content}</p> : <div className="stage-in"><Markdown text={m.content} /></div>}
-        {showAnswer && (
+        {!showAnswer ? null : a.status === "error" ? <p className="text-bad">{m.content}</p> : (
+          <div aria-live={typing ? "off" : "polite"} aria-busy={typing}>
+            <Markdown text={typing ? `${balance(m.content.slice(0, typed))} ▍` : m.content} />
+          </div>
+        )}
+        {showAnswer && !typing && (
           <div className="flex flex-wrap items-center gap-2 border-t border-line pt-2 text-sm">
             {a.mode && <Badge tone={a.mode === "llm" ? "primary" : "neutral"} title="How this answer was produced">{a.mode === "llm" ? "LLM + tools" : "Deterministic fallback"}</Badge>}
             {a.grounding && <Badge tone={a.grounding.pass ? "good" : "warn"}><ShieldCheck aria-hidden className="h-3.5 w-3.5" />
@@ -349,7 +430,7 @@ function AssistantMessage({ m, onSuggest, canReview, latest }: { m: ChatMessage;
             </span>
           </div>
         )}
-        {showAnswer && m.suggestions?.length > 0 && (
+        {showAnswer && !typing && m.suggestions?.length > 0 && (
           <div className="flex flex-wrap gap-2" role="group" aria-label="Suggested follow-ups">
             {m.suggestions.map((s) => (
               <button key={s} type="button" onClick={() => onSuggest(s)}
@@ -393,16 +474,20 @@ function UserMessage({ m }: { m: ChatMessage }) {
   );
 }
 
-export function ChatThread({ messages, onSuggest, canReview = false, autoScroll = true }: {
+export function ChatThread({ messages, onSuggest, canReview = false, autoScroll = true, sessionId = null }: {
   messages: ChatMessage[];
   onSuggest: (s: string) => void;
   canReview?: boolean;
   /** Embedded threads must not drag the whole page away from what the user is looking at. */
   autoScroll?: boolean;
+  /** When set, the newest pending answer streams live over server-sent events. */
+  sessionId?: string | null;
 }) {
   const end = useRef<HTMLDivElement>(null);
   const last = messages[messages.length - 1];
-  const latestAssistant = messages.findLast((m) => m.role === "assistant")?.id;
+  const newest = messages.findLast((m) => m.role === "assistant");
+  const latestAssistant = newest?.id;
+  useAnswerStream(sessionId, newest?.id, newest?.attachments?.status === "pending");
   useEffect(() => {
     if (autoScroll) end.current?.scrollIntoView?.({ behavior: "smooth", block: "end" });
   }, [autoScroll, messages.length, last?.content, last?.attachments?.events?.length]);

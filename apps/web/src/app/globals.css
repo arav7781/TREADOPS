@@ -78,7 +78,7 @@
   --color-brand-yellow: var(--brand-yellow);
   --color-brand-yellow-strong: var(--brand-yellow-strong);
   --font-sans: var(--font-noto);
-  --font-display: var(--font-exo);
+  --font-display: var(--font-saira);
   --font-mono: var(--font-jetbrains);
   --shadow-card: var(--shadow-card);
 }
@@ -96,12 +96,13 @@ body {
 
 /* Michelin-style headline: heavy, italic, upper case. */
 .headline {
-  font-family: var(--font-exo), var(--font-noto), Arial, sans-serif;
+  font-family: var(--font-saira), var(--font-noto), Arial, sans-serif;
+  font-stretch: 125%;
   font-weight: 900;
   font-style: italic;
   text-transform: uppercase;
-  letter-spacing: -0.005em;
-  line-height: 1.04;
+  letter-spacing: -0.01em;
+  line-height: 1.02;
 }
 
 .headline-light {
