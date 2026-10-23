@@ -1,0 +1,2582 @@
+{
+  "at": "2026-10-23T13:11:18.471031+00:00",
+  "roles": [
+    "calibration",
+    "policy"
+  ],
+  "bundle_sha256": "4bdf10e66e0e44dc87b042933908099b6538c42a22b6686e7bce53739bf26676",
+  "model_version": "2",
+  "vision_model": "gpt-4o-mini",
+  "prompt_version": "v1",
+  "prompt_sha256": "30ca9e3582ff71986cfd84e6423a8c8f53ee1d8831fbe4070e9d76c512bfe4e3",
+  "images": 275,
+  "defective": 150,
+  "good": 125,
+  "vision_calls": 118,
+  "vision_errors": 3,
+  "yolo_alone": {
+    "defective_auto_cleared": 4,
+    "good_auto_cleared": 114
+  },
+  "with_second_opinion": {
+    "defective_auto_cleared": 3,
+    "good_sent_to_expert_by_second_opinion": 22
+  },
+  "latency_ms_p50": 2500.0,
+  "per_image": [
+    {
+      "image_id": "00e79f40-313f-5292-8d75-bf1838f1b9cb",
+      "label": "defective",
+      "p": 0.999947933912852,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "010f5c14-5810-534a-8c1d-2a90fac56e8f",
+      "label": "defective",
+      "p": 0.9485946086486321,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "06a99981-673e-580f-8566-d4ec6bc1c803",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "07076a28-7dcc-55e6-987e-195cf661dde3",
+      "label": "good",
+      "p": 0.06190342684518888,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "08adf6aa-f5d6-50bf-b5a4-50e5e6ea8074",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "0a1f77b2-a068-5fe5-9056-5724844febdd",
+      "label": "good",
+      "p": 0.002272260251480292,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "0c576e4e-14e6-52fc-a339-069c3aadac0c",
+      "label": "good",
+      "p": 0.0041835735436278835,
+      "policy_triage": "good_candidate",
+      "final_triage": "manual_review",
+      "decision": "unavailable",
+      "findings": null
+    },
+    {
+      "image_id": "0da6dcdb-ac60-5a08-8015-82756e780bf4",
+      "label": "defective",
+      "p": 0.04947149639410738,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "0e2e4c02-472d-5510-ac3d-2877a4b371fa",
+      "label": "good",
+      "p": 0.0020515542343941995,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "0e4aeb51-60dd-5b02-81a8-e136f9db1c43",
+      "label": "defective",
+      "p": 0.29548262583291274,
+      "policy_triage": "manual_review",
+      "final_triage": "manual_review",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "0ee8e269-3bd3-50d4-88a2-fbf31d96f7bd",
+      "label": "good",
+      "p": 0.005993795066538839,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "0f82bb3f-edff-5127-8e95-8b0e62119b02",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "0f8522ed-e809-56ea-940d-474830170700",
+      "label": "defective",
+      "p": 0.9998220313115544,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "10065f55-9e4e-55da-b8fe-f8a1ab9d36aa",
+      "label": "good",
+      "p": 0.00021794451191132317,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "10a8841d-2f8f-593b-90a0-02058f2a5a8d",
+      "label": "defective",
+      "p": 0.4523602493303346,
+      "policy_triage": "manual_review",
+      "final_triage": "manual_review",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "110d7fc9-e0c3-5c48-a836-f8982f803dd6",
+      "label": "good",
+      "p": 0.015804838308955696,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "118830be-9af4-5d85-b93e-2db0acad429f",
+      "label": "good",
+      "p": 0.0004019922089544644,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "1502fef2-d941-5503-8de8-d14a9bc65f22",
+      "label": "good",
+      "p": 0.033469516671560263,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "152a22fe-43b1-5837-8c14-aaf3659eb4dc",
+      "label": "good",
+      "p": 0.0006344667648395401,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "15d17389-4829-571f-b8bc-95bfce7793eb",
+      "label": "good",
+      "p": 0.4403083548392371,
+      "policy_triage": "manual_review",
+      "final_triage": "manual_review",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "15f3149f-2d71-5d0a-abca-7b4f4b0e0704",
+      "label": "good",
+      "p": 0.0010303297172707276,
+      "policy_triage": "good_candidate",
+      "final_triage": "manual_review",
+      "decision": "disagrees",
+      "findings": [
+        "small puncture",
+        "tread wear",
+        "surface abrasion"
+      ]
+    },
+    {
+      "image_id": "162c90cc-9482-5a94-8289-5a4d8a959f48",
+      "label": "good",
+      "p": 0.0028808550363813136,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "1648936c-18a5-5325-a662-fa0528c2b2ef",
+      "label": "good",
+      "p": 0.09916340644817927,
+      "policy_triage": "good_candidate",
+      "final_triage": "manual_review",
+      "decision": "disagrees",
+      "findings": [
+        "small puncture",
+        "tread wear",
+        "surface dirt"
+      ]
+    },
+    {
+      "image_id": "16ceb656-5faf-59af-a2d5-0ad4a6eaccc0",
+      "label": "defective",
+      "p": 0.9988638547488579,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "1731ac3c-33e4-5bf5-814d-abd3a04b4535",
+      "label": "defective",
+      "p": 0.9997696955719969,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "177ff522-0422-5cf1-a007-6c9172216836",
+      "label": "defective",
+      "p": 0.9997325366398928,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "17f521d6-69d0-52de-a7ff-f5363d4758fd",
+      "label": "defective",
+      "p": 0.9943254577772168,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "189c21eb-368b-5b81-88d1-737f734c9103",
+      "label": "good",
+      "p": 0.4687480731695072,
+      "policy_triage": "manual_review",
+      "final_triage": "manual_review",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "19979a75-e658-5692-bda9-14eaecdd0157",
+      "label": "good",
+      "p": 0.018574183934449845,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "1ab71162-67fd-5a4a-a5ca-35dca95b85ad",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "1ac5236e-5535-5b02-a995-7b3a52598c9a",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "1d6c2848-dfd2-5072-ac83-da48b7c5a589",
+      "label": "defective",
+      "p": 0.9683575796057641,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "21ab3c0e-99bb-5952-b688-07500266fce4",
+      "label": "good",
+      "p": 3.468712779454872e-05,
+      "policy_triage": "good_candidate",
+      "final_triage": "manual_review",
+      "decision": "disagrees",
+      "findings": [
+        "crack in tread",
+        "uneven wear",
+        "possible tread separation"
+      ]
+    },
+    {
+      "image_id": "21d3d5f5-0cd9-5abe-b5c6-324dc2f8e84b",
+      "label": "good",
+      "p": 0.010064378617431813,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "23c1fc26-95d1-5136-b53d-8866a7415320",
+      "label": "good",
+      "p": 3.5060856862929135e-05,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "24b0468b-8e7e-55b6-970d-f46bd22e3fd7",
+      "label": "defective",
+      "p": 0.9690511470408234,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "2616d879-b390-51f7-b727-7a6d99dfa21a",
+      "label": "good",
+      "p": 0.10505520483347616,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "267039ea-cf07-5e3e-a427-aa7429869578",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "29b29fe2-5c21-5a10-b367-1e64d700cf66",
+      "label": "good",
+      "p": 9.52174956296401e-05,
+      "policy_triage": "good_candidate",
+      "final_triage": "manual_review",
+      "decision": "disagrees",
+      "findings": [
+        "small punctures",
+        "irregular tread pattern",
+        "possible wear"
+      ]
+    },
+    {
+      "image_id": "2a68ee42-c208-5b1e-b138-74c8e8ab1f95",
+      "label": "good",
+      "p": 0.30178425860801833,
+      "policy_triage": "manual_review",
+      "final_triage": "manual_review",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "2bb440b8-4c22-557d-b6ce-2d74ee1dd6c6",
+      "label": "defective",
+      "p": 0.9996693642271138,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "2c2ae301-6f5a-5f58-a7b6-faffa901c238",
+      "label": "good",
+      "p": 0.008497414079127014,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "2c7c72c6-4c09-57f2-a02f-be04b9c4b701",
+      "label": "good",
+      "p": 3.468712779454872e-05,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "2df9a7b3-4b73-5d7b-ba28-1cae1cbc811c",
+      "label": "good",
+      "p": 0.007702610899223849,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "2e9ce28c-b211-5559-afc1-e2040f3f35fc",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "2f0aa081-ad69-5b61-ac4e-d394b8162cb0",
+      "label": "defective",
+      "p": 0.9206629250529014,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "30dca4da-f29a-53ed-a810-a7b0fcd104f4",
+      "label": "defective",
+      "p": 0.9507967724769044,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "31ed06ee-91d2-5279-b782-2dc738286cb7",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "34a92bf1-dbe3-5d1f-982b-eecbcabc1c39",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "36c0912c-0353-50fe-999f-b53985c16cfc",
+      "label": "defective",
+      "p": 0.999965312869571,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "380f8d6c-b3d8-50a2-9016-5cb81e101562",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "385568f3-52ff-58fc-811f-4a176f19dbb4",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "385863c5-0336-50a2-b640-278c82d6a4da",
+      "label": "good",
+      "p": 0.05510140376985067,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "38b23d61-e94d-5ccb-a15f-a2c7dad57d8d",
+      "label": "defective",
+      "p": 0.8413404602419877,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "38b2b578-f97f-561f-9871-42246386f9c7",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "3916abeb-b00c-5ba9-aa22-67a6bfe9ebed",
+      "label": "defective",
+      "p": 0.9781418170279093,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "3a1d852d-6104-5ab2-8fab-8fbc547ad0ae",
+      "label": "good",
+      "p": 0.0001347180322234069,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "3a6571a4-5ada-5592-8aca-6bae62b24578",
+      "label": "defective",
+      "p": 0.9997929379714375,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "3a76c7fb-b2fa-5cfe-a0ab-6486a13698f5",
+      "label": "defective",
+      "p": 0.9605176026476909,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "3bfe0a16-4e4f-5d8e-928f-b8391fe7a053",
+      "label": "defective",
+      "p": 0.9363233393076712,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "3c6ca79e-b28b-5a68-8b3e-f162127a23d9",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "3cdc301b-45c0-56df-8e33-e5f33649e9ca",
+      "label": "good",
+      "p": 0.08851791063957752,
+      "policy_triage": "good_candidate",
+      "final_triage": "manual_review",
+      "decision": "disagrees",
+      "findings": [
+        "cracks on tread",
+        "severe wear",
+        "exposed cords"
+      ]
+    },
+    {
+      "image_id": "3d600d2c-75a4-537a-98b7-0020a21ba239",
+      "label": "good",
+      "p": 3.468712779454872e-05,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "3e06f8dc-2cbc-5dbf-b85b-e64d3aa2df26",
+      "label": "defective",
+      "p": 0.9998275218406707,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "3e67f570-118e-5806-82e0-635d381325c8",
+      "label": "good",
+      "p": 0.006760054981065697,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "3f73bded-8b6c-581c-b870-938d5853641c",
+      "label": "defective",
+      "p": 0.9895713147718725,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "41842f43-78f1-51bb-8b73-3ced320a3e44",
+      "label": "defective",
+      "p": 0.6825712016397055,
+      "policy_triage": "manual_review",
+      "final_triage": "manual_review",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "42d01d20-eace-57c8-878c-cad35c95083b",
+      "label": "good",
+      "p": 3.468712779454872e-05,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "43f68c90-d6ab-59b6-b130-54419c077e50",
+      "label": "defective",
+      "p": 0.9974332590532908,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "440d6b9e-6398-5042-88f0-2a7bac3df667",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "4789a552-aa9f-5c1d-a060-4071f0fd339a",
+      "label": "good",
+      "p": 0.0005580526227057865,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "488674a0-61bc-5b1e-b9a3-9d3f5798a8bb",
+      "label": "good",
+      "p": 0.08235906381055096,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "489097ba-1fe4-5fa6-8ab9-138ff5dfb0ed",
+      "label": "good",
+      "p": 3.468712779454872e-05,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "48eb7374-5599-5a62-8271-36b65e14b8b1",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "4ac5d956-4821-5376-a355-663db80fdc43",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "4b07c26a-ede6-5395-a597-79a149b381fd",
+      "label": "good",
+      "p": 0.0019138053957849822,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "4baab4d2-812f-5abe-9a99-4e95ce23d12f",
+      "label": "good",
+      "p": 0.001085118840169701,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "4c5795c5-e968-50c9-9fd5-27ae17d97e86",
+      "label": "good",
+      "p": 0.044298565892870234,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "4cd76017-083a-5875-969b-4de7e78ec466",
+      "label": "good",
+      "p": 0.33182569673698287,
+      "policy_triage": "manual_review",
+      "final_triage": "manual_review",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "4e155ab4-4167-567e-9823-f0901f15a3a4",
+      "label": "defective",
+      "p": 0.20392927291844143,
+      "policy_triage": "manual_review",
+      "final_triage": "manual_review",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "4ff56a1b-dcce-5dbc-9345-bc8b24600cfc",
+      "label": "defective",
+      "p": 0.9946765421424913,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "50d37c1e-3f76-5e05-bc8a-8db775ab8d2f",
+      "label": "defective",
+      "p": 0.969140576515277,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "51492bd5-929b-5bce-8564-becea2bda0db",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "51b7f0c5-645c-58ae-925b-11f0e9edcab6",
+      "label": "good",
+      "p": 0.011674169413559839,
+      "policy_triage": "good_candidate",
+      "final_triage": "manual_review",
+      "decision": "disagrees",
+      "findings": [
+        "crack in tread",
+        "visible separation",
+        "potential for tread failure"
+      ]
+    },
+    {
+      "image_id": "52bf736f-2f39-517a-a5e1-b0bc4fb80bb6",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "53128c63-09ee-53c3-b800-41d1534b78c5",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "53ae1d08-4ed6-50be-8f76-499b0e24b6b1",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "549f6ba7-17c5-5264-bd25-0c9d4ec78f9e",
+      "label": "good",
+      "p": 0.18460888518723256,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "563d86b6-b700-5478-9df2-6148022cae3d",
+      "label": "defective",
+      "p": 0.8975053923014896,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "5694af93-d745-5412-9384-62c18589d74d",
+      "label": "defective",
+      "p": 0.992473522948256,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "574e4164-9a94-5d2f-820d-1035e5d07bd1",
+      "label": "defective",
+      "p": 0.9981804739657452,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "597a9bf2-a5c9-5651-8a9e-cbe3e4add9c0",
+      "label": "good",
+      "p": 0.0010219412734564623,
+      "policy_triage": "good_candidate",
+      "final_triage": "manual_review",
+      "decision": "disagrees",
+      "findings": [
+        "minor cracks",
+        "tread wear",
+        "surface abrasions"
+      ]
+    },
+    {
+      "image_id": "5a78371f-4006-515a-9283-e4a9300fa42a",
+      "label": "defective",
+      "p": 0.9951380922794133,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "5aed4716-df6d-53a6-913d-aab364932204",
+      "label": "good",
+      "p": 0.3035084528055142,
+      "policy_triage": "manual_review",
+      "final_triage": "manual_review",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "5bd08496-37b1-5227-95ce-cb6dc051ed64",
+      "label": "defective",
+      "p": 0.9758105313404878,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "5bf6b6e3-fe62-5c4d-ba6e-787537343634",
+      "label": "good",
+      "p": 0.038600677207136516,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "5cd622ab-4f63-5c9c-b85a-f7db78c7f559",
+      "label": "good",
+      "p": 0.00041776516995969476,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "5d17e5a6-98dd-5f1b-a44e-c68cf0b6a34f",
+      "label": "good",
+      "p": 0.0057917776217983,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "5d61f7e3-2c87-5aaa-bc74-01dd94a34039",
+      "label": "defective",
+      "p": 0.016619951867969714,
+      "policy_triage": "good_candidate",
+      "final_triage": "manual_review",
+      "decision": "disagrees",
+      "findings": [
+        "visible cuts",
+        "tread damage",
+        "possible wear"
+      ]
+    },
+    {
+      "image_id": "5fb32ef5-c665-55a7-8f5c-d3cf9ce63049",
+      "label": "defective",
+      "p": 0.9991593883591376,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "60e14934-8b04-5e59-8940-9520c03428bc",
+      "label": "good",
+      "p": 0.0004197504727844722,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "611d8f6a-4a7c-5578-b266-41b4fe8bc7da",
+      "label": "defective",
+      "p": 0.6868697086831499,
+      "policy_triage": "manual_review",
+      "final_triage": "manual_review",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "61288b48-03bc-54ed-b2ea-9408dde01e5a",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "63e3ded0-304a-5e13-a488-227aeefc66ce",
+      "label": "defective",
+      "p": 0.999863959390558,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "66e88bd7-bf75-5645-97d7-57552922ce3c",
+      "label": "good",
+      "p": 0.006889302546525626,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "68a812ef-fe1f-5764-88cc-1646a210136f",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "6901e2f0-49be-5eeb-ba12-1467246098ae",
+      "label": "good",
+      "p": 0.002555328296254961,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "6ad5fc39-7adb-5ea7-89ed-c70b21c28b57",
+      "label": "good",
+      "p": 0.004918315225935745,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "6c786c81-fb71-51a5-a285-f9025c100617",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "6e266433-9434-5420-b446-70ead5c787c7",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "6ea80a75-9687-55c2-a1b8-064035c0001e",
+      "label": "defective",
+      "p": 0.9954824508164478,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "6f126d43-f125-55be-957d-409e344bf7e3",
+      "label": "good",
+      "p": 0.0038615877362602673,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "6f219a8d-fdb3-560f-a006-32524e0bdd96",
+      "label": "good",
+      "p": 3.468712779454872e-05,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "7181f2cb-f59b-57d4-a938-db724b925568",
+      "label": "good",
+      "p": 3.468712779454872e-05,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "7252b107-7315-5478-b2d6-fb9f3320c7b3",
+      "label": "good",
+      "p": 0.0012279691753166126,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "73968328-e3d8-525b-853f-24fc336a1497",
+      "label": "good",
+      "p": 0.006344819273995855,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "748cc2ca-ef06-5dd8-a875-111fa14a0da9",
+      "label": "good",
+      "p": 0.0022776069970637386,
+      "policy_triage": "good_candidate",
+      "final_triage": "manual_review",
+      "decision": "disagrees",
+      "findings": [
+        "small cut",
+        "possible tread damage"
+      ]
+    },
+    {
+      "image_id": "752feac3-9d58-5ff5-8821-2a49cc25ea44",
+      "label": "good",
+      "p": 0.017706505439741758,
+      "policy_triage": "good_candidate",
+      "final_triage": "manual_review",
+      "decision": "disagrees",
+      "findings": [
+        "shallow cuts in tread",
+        "uneven wear",
+        "minor cracks"
+      ]
+    },
+    {
+      "image_id": "764f3955-ce13-56c8-87c9-d6e7b647385a",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "76c275a2-e298-550a-a00c-1dba90a90974",
+      "label": "good",
+      "p": 0.003007483000728099,
+      "policy_triage": "good_candidate",
+      "final_triage": "manual_review",
+      "decision": "disagrees",
+      "findings": [
+        "small cuts",
+        "tread wear",
+        "minor gashes"
+      ]
+    },
+    {
+      "image_id": "7710bb53-a531-5f70-85a0-bf81006d8ab0",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "77e69667-c155-5b6e-b9d4-66476c1115a4",
+      "label": "defective",
+      "p": 0.8980963427554591,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "789d3bb8-0fac-5d5c-9ed9-ab658a09d82e",
+      "label": "good",
+      "p": 0.003206128090174003,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "7996195a-7f7c-5a3b-b6e8-0253dec54430",
+      "label": "good",
+      "p": 3.468712779454872e-05,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "79ea13fc-dc40-5d3c-aede-fe5210727eca",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "7a1836d2-d7a1-5c4e-b173-08917da41c8c",
+      "label": "defective",
+      "p": 0.9938603531280595,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "7a5339ee-5dd9-5597-81b1-d25a8856fa17",
+      "label": "good",
+      "p": 0.00572700513326627,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "7b38379c-552e-5a20-925b-25f2dd51811d",
+      "label": "defective",
+      "p": 0.9757908461341981,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "7b3a1451-d485-5f59-ba0e-5ae7299f59d2",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "7b887c37-8e37-56a8-824a-f19253e01fef",
+      "label": "good",
+      "p": 0.0007792364068081583,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "7d0b57d9-ee02-521b-b081-2a707e971a06",
+      "label": "good",
+      "p": 3.468712779454872e-05,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "7d2f7cd4-b13d-5a2e-a25d-a463e7d1a2ae",
+      "label": "good",
+      "p": 0.006240577663113849,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "7d6b6fff-013e-5fd6-93e3-8759437d72b0",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "7f2b7b3e-3f8b-54bc-ad33-1433091bbca8",
+      "label": "good",
+      "p": 3.468712779454872e-05,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "7fd6f14f-4925-531f-bcc6-be18ef9e2603",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "80c8bfa1-4f66-5d9c-84b0-4a4019e79fbb",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "82177b3f-00e9-56cd-b104-35c5e1706bc6",
+      "label": "good",
+      "p": 0.0037986802476247974,
+      "policy_triage": "good_candidate",
+      "final_triage": "manual_review",
+      "decision": "disagrees",
+      "findings": [
+        "small cuts",
+        "tread wear",
+        "minor cracks"
+      ]
+    },
+    {
+      "image_id": "82276a4f-d441-5121-b711-ca521d36174e",
+      "label": "good",
+      "p": 0.4853077360728666,
+      "policy_triage": "manual_review",
+      "final_triage": "manual_review",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "8244bbaa-86e1-53ba-82ee-4a596080f23b",
+      "label": "good",
+      "p": 3.468712779454872e-05,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "83390803-4650-593c-8093-4ac892974208",
+      "label": "good",
+      "p": 0.030486486771192655,
+      "policy_triage": "good_candidate",
+      "final_triage": "manual_review",
+      "decision": "disagrees",
+      "findings": [
+        "cracks in tread",
+        "severe wear",
+        "uneven tread depth"
+      ]
+    },
+    {
+      "image_id": "835ffec7-5564-5a2e-96c0-2e4fb05374d7",
+      "label": "good",
+      "p": 0.0015083541841263422,
+      "policy_triage": "good_candidate",
+      "final_triage": "manual_review",
+      "decision": "disagrees",
+      "findings": [
+        "small cut",
+        "minor wear",
+        "surface blemish"
+      ]
+    },
+    {
+      "image_id": "84644d94-c19c-54cd-8713-a51728747f11",
+      "label": "good",
+      "p": 0.01885751402340595,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "84bf9d02-bac1-5762-bf1c-a71f363b6d20",
+      "label": "good",
+      "p": 0.04636487993358781,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "853cc3f3-2705-587e-9e15-9902f6a56a4c",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "85e3f349-72f6-576a-9506-b6281a4f6988",
+      "label": "defective",
+      "p": 0.03471168144662462,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "86ad4aa4-71b3-50fe-9ec8-f14e4415c80e",
+      "label": "defective",
+      "p": 0.9988838554738416,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "87714315-260d-5f28-bf72-a80873917421",
+      "label": "good",
+      "p": 0.0005762088889140303,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "888056d4-2a5a-5de8-ab65-09fe46c512b0",
+      "label": "good",
+      "p": 0.0010884828683479654,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "89685574-2565-5c7d-ab41-5c4967bdce06",
+      "label": "good",
+      "p": 0.05943282270998921,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "8b0733f5-6194-5c6b-b759-a2987c0e7e2d",
+      "label": "good",
+      "p": 0.003553138377916057,
+      "policy_triage": "good_candidate",
+      "final_triage": "manual_review",
+      "decision": "unavailable",
+      "findings": null
+    },
+    {
+      "image_id": "8b3932fc-6812-5d52-b9c7-0bec856ec649",
+      "label": "good",
+      "p": 0.0023111794465212397,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "8bbe139a-e4a1-5726-8ce6-09920f696db7",
+      "label": "good",
+      "p": 0.00032094870172916224,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "8d208c5f-3844-549a-b5fb-88d4d95b3c22",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "8de8bc38-76f5-5926-83fd-3e45bcc2865e",
+      "label": "good",
+      "p": 0.22859737167157831,
+      "policy_triage": "manual_review",
+      "final_triage": "manual_review",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "903e5183-2a9c-5de1-a6cd-64802edbe0d5",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "90af6bff-b9b8-5fdf-a0d5-efc7c9f68804",
+      "label": "defective",
+      "p": 0.3893404238924091,
+      "policy_triage": "manual_review",
+      "final_triage": "manual_review",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "910e0377-9b75-5d32-93e2-58e659eeb425",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "91598894-375c-52f1-8276-f3e17a811cfe",
+      "label": "good",
+      "p": 0.0026922550759920006,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "92890698-6804-5d68-9d15-cc3643c21db9",
+      "label": "good",
+      "p": 9.593514290600416e-05,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "932fb904-03c4-5d15-b1c7-7f6640c4deda",
+      "label": "defective",
+      "p": 0.9990056659614224,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "9424fecb-c142-5bbe-8d29-7cb3da42a4e5",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "943979f4-cbd2-5453-9ca9-637116aa3ea6",
+      "label": "defective",
+      "p": 0.9993747481231825,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "947fb137-b594-513e-99fa-bdc66f56b370",
+      "label": "good",
+      "p": 0.005198448809546218,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "952ccb89-71da-5855-8b52-63652b5589c5",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "962f87fe-51cd-520a-bdd7-0eddd742e201",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "97210ff6-26bc-52d3-a844-4a45e7cd8e66",
+      "label": "good",
+      "p": 0.52181614873642,
+      "policy_triage": "manual_review",
+      "final_triage": "manual_review",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "9754f3d6-2692-57d4-9932-1a226c3c687e",
+      "label": "defective",
+      "p": 0.9978545965855516,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "97a022a1-d931-5397-9bb3-92e1281f1275",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "987fd196-75ae-5453-86b5-25b0f74595ec",
+      "label": "good",
+      "p": 0.9024990292205454,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "98a6876a-c093-5acf-8394-25e29a4a05a5",
+      "label": "defective",
+      "p": 0.999374870355597,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "9a3676b5-e6b1-5157-99b6-758187e4a8c3",
+      "label": "defective",
+      "p": 0.324024082430706,
+      "policy_triage": "manual_review",
+      "final_triage": "manual_review",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "9a8cc432-1cfd-569c-97ab-4989eaa095f0",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "9b67cbc1-85f8-5d2f-b467-f844e295c027",
+      "label": "defective",
+      "p": 0.2623219320532624,
+      "policy_triage": "manual_review",
+      "final_triage": "manual_review",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "9dd350bf-9ccd-5200-b67e-b32a215d6b5b",
+      "label": "good",
+      "p": 0.009174199961764214,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "9ecf5e5c-3515-5edf-a6e7-6b2c2d0f5083",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "9f0b94f6-737a-5e2a-9cbd-a57ca2093063",
+      "label": "good",
+      "p": 0.028243737587840143,
+      "policy_triage": "manual_review",
+      "final_triage": "manual_review",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "9fc549ad-f4fb-5094-b3db-1ecc2122ebda",
+      "label": "defective",
+      "p": 0.9375034877806215,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "a0059d00-762a-53af-8f44-bbaeb2bc79f9",
+      "label": "good",
+      "p": 0.0007418675883154227,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "a0746823-bd43-565d-90b9-1624245e22be",
+      "label": "defective",
+      "p": 0.9999221179952223,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "a2549d48-cf93-556f-a21a-8a2089951082",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "a5bb3e9a-3942-56c8-80e0-0f7f485c78a5",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "a6489cb8-04a2-52b2-b68f-0de7b4caf0c4",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "a9ac6512-cef5-5435-a749-9905e0b61598",
+      "label": "good",
+      "p": 3.468712779454872e-05,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "a9ec63dc-dab9-5854-a073-1d8803356dd1",
+      "label": "defective",
+      "p": 0.921174749571178,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "aae8de60-da3f-55ef-bcd0-a7a7a1ad4dac",
+      "label": "good",
+      "p": 0.03052492670816028,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "ab4f60a9-e6fc-5f5a-ae1b-b9e4fd6d325a",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "ac156609-e751-5313-86bd-b287bd072b03",
+      "label": "good",
+      "p": 0.0026211105980407726,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "adc23e15-656e-541f-a729-aae8bab7beb1",
+      "label": "defective",
+      "p": 0.9990956895597023,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "af25bf02-a9ba-52cd-9722-0738e36f70f1",
+      "label": "good",
+      "p": 0.00244791515547388,
+      "policy_triage": "good_candidate",
+      "final_triage": "manual_review",
+      "decision": "disagrees",
+      "findings": [
+        "small puncture",
+        "surface wear",
+        "minor cuts"
+      ]
+    },
+    {
+      "image_id": "af5ced1c-c89c-547b-b9a4-0343d8e53d78",
+      "label": "defective",
+      "p": 0.9995990616414718,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "b1132e07-e773-5042-9561-0cc1ed1e481a",
+      "label": "defective",
+      "p": 0.9999554873467655,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "b1940be7-c69b-5584-85c6-9e1472ba8e09",
+      "label": "defective",
+      "p": 0.22211811872148385,
+      "policy_triage": "manual_review",
+      "final_triage": "manual_review",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "b2882594-0aca-5556-a148-4e465d3c4616",
+      "label": "good",
+      "p": 0.004146617841197097,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "b3b65301-b5e6-5ec3-8b73-78a9c2004ecc",
+      "label": "defective",
+      "p": 0.9980153902645004,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "b4087dc8-562b-5536-a13e-d616b56b3753",
+      "label": "good",
+      "p": 0.04670201550347916,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "b597cc14-c350-52f8-b47e-f1022760ebc8",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "b59e256b-62ad-571a-ad60-31937b8e68f0",
+      "label": "defective",
+      "p": 0.9992607762120472,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "b6830579-5066-5b28-b17d-6d3ae9db25e1",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "b6c1fe68-4ad1-59fb-9ea2-31e5a57b3949",
+      "label": "good",
+      "p": 0.0008260097218191668,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "b8365c3a-75a4-593c-81c8-ffa014036079",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "b8820b36-7a90-5a1d-9e8d-2bb0779b9639",
+      "label": "good",
+      "p": 0.005211986808466283,
+      "policy_triage": "good_candidate",
+      "final_triage": "manual_review",
+      "decision": "unavailable",
+      "findings": null
+    },
+    {
+      "image_id": "b89f442d-a6e2-53c4-aceb-fab12f733a50",
+      "label": "defective",
+      "p": 0.995758914865479,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "b9489ccd-9252-5b7c-9fbf-41ea4eec13f2",
+      "label": "good",
+      "p": 0.006488279453502755,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "b9dd1c2e-356b-516c-baac-a07ee4703d10",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "ba8f4db9-013f-5b72-afa7-318f5e991812",
+      "label": "good",
+      "p": 0.0323407888262627,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "bac1af22-4853-5919-8930-8bcce1471154",
+      "label": "defective",
+      "p": 0.6979519791407932,
+      "policy_triage": "manual_review",
+      "final_triage": "manual_review",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "bb0a39d0-a024-5dd8-8141-89e04fe9bf4c",
+      "label": "defective",
+      "p": 0.9772117079963222,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "bdf505b3-c232-53d5-af39-20fbf1430482",
+      "label": "good",
+      "p": 3.468712779454872e-05,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "bdfafe1c-65b1-5751-8578-af5c97116942",
+      "label": "good",
+      "p": 0.022651306531410866,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "be948aa1-053a-5e9f-a3ec-3065ca8b987d",
+      "label": "defective",
+      "p": 0.9990630084006062,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "bed9a2f3-6d03-5544-b5e0-d7c41c7fb99d",
+      "label": "defective",
+      "p": 0.991667899333554,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "bf097265-92fb-54d6-b39e-bf3ce45f97d0",
+      "label": "good",
+      "p": 0.002589111439484021,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "bf81f2cd-57ba-59fb-8195-bc94e2b41345",
+      "label": "defective",
+      "p": 0.9522551825507314,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "c0389cfa-2e0b-54a8-a3a9-b26f84b0dfa2",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "c0425bd5-4a37-55aa-8c8c-0a1da2286848",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "c243774f-44c7-571c-99a1-c8eb5b14f3e8",
+      "label": "good",
+      "p": 0.04472877534019522,
+      "policy_triage": "good_candidate",
+      "final_triage": "manual_review",
+      "decision": "disagrees",
+      "findings": [
+        "small cuts",
+        "surface cracks",
+        "wear on sidewall"
+      ]
+    },
+    {
+      "image_id": "c2662cc6-fc57-5ca4-ab3b-126d7a425c69",
+      "label": "defective",
+      "p": 0.999812483467139,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "c310bf1e-8e4a-52e2-aeb7-7a9ec07b4af7",
+      "label": "good",
+      "p": 0.005662521635290591,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "c483e63f-29e9-5408-9b7e-134bf921c576",
+      "label": "good",
+      "p": 3.468712779454872e-05,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "c5513800-d2ce-50ad-a765-52f28f82efc4",
+      "label": "defective",
+      "p": 0.994706066564682,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "c55e80a5-1a85-55f1-8eba-1907de81062f",
+      "label": "good",
+      "p": 0.04199486626245104,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "c57a499f-f04e-5138-844c-0c31319858a0",
+      "label": "good",
+      "p": 3.468712779454872e-05,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "c57f893a-2e2f-55ad-b951-360e47251244",
+      "label": "defective",
+      "p": 0.9977610738732903,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "c5c7bf2c-52df-5784-ac48-f6b5f0648197",
+      "label": "defective",
+      "p": 0.8123462096117746,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "c6215edb-76b9-5c49-83b1-d2b4b6fb2f8a",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "c8b08a80-6c4e-5d1d-8101-f0b86719ea63",
+      "label": "good",
+      "p": 0.0022826300361594378,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "c91a4ad0-d3ca-5fca-84bd-8e165c666a7b",
+      "label": "defective",
+      "p": 0.9929954129890322,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "c91d6cd5-b84e-5639-9411-28a28f68c19a",
+      "label": "good",
+      "p": 0.0005001756605766339,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "c95b4949-8cef-5f4f-9e0b-af87711c6e4b",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "c99d39f1-33e3-50cd-931e-4110582f8ece",
+      "label": "good",
+      "p": 3.468712779454872e-05,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "cf186d5a-64f8-5112-ae64-acf5970a39b4",
+      "label": "defective",
+      "p": 0.9999503361639854,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "cf275722-dc3b-571c-950e-8feab1a8817f",
+      "label": "good",
+      "p": 3.468712779454872e-05,
+      "policy_triage": "good_candidate",
+      "final_triage": "manual_review",
+      "decision": "disagrees",
+      "findings": [
+        "crack in tread",
+        "possible tread separation",
+        "uneven wear"
+      ]
+    },
+    {
+      "image_id": "cf2d0ec6-a46d-5a74-a3fe-90200d8045e1",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "d02c4de9-feca-5d6c-bd2e-9e7f7ea265d8",
+      "label": "good",
+      "p": 0.012179149254160698,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "d2352ed8-bd10-5134-80c3-221b419f850f",
+      "label": "defective",
+      "p": 0.9932820225683582,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "d2b997a7-9b18-53ec-b004-aae84b9c5a5f",
+      "label": "defective",
+      "p": 0.9998786452131145,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "d38f511e-5d22-5d73-a45b-4c053f719005",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "d3ea07e2-9f31-5a17-89f9-4b55594dfa05",
+      "label": "defective",
+      "p": 0.9998030674540392,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "d544773d-49fe-531b-8e12-a98f54eaa572",
+      "label": "good",
+      "p": 3.468712779454872e-05,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "dabb2c93-c1bd-52e6-8e91-c20f3d078be9",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "dafc1126-a65b-5a5f-8814-43fcb8c9729a",
+      "label": "good",
+      "p": 3.4687130428952817e-05,
+      "policy_triage": "good_candidate",
+      "final_triage": "manual_review",
+      "decision": "disagrees",
+      "findings": [
+        "crack in tread",
+        "wear visible",
+        "possible tread separation"
+      ]
+    },
+    {
+      "image_id": "db1b93d1-9f1a-51ec-8d60-3ebf14e483f1",
+      "label": "defective",
+      "p": 0.9979685637013312,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "dcb9c73f-7306-5e5f-ba3b-0fd51a10c31e",
+      "label": "defective",
+      "p": 0.9999458309163441,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "dd051089-cb09-5faf-aafb-2165976d59f7",
+      "label": "defective",
+      "p": 0.9978331541431434,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "dd2e4fb8-5d0b-5caf-b97c-a04bdfe5f9a9",
+      "label": "defective",
+      "p": 0.9779901968008928,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "de064494-709e-56ce-a461-591fa3a8493c",
+      "label": "defective",
+      "p": 0.8422051883220596,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "e0e2b613-a943-53ea-90fc-3afa202a5ad0",
+      "label": "defective",
+      "p": 0.2468691536430785,
+      "policy_triage": "manual_review",
+      "final_triage": "manual_review",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "e17a6eb4-7b48-5a7f-9a2e-2ef00cbbdf11",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "e1e58432-bd2a-556b-b8af-fcf66d87c557",
+      "label": "good",
+      "p": 0.13798333954577116,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "e2bc96ae-f027-5d8c-ade0-741543ccaf72",
+      "label": "defective",
+      "p": 0.999965312869571,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "e332c44c-57f4-572b-b9d3-b3364b0d5823",
+      "label": "good",
+      "p": 0.03085180284926296,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "e4047921-b248-5b5d-b34f-d1fc1b34962d",
+      "label": "defective",
+      "p": 0.023256081175487674,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "e41374db-3e0e-5207-85c0-161e76f5e100",
+      "label": "defective",
+      "p": 0.9992064619509509,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "e46912ac-3712-5a3a-9e06-4e3c2e64238c",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "e99aa491-057d-59bd-b4f1-19fdd7f5053c",
+      "label": "defective",
+      "p": 0.9998751955049189,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "e99e8af2-2f38-5ce4-a23f-792f6ab25cc3",
+      "label": "good",
+      "p": 0.04401766677116545,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "eaef9570-bd07-5e25-97b8-1afebb03ebd0",
+      "label": "defective",
+      "p": 0.930159418564642,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "ec48f8ea-768e-553e-a55a-593be8b5e946",
+      "label": "good",
+      "p": 0.1575889947859525,
+      "policy_triage": "good_candidate",
+      "final_triage": "manual_review",
+      "decision": "disagrees",
+      "findings": [
+        "visible cuts",
+        "tread wear",
+        "possible cracks"
+      ]
+    },
+    {
+      "image_id": "ecbf497d-e995-5e90-bee3-c8847a95714c",
+      "label": "good",
+      "p": 0.0002167599000687303,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "ef8f0ebf-cc7d-5a9e-82d4-a9aa41ef4b38",
+      "label": "good",
+      "p": 0.00812988931481688,
+      "policy_triage": "good_candidate",
+      "final_triage": "manual_review",
+      "decision": "disagrees",
+      "findings": [
+        "visible crack",
+        "tread separation",
+        "uneven surface"
+      ]
+    },
+    {
+      "image_id": "f06a3a69-7700-58b7-aa9e-08c9a142af22",
+      "label": "defective",
+      "p": 0.9533790006771217,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "f1cad517-d3cf-5d25-bf92-d79f0808c1e4",
+      "label": "defective",
+      "p": 0.642084295462458,
+      "policy_triage": "manual_review",
+      "final_triage": "manual_review",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "f2fcbf71-d657-58b2-8717-1d27eb8cc8da",
+      "label": "good",
+      "p": 0.13371281979143712,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "f3a25682-c3ba-52ac-a76b-a88c862c402d",
+      "label": "good",
+      "p": 0.003139659344943918,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "f3c5f1ea-5afc-5b4d-b0a7-41cc6058e730",
+      "label": "defective",
+      "p": 0.9888951261586136,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "f56689b8-0d7a-52ee-b2be-2f4041b789fe",
+      "label": "good",
+      "p": 3.468712779454872e-05,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "f5893782-16a0-535c-9cfe-2a3b94eefc92",
+      "label": "defective",
+      "p": 0.9723539230061568,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "f5dc4abf-df7d-5536-8897-eac4038b6624",
+      "label": "good",
+      "p": 0.0013344456548409697,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "f6dff197-1092-5583-851b-f0abb323bcc2",
+      "label": "good",
+      "p": 0.37724521131279987,
+      "policy_triage": "manual_review",
+      "final_triage": "manual_review",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "f788a574-ccb3-5639-9fa6-a31c92b025ed",
+      "label": "good",
+      "p": 0.028873762480562774,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "f7e8315b-d510-5a24-bbca-a7613c04c5cd",
+      "label": "defective",
+      "p": 0.999827373311461,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "f937dd5c-7e26-54c7-8c02-8cfb31291828",
+      "label": "good",
+      "p": 0.009695848276404878,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "f93b4dc1-c8d4-5703-b7c1-5f68a12b6fdf",
+      "label": "defective",
+      "p": 0.9999137776468313,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    },
+    {
+      "image_id": "fce5d1e4-2d88-5998-94e1-6bc346904ef7",
+      "label": "good",
+      "p": 0.00032209525738696666,
+      "policy_triage": "good_candidate",
+      "final_triage": "good_candidate",
+      "decision": "agrees",
+      "findings": []
+    },
+    {
+      "image_id": "ffb39e5c-9151-5498-8cb6-8266309a9e07",
+      "label": "defective",
+      "p": 0.9999653128722055,
+      "policy_triage": "defect_flagged",
+      "final_triage": "defect_flagged",
+      "decision": "not_needed",
+      "findings": null
+    }
+  ]
+}

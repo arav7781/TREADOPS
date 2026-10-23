@@ -1,0 +1,8 @@
+# Versioned prompt for the vision second opinion. Every prediction records `version` and the SHA-256 of `template`.
+id: vision_check
+version: v1
+template: |
+  Inspect this tyre photo for damage that would make a tyre unsafe or unfit for retreading: cuts, gashes,
+  punctures, bulges or blisters, cracks (sidewall or tread), exposed cords or belts, tread separation, or
+  severe wear. Reply with JSON only: {"damage_visible": true or false, "confidence": "low" | "medium" | "high",
+  "findings": [up to 3 short phrases], "location": "sidewall" | "tread" | "shoulder" | "bead" | "none" | "unclear"}

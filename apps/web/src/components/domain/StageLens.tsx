@@ -68,10 +68,14 @@ export function stageChanges(stage: Stage, byIndex: Map<number, Stage>): string[
         fixed(p.max_delta, 2) && `largest margin drop +${fixed(p.max_delta, 2)}`);
       break;
     }
-    case "classified":
+    case "classified": {
+      const so = p.second_opinion as { decision?: string; model?: string } | undefined;
       out.push(p.triage ? humanize(String(p.triage)) : null, fixed(p.p_defective) && `p(defective) ${fixed(p.p_defective)}`,
+        so?.decision && `vision second opinion ${so.decision}${so.model ? ` (${so.model})` : ""}`,
+        p.policy_triage && p.policy_triage !== p.triage ? `YOLO alone: ${humanize(String(p.policy_triage))}` : null,
         "human clearance required");
       break;
+    }
   }
   return out.filter((x): x is string => typeof x === "string" && x.length > 0);
 }

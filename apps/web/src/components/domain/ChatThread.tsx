@@ -36,6 +36,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Markdown } from "@/components/domain/Markdown";
+import { SecondOpinionPanel } from "@/components/domain/SecondOpinion";
 import { ProbabilityPanel } from "@/components/domain/ProbabilityPanel";
 import { ReviewForm } from "@/components/domain/ReviewForm";
 import { PipelineConsole, StageTheatre } from "@/components/domain/StageGallery";
@@ -339,6 +340,7 @@ function ChatResult({ d, canReview }: { d: InspectionDetail; canReview: boolean 
         <QualityBadge status={p.quality_status} reasons={p.quality.reasons} />
       </div>
       <p className="mt-1 text-sm text-ink-soft">{p.triage_reason}</p>
+      {p.second_opinion && <SecondOpinionPanel s={p.second_opinion} className="mt-3" />}
       <div className="mt-3 grid gap-4 md:grid-cols-[minmax(0,220px)_1fr]">
         {classified && (
           // eslint-disable-next-line @next/next/no-img-element
@@ -481,7 +483,7 @@ function VideoInChat({ ids, events, result, canReview, animate, revealed, onReve
       {result?.verdict && (
         <div className="stage-in flex flex-wrap items-center gap-2 rounded-xl border border-line bg-surface p-3" data-testid="video-verdict">
           <span className="font-bold text-ink">Tyre verdict</span>
-          <VerdictBadge damaged={result.verdict === "damaged"} triage={result.triage} large />
+          <VerdictBadge verdict={result.verdict} triage={result.triage} large />
           <span className="text-sm text-ink-soft">
             worst of {result.frames_classified} frames: #{(result.decisive_frame ?? 0) + 1}
             {result.decisive_time_s != null ? ` at ${result.decisive_time_s.toFixed(1)} s` : ""}, p(defective) {result.p_defective?.toFixed(3)}

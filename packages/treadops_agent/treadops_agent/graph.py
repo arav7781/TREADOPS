@@ -58,7 +58,8 @@ def split_followups(text: str) -> tuple[str, list[str]]:
 
 
 def verdict_label(c: dict[str, Any]) -> str:
-    return {"damaged": "Damaged", "not_damaged": "Not damaged"}.get(str(c.get("verdict")), "Unknown")
+    return {"damaged": "Damaged", "not_damaged": "Not damaged", "uncertain": "Uncertain (expert check)"}.get(
+        str(c.get("verdict")), "Unknown")
 
 
 def guardrail_summary(c: dict[str, Any]) -> str:

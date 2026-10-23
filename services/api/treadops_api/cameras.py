@@ -123,7 +123,8 @@ def snapshot_key(camera_id: Any) -> str:
 
 
 def stats(db: Session, codes: list[str], hours: int = 1) -> dict[str, dict[str, int]]:
-    """Damaged / not damaged / expert-check counts per camera code over the last `hours`."""
+    """Damaged / not damaged / expert-check counts per camera code over the last `hours`. The three add up: "not
+    damaged" is a clean auto-clear only, and every other non-damaged tyre is an expert check (as in verdict_of)."""
     if not codes:
         return {}
     since = datetime.now(UTC) - timedelta(hours=hours)
@@ -131,15 +132,15 @@ def stats(db: Session, codes: list[str], hours: int = 1) -> dict[str, dict[str, 
         select(Inspection.camera_id,
                func.count(Prediction.inspection_id),
                func.sum(case((Prediction.binary_defective.is_(True), 1), else_=0)),
-               func.sum(case((Prediction.triage == "manual_review", 1), (Prediction.quality_status == "low_quality", 1),
-                             else_=0)))
+               func.sum(case((Prediction.binary_defective.is_(False) & (Prediction.triage == "good_candidate")
+                              & (Prediction.quality_status != "low_quality"), 1), else_=0)))
         .join(Prediction, Prediction.inspection_id == Inspection.id)
         .where(Inspection.camera_id.in_(codes), Inspection.source == "camera", Inspection.created_at >= since)
         .group_by(Inspection.camera_id)).all()
     out = {c: {"inspected": 0, "damaged": 0, "not_damaged": 0, "expert_check": 0} for c in codes}
-    for code, n, damaged, expert in rows:
-        out[code] = {"inspected": int(n), "damaged": int(damaged or 0), "not_damaged": int(n) - int(damaged or 0),
-                     "expert_check": int(expert or 0)}
+    for code, n, damaged, clear in rows:
+        out[code] = {"inspected": int(n), "damaged": int(damaged or 0), "not_damaged": int(clear or 0),
+                     "expert_check": int(n) - int(damaged or 0) - int(clear or 0)}
     return out
 
 

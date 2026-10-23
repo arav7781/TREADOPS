@@ -7,6 +7,7 @@ import Link from "next/link";
 import { QualityBadge, SourceBadge, TriageBadge } from "@/components/domain/badges";
 import { LineageDrawer } from "@/components/domain/LineageDrawer";
 import { ProbabilityPanel } from "@/components/domain/ProbabilityPanel";
+import { SecondOpinionPanel } from "@/components/domain/SecondOpinion";
 import { Badge, Card, KeyValue } from "@/components/ui";
 import { api } from "@/lib/api";
 import { ms, shortSha } from "@/lib/format";
@@ -38,6 +39,7 @@ export function ResultPanel({ d }: { d: InspectionDetail }) {
         <ProbabilityPanel raw={p.raw_probs} calibrated={p.calibrated_probs} pDefective={p.p_defective}
           temperature={typeof inference?.temperature === "number" ? inference.temperature : null}
           thresholds={policy ? { low: policy.triage_low, high: policy.triage_high, binary: policy.binary_threshold } : undefined} />
+        {p.second_opinion && <SecondOpinionPanel s={p.second_opinion} className="mt-4" />}
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <QualityBadge status={p.quality_status} reasons={p.quality.reasons} />
           <Badge tone="neutral">binary @ {policy ? `threshold ${policy.binary_threshold.toFixed(3)}` : "policy threshold"}: {p.binary_defective ? "defective" : "good"}</Badge>

@@ -36,6 +36,10 @@ First complete version of the blueprint: data to model to release to monitoring,
 - **Quality**: unit, data/ML, integration (real Postgres/Redis/object store), Vitest and Playwright suites; CI for
   lint, types, contract diff, migrations, tests, web build and container images; load, restart and
   backup/restore drills.
+- **Vision second opinion** (`VISION_CHECK_MODEL`, optional): a vision LLM re-checks every tyre YOLO would
+  auto-clear and sends it to an expert when it sees damage (or gives no usable answer). Stored per prediction with
+  model, prompt version and hash; `scripts/eval_vision_check.py` measures it. Verdicts are now three-way: damaged,
+  not damaged (clean auto-clear only) and uncertain (expert check).
 - **Docs**: ADRs 0001–0008, runbooks, knowledge base, evidence index, licence notices and generated third-party
   inventories, contributing guide, security policy, code of conduct and citation file.
 
@@ -44,6 +48,9 @@ First complete version of the blueprint: data to model to release to monitoring,
 - UI follows the michelin.in visual language (black header with dropdown navigation, navy panels, yellow calls to
   action, heavy italic headlines). The copilot is named Bib; there is no Michelin logo, artwork or proprietary font.
 - `/inspect` and `/copilot` merged into one chat; `/copilot` redirects.
+- Copilot answers render GitHub-flavoured markdown (headings, numbered lists, tables, rules, links); raw HTML and
+  images are never rendered.
+- The header is a single bar aligned to the content column; the environment/model/user utility row is gone.
 - Monitoring windows are defined by the completion count that triggered them.
 - Replays resume after interruption; work stops as soon as a job lease is lost.
 
@@ -54,5 +61,10 @@ First complete version of the blueprint: data to model to release to monitoring,
 - Upload bursts exhausted the database pool and timed out; excess uploads now get `429` before their bodies are read.
 - Copilot photo turns were rolled back by the acceptance path.
 - Certification rewrites removed negated phrases; grounding ignored figures inside strings.
+- A tyre with a fresh sidewall gash was auto-cleared as "not damaged" (the training data has no localized damage
+  on new tyres); the vision second opinion now routes such tyres to an expert.
+- Certification rewrites spliced "[requires inspector clearance]" into sentences ("certified recycling", negations
+  far from the word); a real claim now replaces its whole sentence, and "certified inspector/recycler" is allowed.
+- Camera "not damaged" counts included uncertain tyres.
 - Pages kept a broken layout after leaving the chat (Next keeps the previous route alive in a hidden `<Activity>`).
 - Horizontal overflow at phone widths; hydration mismatches in shell-shared queries.

@@ -13,7 +13,7 @@ import { SourceBadge, StatusBadge, TriageBadge, VerdictBadge } from "@/component
 import { useMe } from "@/components/AppShell";
 import { Badge, Card, ErrorState, KeyValue, PageHeader, SkeletonRows } from "@/components/ui";
 import { mediaUrl } from "@/lib/api";
-import { dateTime, humanize, shortSha } from "@/lib/format";
+import { dateTime, humanize, shortSha, VERDICT_LABEL, verdictOf } from "@/lib/format";
 import { useInspection } from "@/lib/hooks";
 import { qk } from "@/lib/query";
 import { hasRole } from "@/lib/roles";
@@ -40,7 +40,7 @@ export function InspectionView({ idPromise }: { idPromise: Promise<string> }) {
   return (
     <>
       <PageHeader eyebrow={`Inspection ${d.inspection_id.slice(0, 8)}`}
-        title={d.prediction ? (d.prediction.binary_defective ? "Damaged" : "Not damaged") : humanize(d.status)}
+        title={d.prediction ? VERDICT_LABEL[verdictOf(d.prediction.binary_defective, d.prediction.triage, d.prediction.quality_status)] : humanize(d.status)}
         subtitle={<>Created {dateTime(d.created_at)} · source {d.source}{d.scenario_id ? ` · scenario ${d.scenario_id}` : ""}{d.line_id ? ` · ${d.line_id}/${d.camera_id}` : ""}</>}
         actions={<><StatusBadge status={d.status} /><VerdictBadge damaged={d.prediction?.binary_defective} triage={d.prediction?.triage} quality={d.prediction?.quality_status} /><TriageBadge triage={d.prediction?.triage} /><SourceBadge origin={d.metadata_origin} />
           <Link href={`/circularity/passport/${d.inspection_id}`} className="font-semibold text-primary-ink hover:underline">Casing passport →</Link></>} />

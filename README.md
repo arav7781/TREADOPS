@@ -74,6 +74,25 @@ specificity but loses recall under blur (−8.6 pp, CI −19.0 to −0.9) and lo
 v3 was promoted only in an explicitly labelled **release drill** (generation 2) and rolled back to v2
 (generation 3) citing that evidence; inspections taken in between keep their v3 lineage.
 
+**Vision second opinion (a safety net for auto-clears).** D1's "defective" photos are mostly aged, cracked
+rubber, so YOLO learned "new-looking rubber = good": a new tyre with a fresh sidewall gash scored p(defective)
+0.124 and was auto-cleared. Its embedding distance (0.38) is inside the training distribution (p99 0.51), so an
+out-of-distribution gate would not catch it either. With `VISION_CHECK_MODEL` set, a vision LLM re-checks every tyre
+YOLO would auto-clear; when it sees damage with medium or high confidence (or gives no usable answer) the tyre goes
+to an expert instead, and the result shows **Uncertain · expert check** with its findings. Measured with
+`scripts/eval_vision_check.py` (YOLO26s-cls v2, `gpt-4o-mini`, prompt v1; `docs/evidence/vision_check/`):
+
+| | Validation (calibration + policy) | Locked test |
+|---|---|---|
+| Defective tyres auto-cleared, YOLO alone | 4 / 150 | 3 / 150 |
+| Defective tyres auto-cleared, with second opinion | **3 / 150** | **1 / 150** |
+| Good tyres sent to an expert by the second opinion | 22 / 114 auto-cleared (19 disagreements, 3 unusable answers) | 27 / 116 (24 + 3) |
+| Added latency per auto-clear (p50) | 2.5 s | 2.4 s |
+
+The cost is roughly one in five clean tyres going to an inspector. The real fix is training data with localized
+damage on new tyres (cuts, punctures, bulges): label such inspections "defective" in the review queue so they can
+enter a future dataset snapshot, or add a licensed dataset.
+
 **Serving (real photo, end to end):** warm YOLO inference 7–13 ms; whole worker job incl. preprocessing,
 occlusion attribution and stage images ≈ 0.3–0.6 s.
 
@@ -92,8 +111,8 @@ resolvable ✅.
 2.07 across consecutive windows; alerts opened only after two windows above 0.20 and duplicates merged. Mean
 p(defective) fell 0.53 → 0.44 as images darkened, matching the stress-test recall drop.
 
-**Tests:** 80 unit, 9 data/ML (on the real data and artifacts) and 31 integration tests against real
-PostgreSQL/Redis/object storage (API-01..04, JOB-01..04, REL-01..04, DB-01, cameras and regressions), 43 web
+**Tests:** 92 unit, 9 data/ML (on the real data and artifacts) and 34 integration tests against real
+PostgreSQL/Redis/object storage (API-01..04, JOB-01..04, REL-01..04, DB-01, cameras, vision second opinion and regressions), 46 web
 component tests and 22 Playwright journeys against the live stack and the configured LLM (including video upload and
 live-camera recording through Chromium's fake camera) — all passing; GitHub CI (lint, mypy, contract diff,
 migrations, tests, web build, Docker images) is green.
@@ -152,7 +171,7 @@ tools (the YOLO inspection tools, model evidence, drift, knowledge base). Set `L
 `llm_not_configured`; a failed or filtered model call is retried once and then shown as an error, never replaced
 by a templated answer. Guardrails still run on both sides as safety checks. The system prompt is versioned in
 `configs/prompts/`; `make eval-copilot` runs the golden set against the configured model and logs to MLflow
-(prompt v5: 15/15 on two consecutive runs with `azure/deepSeek-V4-Flash`).
+(prompt v6 with the current guardrails: 15/15 with `azure/deepSeek-V4-Flash`; v5 also 15/15 on two consecutive runs).
 
 ### Name and visual design
 
@@ -208,6 +227,8 @@ docs/                     adr/, runbooks/, kb/, evidence/, assets/ (README banne
 - Labels are image-level. The heatmap is an attribution aid, not a defect location; detection needs a separately
   annotated dataset (blueprint §38).
 - Low-light robustness is weak (recall ~0.75 at 45 % brightness).
+- D1 has almost no localized damage on otherwise new tyres (fresh cuts, punctures, bulges), so YOLO can auto-clear
+  them; the optional vision second opinion catches most of these at the cost of extra expert reviews.
 - Training ran on Apple Silicon (MPS) and CPU, not the RTX 4050 profile in the blueprint (ADR 0002).
 
 ## Documentation

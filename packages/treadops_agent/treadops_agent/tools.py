@@ -34,8 +34,15 @@ TRIAGE_LABEL = {"good_candidate": "Retread candidate", "manual_review": "Expert 
                 "defect_flagged": "Defect flagged"}
 
 
-VERDICT_LABEL = {"damaged": "Damaged", "not_damaged": "Not damaged"}
+VERDICT_LABEL = {"damaged": "Damaged", "not_damaged": "Not damaged", "uncertain": "Uncertain (expert check)"}
 TRIAGE_ORDER = {"good_candidate": 0, "manual_review": 1, "defect_flagged": 2}
+
+
+def verdict_of(binary_defective: bool, triage: str, quality_status: str) -> str:
+    """Damaged if the policy says so; 'not damaged' only for a clean auto-clear; anything else is uncertain."""
+    if binary_defective:
+        return "damaged"
+    return "not_damaged" if triage == "good_candidate" and quality_status != "low_quality" else "uncertain"
 
 
 @dataclass
@@ -105,10 +112,13 @@ def _compact(insp: Inspection, pred: Prediction | None, stages: list[InspectionS
                            "metadata_origin": insp.metadata_origin}
     if pred is not None:
         circ = pred.circularity or {}
-        verdict = "damaged" if pred.binary_defective else "not_damaged"
+        verdict = verdict_of(pred.binary_defective, pred.triage, pred.quality_status)
+        so = pred.second_opinion or {}
         out.update({
             "verdict": verdict, "verdict_label": VERDICT_LABEL[verdict],
             "needs_expert_check": pred.triage == "manual_review" or pred.quality_status == "low_quality",
+            "second_opinion": {k: so.get(k) for k in ("model", "decision", "damage_visible", "confidence", "findings",
+                                                      "location")} if so else None,
             "triage": pred.triage, "triage_label": TRIAGE_LABEL[pred.triage], "triage_reason": pred.triage_reason,
             "p_defective": round(pred.p_defective, 4),
             "raw_probs": {k: round(v, 4) for k, v in pred.raw_probs.items()},
@@ -280,11 +290,13 @@ def aggregate_frames(frames: list[dict[str, Any]]) -> dict[str, Any]:
     if not done:
         return {"error": "no_frame_classified", "frames": frames}
     decisive = max(done, key=lambda f: (TRIAGE_ORDER[f["triage"]], f["p_defective"]))
-    verdict = "damaged" if any(f["verdict"] == "damaged" for f in done) else "not_damaged"
+    verdicts = {f["verdict"] for f in done}
+    verdict = "damaged" if "damaged" in verdicts else "uncertain" if "uncertain" in verdicts else "not_damaged"
     low_q = sum(1 for f in done if f.get("quality_status") == "low_quality")
     return {
         "tyre_level": True,
-        "rule": "any damaged frame makes the tyre damaged; the worst frame decides the triage",
+        "rule": "any damaged frame makes the tyre damaged, else any uncertain frame makes it uncertain; the worst "
+                "frame decides the triage",
         "verdict": verdict, "verdict_label": VERDICT_LABEL[verdict],
         "needs_expert_check": decisive["triage"] == "manual_review" or low_q > 0,
         "triage": decisive["triage"], "triage_label": TRIAGE_LABEL[decisive["triage"]],

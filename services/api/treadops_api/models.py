@@ -288,6 +288,7 @@ class Prediction(Base):
     lineage: Mapped[dict[str, Any]] = mapped_column(JSONB)
     attribution: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     embedding_key: Mapped[str | None] = mapped_column(String(300))
+    second_opinion: Mapped[dict[str, Any] | None] = mapped_column(JSONB)  # vision model re-check of auto-clears
     circularity: Mapped[dict[str, Any]] = mapped_column(JSONB)
     created_at: Mapped[datetime] = mapped_column(TS, default=utcnow)
 

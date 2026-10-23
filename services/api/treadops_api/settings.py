@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     llm_base_url: str | None = Field(None, alias="LLM_BASE_URL")
     llm_api_key: str | None = Field(None, alias="LLM_API_KEY")
     llm_model: str | None = Field(None, alias="LLM_MODEL")
+    vision_check_model: str | None = Field(None, alias="VISION_CHECK_MODEL")  # vision second opinion; off if unset
 
 
 @lru_cache

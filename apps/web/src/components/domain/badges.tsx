@@ -3,7 +3,7 @@
 import { CheckCircle2, CircleDashed, CircleSlash, FlaskConical, ShieldAlert, XCircle } from "lucide-react";
 
 import { Badge, type Tone } from "@/components/ui";
-import { gateLabel, humanize, TRIAGE_LABEL } from "@/lib/format";
+import { gateLabel, humanize, TRIAGE_LABEL, VERDICT_LABEL, verdictOf, type Verdict } from "@/lib/format";
 import type { GateState, Triage } from "@/lib/types";
 
 /** Makes data provenance visible: simulated operational metadata must never pass as real plant data. */
@@ -31,22 +31,26 @@ export function TriageBadge({ triage, large }: { triage: Triage | null | undefin
   );
 }
 
+const VERDICT_TONE: Record<Verdict, Tone> = { damaged: "bad", not_damaged: "good", uncertain: "warn" };
+
 /**
- * The quality-check verdict: the policy's binary decision (damaged / not damaged), plus "expert check" when the
- * triage is uncertain or the image quality is low.
+ * The quality-check verdict: damaged, not damaged (only for a clean auto-clear) or uncertain, plus "expert check"
+ * whenever an inspector has to look (uncertain, or damaged on a borderline score or a low-quality photo).
  */
-export function VerdictBadge({ damaged, triage, quality, large }: {
-  damaged: boolean | null | undefined;
+export function VerdictBadge({ damaged, verdict, triage, quality, large }: {
+  damaged?: boolean | null;
+  verdict?: Verdict | null;
   triage?: Triage | null;
   quality?: string | null;
   large?: boolean;
 }) {
-  if (damaged === null || damaged === undefined) return <Badge>Pending</Badge>;
-  const expert = triage === "manual_review" || quality === "low_quality";
+  if (!verdict && (damaged === null || damaged === undefined)) return <Badge>Pending</Badge>;
+  const v = verdict ?? verdictOf(Boolean(damaged), triage, quality);
+  const expert = v === "uncertain" || (v === "damaged" && (triage === "manual_review" || quality === "low_quality"));
   return (
     <span className="inline-flex flex-wrap items-center gap-1.5">
-      <Badge tone={damaged ? "bad" : "good"} className={large ? "px-3.5 py-1 text-base font-bold" : "font-bold"}>
-        {damaged ? "Damaged" : "Not damaged"}
+      <Badge tone={VERDICT_TONE[v]} className={large ? "px-3.5 py-1 text-base font-bold" : "font-bold"}>
+        {VERDICT_LABEL[v]}
       </Badge>
       {expert && <Badge tone="warn">Expert check</Badge>}
     </span>

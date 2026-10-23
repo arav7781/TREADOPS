@@ -22,6 +22,7 @@ from treadops_api.storage import get_storage
 from treadops_ml.attribution import annotate, occlusion_map, render_heatmap
 from treadops_ml.preprocess import Stage, run_stages, thumb
 
+from .. import vision_check
 from ..runtime import bundles, reference_encoder
 from ..tasks import JobContext, Permanent, handler, on_fail
 
@@ -104,6 +105,13 @@ def run(ctx: JobContext) -> dict[str, Any]:
              f"policy {bundle.policy.version}: {pred.triage} ({pred.triage_reason})"]), db)
         ctx.heartbeat(0.6, "classified")
 
+        # Vision second opinion on auto-clears only: it can send a tyre to an expert, never clear one.
+        opinion = vision_check.second_opinion(staged["canonical_rgb"]) \
+            if pred.triage == "good_candidate" and vision_check.enabled() else None
+        triage, decision, why = vision_check.decide(pred.triage, opinion)
+        triage_reason = f"{pred.triage_reason}; {why}" if why else pred.triage_reason
+        second = {**opinion, "decision": decision, "policy_triage": pred.triage} if opinion else None
+
         t1 = time.perf_counter()
         occ = occlusion_map(bundle, staged["tensor"], grid=8)
         heat = render_heatmap(staged["canonical_rgb"], occ["delta"], staged["letterbox_meta"])
@@ -121,11 +129,19 @@ def run(ctx: JobContext) -> dict[str, Any]:
              "explanation aid only - not a defect localisation"]), db)
 
         label = f"{tup.get('model_family')} v{tup.get('registry_version') or '?'}"
-        base = heat if pred.triage != "good_candidate" else thumb(Image.fromarray(staged["canonical_rgb"]), 720)
-        final = annotate(base, pred.triage, pred.p_defective, label)
+        base = heat if triage != "good_candidate" else thumb(Image.fromarray(staged["canonical_rgb"]), 720)
+        final = annotate(base, triage, pred.p_defective, label)
+        log = [f"final decision {triage.upper()} · human clearance required"]
+        if second:
+            seen = second.get("findings") or []
+            log.insert(0, f"vision second opinion ({second['model']}, prompt {second['prompt_version']}): " + (
+                f"no usable answer ({second.get('error', '')[:60]})" if decision == "unavailable" else
+                f"damage {'visible' if second['damage_visible'] else 'not visible'} ({second.get('confidence')})"
+                + (f": {', '.join(seen)}" if seen else "")) + f" -> {decision}")
         _put_stage(storage, insp.id, Stage(
-            8, "classified", "Classified image", final, {"triage": pred.triage, "p_defective": pred.p_defective},
-            0.0, [f"final decision {pred.triage.upper()} · human clearance required"]), db)
+            8, "classified", "Classified image", final,
+            {"triage": triage, "p_defective": pred.p_defective, "policy_triage": pred.triage,
+             **({"second_opinion": second} if second else {})}, 0.0, log), db)
 
         emb_key = f"embeddings/{insp.id}.npy"
         buf = io.BytesIO()
@@ -140,7 +156,9 @@ def run(ctx: JobContext) -> dict[str, Any]:
                "deployment_id": tup["deployment_id"], "deployment_generation": tup["generation"],
                "model_version": tup.get("registry_version"), "worker": ctx.owner,
                "policy": {"version": bundle.policy.version, "binary_threshold": bundle.policy.binary_threshold,
-                          "triage_low": bundle.policy.triage_low, "triage_high": bundle.policy.triage_high}}
+                          "triage_low": bundle.policy.triage_low, "triage_high": bundle.policy.triage_high},
+               **({"second_opinion": {k: second[k] for k in ("model", "prompt_version", "prompt_sha256")}}
+                  if second else {})}
     with session_scope() as db:
         job = must_get(db, Job, ctx.job_id, populate_existing=True)
         if job.status != "running":
@@ -149,19 +167,20 @@ def run(ctx: JobContext) -> dict[str, Any]:
         if exists is None:  # unique(inspection_id) also guards this
             db.add(Prediction(
                 inspection_id=insp.id, raw_probs=pred.raw_probs, calibrated_probs=pred.calibrated_probs,
-                p_defective=pred.p_defective, triage=pred.triage, triage_reason=pred.triage_reason,
+                p_defective=pred.p_defective, triage=triage, triage_reason=triage_reason, second_opinion=second,
                 binary_defective=pred.binary_defective, quality_status=pred.quality_status,
                 quality={"descriptors": pred.descriptors, "reasons": pred.quality_reasons},
                 timing={"queue_ms": round(queue_ms, 1), "preprocess_ms": round(preprocess_ms, 2),
                         "inference_ms": round(pred.timing_ms["inference_ms"], 2),
                         "attribution_ms": round(attribution_ms, 1), "worker_total_ms": round(total_ms, 1)},
                 lineage=lineage, attribution=attribution, embedding_key=emb_key,
-                circularity=recommendation(pred.triage, pred.quality_status),
+                circularity=recommendation(triage, pred.quality_status),
             ))
         row = must_get(db, Inspection, insp.id, populate_existing=True)
         row.status = "succeeded"
         row.completed_at = datetime.now(UTC)
-        result = {"triage": pred.triage, "p_defective": pred.p_defective, "bundle_sha256": bundle.sha}
+        result = {"triage": triage, "p_defective": pred.p_defective, "bundle_sha256": bundle.sha,
+                  "second_opinion": decision}
         jobs.succeed(db, job, result)
     return result
 

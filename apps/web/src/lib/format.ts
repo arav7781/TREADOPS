@@ -6,6 +6,15 @@ export const TRIAGE_LABEL: Record<Triage, string> = {
   defect_flagged: "Defect flagged",
 };
 
+export type Verdict = "damaged" | "not_damaged" | "uncertain";
+export const VERDICT_LABEL: Record<Verdict, string> = { damaged: "Damaged", not_damaged: "Not damaged", uncertain: "Uncertain" };
+
+/** Mirrors treadops_agent.tools.verdict_of: "not damaged" only for a clean auto-clear; anything else is uncertain. */
+export function verdictOf(damaged: boolean, triage?: Triage | null, quality?: string | null): Verdict {
+  if (damaged) return "damaged";
+  return triage === "good_candidate" && quality !== "low_quality" ? "not_damaged" : "uncertain";
+}
+
 export const TERMINAL_JOB: ReadonlySet<string> = new Set(["succeeded", "failed", "cancelled"]);
 export const TERMINAL_INSPECTION: ReadonlySet<string> = new Set(["succeeded", "failed", "cancelled"]);
 

@@ -22,7 +22,7 @@ export async function expectTyreVerdict(page: Page) {
   await expect(page.getByRole("list", { name: "Video frames you sent" })).toBeVisible({ timeout: 30_000 });
   // One inspection per frame, then the tyre-level verdict from the worst frame, then the LLM's answer.
   await expect(page.getByTestId("video-verdict")).toBeVisible({ timeout: 180_000 });
-  await expect(page.getByTestId("video-verdict").getByText(/^(Damaged|Not damaged)$/)).toBeVisible();
-  await expect(page.locator('[data-role="assistant"]').last().getByText(/\b(Damaged|Not damaged)\b/).last())
+  await expect(page.getByTestId("video-verdict").getByText(/^(Damaged|Not damaged|Uncertain)$/)).toBeVisible();
+  await expect(page.locator('[data-role="assistant"]').last().getByText(/\b(Damaged|Not damaged|Uncertain)\b/).last())
     .toBeVisible({ timeout: 120_000 });
 }

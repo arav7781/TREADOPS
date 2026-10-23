@@ -82,7 +82,25 @@ def test_only_unnegated_certification_claims_are_rewritten():
     cls = {"triage": "good_candidate", "p_defective": 0.03}
     v = g.check_output("The model does not certify tyres. This casing is certified for reuse.", tool_results=[cls],
                        system_prompt=SYSTEM, classification=cls, fallback_summary=None)
-    assert "does not certify" in v.text and "is [requires inspector clearance]" in v.text
+    assert v.text.startswith("The model does not certify tyres. Only a qualified inspector can clear this tyre for use.")
+    assert "certified for reuse" not in v.text
+
+
+def test_certification_rewrite_keeps_sentences_readable():
+    """Seen in chat: a recycler, a disclaimer far from its negation and a list item were spliced mid-sentence."""
+    cls = {"triage": "defect_flagged", "verdict": "damaged", "p_defective": 0.82}
+    answer = ("Send it to certified recycling / material recovery (ELT).\n\n"
+              "The model output does not constitute a roadworthiness or safety certification.\n\n"
+              "- A certified inspector must confirm before disposal.\n"
+              "- This casing is certified for retread.\n"
+              "- Next: review the heatmap.")
+    v = g.check_output(answer, tool_results=[cls], system_prompt=SYSTEM, classification=cls, fallback_summary=None)
+    assert "Send it to certified recycling / material recovery (ELT)." in v.text
+    assert "does not constitute a fitness for use or safety certification." in v.text
+    assert "- A certified inspector must confirm before disposal." in v.text
+    assert "- Only a qualified inspector can clear this tyre for use.\n- Next: review the heatmap." in v.text
+    assert "[requires" not in v.text
+    assert [e.detail["count"] for e in v.events if e.rule == "certification_claim"] == [1]
 
 
 def test_figures_quoted_from_stage_logs_are_grounded():

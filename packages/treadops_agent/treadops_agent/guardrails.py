@@ -29,6 +29,7 @@ TRIAGE_WORDS = {
 # Damage verdict wording. "not damaged" is matched first so it never also counts as "damaged".
 VERDICT_NOT = re.compile(r"\b(not damaged|undamaged|no (?:visible )?damage|isn't damaged)\b")
 VERDICT_YES = re.compile(r"\bdamaged\b")
+UNCERTAIN_WORDS = re.compile(r"\b(uncertain|expert (?:check|review)|manual review|disagree\w*)\b")
 
 
 def claimed_verdict(low: str) -> str | None:
@@ -142,11 +143,37 @@ def grounded(value: float, allowed: list[float]) -> bool:
     return False
 
 
-def _clause_before(low: str, pos: int, width: int = 40) -> str:
-    """Up to `width` characters before `pos`, never reaching back past the start of the sentence."""
-    window = low[max(0, pos - width) : pos]
-    cut = max(window.rfind(c) for c in ".!?\n")
-    return window[cut + 1 :] if cut >= 0 else window
+CLAUSE_END = re.compile(r"[.!?;:](?=\s)|\n|\b(?:but|however|and|so)\b")
+SENTENCE_END = re.compile(r"[.!?](?=\s|$)|\n")
+LINE_MARKER = re.compile(r"\s*(?:[-*+>#]+\s+|\d+[.)]\s+)?")
+# Negated ("does not certify") or stated as a requirement ("must be certified by an inspector"): not a claim.
+NOT_A_CLAIM = re.compile(r"\b(not|never|cannot|can't|isn't|no|without|only|requires?|required|needs?|must|until|"
+                         r"unless|pending|before)\b")
+CLEARANCE_SENTENCE = "Only a qualified inspector can clear this tyre for use."
+
+
+def _clause_before(low: str, pos: int) -> str:
+    """The text before `pos` back to the start of its clause (sentence end, ;, :, line break, but/and/so)."""
+    ends = [m.end() for m in CLAUSE_END.finditer(low, 0, pos)]
+    return low[ends[-1] if ends else 0 : pos]
+
+
+def _is_claim(low: str, m: re.Match[str], qualifiers: list[str]) -> bool:
+    """A certification phrase is a claim unless negated or a requirement, or it describes who does the work
+    ("certified inspector", "certified recycling")."""
+    if NOT_A_CLAIM.search(_clause_before(low, m.start())):
+        return False
+    return not re.match(rf"\s+(?:tyre\s+|tire\s+)?(?:{'|'.join(qualifiers)})", low[m.end():])
+
+
+def _sentence_span(text: str, start: int, end: int) -> tuple[int, int]:
+    """The sentence around text[start:end], keeping any list, quote or heading marker in front of it."""
+    before = [m.end() for m in SENTENCE_END.finditer(text, 0, start)]
+    s = before[-1] if before else 0
+    s = LINE_MARKER.match(text, s).end()  # type: ignore[union-attr]  # the pattern can match empty
+    after = SENTENCE_END.search(text, end)
+    e = len(text) if after is None else after.start() if after.group() == "\n" else after.end()
+    return s, e
 
 
 @dataclass
@@ -179,23 +206,34 @@ def check_output(text: str, *, tool_results: list[dict[str, Any]], system_prompt
         actual = classification["triage"]
         claimed = {t for t, words in TRIAGE_WORDS.items() if any(w in low for w in words)}
         verdict, said = classification.get("verdict"), claimed_verdict(low)
-        if (claimed and actual not in claimed) or (verdict and said and said != verdict):
+        # An uncertain result may be described as possibly damaged, or quote YOLO's own "not damaged" alongside the
+        # expert check, but never presented as simply not damaged.
+        wrong_verdict = (said == "not_damaged" and not UNCERTAIN_WORDS.search(low)) if verdict == "uncertain" \
+            else bool(verdict and said and said != verdict)
+        if (claimed and actual not in claimed) or wrong_verdict:
             events.append(GuardEvent("output", "triage_contradiction", "rewrite",
                                      {"tool_triage": actual, "claimed": sorted(claimed), "tool_verdict": verdict,
                                       "claimed_verdict": said}))
             if fallback_summary:
                 text, low, replaced = fallback_summary, fallback_summary.lower(), True
 
-    # 3) certification / safety claims
+    # 3) certification / safety claims: the whole sentence making one is replaced, so the answer still reads well.
+    spans: list[tuple[int, int]] = []
     for pat in g["certification_patterns"]:
-        # Rewrite only the un-negated matches, right to left so earlier offsets stay valid.
         claims = [m for m in re.finditer(pat, text, flags=re.IGNORECASE)
-                  if not re.search(r"\b(not|never|cannot|can't|isn't|no)\b", _clause_before(low, m.start()))]
+                  if _is_claim(low, m, g.get("certification_qualifiers", []))]
         if claims:
             events.append(GuardEvent("output", "certification_claim", "rewrite", {"pattern": pat, "count": len(claims)}))
-            for m in reversed(claims):
-                text = text[: m.start()] + "[requires inspector clearance]" + text[m.end():]
-            low = text.lower()
+            spans += [_sentence_span(text, m.start(), m.end()) for m in claims]
+    merged: list[tuple[int, int]] = []
+    for s, e in sorted(set(spans)):
+        if merged and s < merged[-1][1]:
+            merged[-1] = (merged[-1][0], max(e, merged[-1][1]))
+        else:
+            merged.append((s, e))
+    for s, e in reversed(merged):  # right to left so earlier offsets stay valid
+        text = text[:s] + CLEARANCE_SENTENCE + text[e:]
+    low = text.lower()
 
     # 3b) certification vocabulary, even when negated ("does not mean it is roadworthy" -> "fit for use")
     reworded = 0

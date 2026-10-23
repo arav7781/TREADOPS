@@ -123,6 +123,21 @@ export interface Circularity {
   scope: string;
 }
 
+/** A vision LLM's re-check of a tyre YOLO would auto-clear (null when YOLO did not auto-clear or it is off). */
+export interface SecondOpinion {
+  model: string;
+  prompt_version: string;
+  prompt_sha256?: string;
+  decision: "agrees" | "disagrees" | "unavailable";
+  policy_triage: Triage;
+  damage_visible?: boolean;
+  confidence?: "low" | "medium" | "high";
+  findings?: string[];
+  location?: string | null;
+  error?: string;
+  latency_ms?: number;
+}
+
 export interface PredictionView {
   task: "classify";
   raw_probs: Record<string, number>;
@@ -133,6 +148,7 @@ export interface PredictionView {
   binary_defective: boolean;
   quality_status: "accepted" | "low_quality";
   quality: { descriptors?: Record<string, number>; reasons?: string[] };
+  second_opinion: SecondOpinion | null;
   timing: Record<string, number>;
   lineage: Record<string, unknown>;
   attribution: { method?: string; grid?: number; max_delta?: number; min_delta?: number; strongest_cell?: number[]; note?: string } | null;
@@ -747,14 +763,14 @@ export interface VideoFrameResult {
   time_s: number | null;
   inspection_id?: string;
   status: string;
-  verdict?: "damaged" | "not_damaged";
+  verdict?: "damaged" | "not_damaged" | "uncertain";
   triage?: Triage;
   p_defective?: number;
   quality_status?: string;
 }
 
 export interface VideoResult {
-  verdict?: "damaged" | "not_damaged";
+  verdict?: "damaged" | "not_damaged" | "uncertain";
   verdict_label?: string;
   needs_expert_check?: boolean;
   triage?: Triage;

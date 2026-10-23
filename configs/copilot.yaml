@@ -25,8 +25,14 @@ guardrails:
     - "\\bguarantee(d)?\\b"
     - "\\bno (need|requirement) (for|of) (an? )?(human |manual )?(inspection|review)\\b"
     - "\\bcleared for (retread|use|service)\\b"
+  # "certified" describing who does the work is not a claim about the tyre ("certified inspector", "certified
+  # recycling"). Prefixes of the word that follows, optionally after "tyre".
+  certification_qualifiers: [inspector, technician, retread, recycl, facilit, centre, center, partner, processor,
+                             plant, professional, expert, specialist, lab, body, operator, collector, scheme,
+                             standard, staff, personnel]
   # Even denials are rephrased so answers never use certification vocabulary about a tyre.
   certification_vocabulary:
+    "road ?-?worthiness": "fitness for use"
     "road ?-?worthy": "fit for use"
     "safe to (drive|use|run)": "fit for use"
   domain_keywords: [tyre, tire, tread, casing, retread, defect, crack, sidewall, bead, crown, bulge, cut, puncture,
