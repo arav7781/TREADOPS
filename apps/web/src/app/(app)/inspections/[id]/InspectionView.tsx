@@ -9,7 +9,7 @@ import { JobTimeline } from "@/components/domain/JobTimeline";
 import { ResultPanel } from "@/components/domain/ResultPanel";
 import { ReviewForm } from "@/components/domain/ReviewForm";
 import { PipelineConsole, StageGallery } from "@/components/domain/StageGallery";
-import { SourceBadge, StatusBadge, TriageBadge } from "@/components/domain/badges";
+import { SourceBadge, StatusBadge, TriageBadge, VerdictBadge } from "@/components/domain/badges";
 import { useMe } from "@/components/AppShell";
 import { Badge, Card, ErrorState, KeyValue, PageHeader, SkeletonRows } from "@/components/ui";
 import { mediaUrl } from "@/lib/api";
@@ -28,6 +28,7 @@ export function InspectionView({ idPromise }: { idPromise: Promise<string> }) {
   const me = useMe();
   const qc = useQueryClient();
   const [zoom, setZoom] = useState(false);
+  const [saved, setSaved] = useState<number | null>(null); // survives the form remounting on the new revision
   const [view, setView] = useState<"original" | "heatmap" | "classified">("original");
   if (q.isError) return <ErrorState error={q.error} onRetry={() => q.refetch()} />;
   const d = q.data;
@@ -38,9 +39,10 @@ export function InspectionView({ idPromise }: { idPromise: Promise<string> }) {
 
   return (
     <>
-      <PageHeader eyebrow={`Inspection ${d.inspection_id.slice(0, 8)}`} title={d.prediction ? `${humanize(d.prediction.triage)}` : humanize(d.status)}
+      <PageHeader eyebrow={`Inspection ${d.inspection_id.slice(0, 8)}`}
+        title={d.prediction ? (d.prediction.binary_defective ? "Damaged" : "Not damaged") : humanize(d.status)}
         subtitle={<>Created {dateTime(d.created_at)} · source {d.source}{d.scenario_id ? ` · scenario ${d.scenario_id}` : ""}{d.line_id ? ` · ${d.line_id}/${d.camera_id}` : ""}</>}
-        actions={<><StatusBadge status={d.status} /><TriageBadge triage={d.prediction?.triage} /><SourceBadge origin={d.metadata_origin} />
+        actions={<><StatusBadge status={d.status} /><VerdictBadge damaged={d.prediction?.binary_defective} triage={d.prediction?.triage} quality={d.prediction?.quality_status} /><TriageBadge triage={d.prediction?.triage} /><SourceBadge origin={d.metadata_origin} />
           <Link href={`/circularity/passport/${d.inspection_id}`} className="font-semibold text-primary-ink hover:underline">Casing passport →</Link></>} />
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
@@ -82,10 +84,15 @@ export function InspectionView({ idPromise }: { idPromise: Promise<string> }) {
           <Card title="Human review" subtitle={`Current revision r${d.review.revision}${d.review.label ? ` · ${humanize(d.review.label)}` : " · not yet reviewed"}`}>
             {canReview ? (
               d.status === "succeeded" ? (
+                <>
+                {saved !== null && saved === d.review.revision && (
+                  <p role="status" className="mb-3 rounded-lg bg-good-soft px-3 py-2 font-semibold text-good">Saved revision r{saved}</p>
+                )}
                 <ReviewForm key={d.review.revision} inspectionId={d.inspection_id} expectedRevision={d.review.revision}
                   current={{ label: d.review.label, disposition: d.review.disposition }}
                   suggestedDisposition={d.prediction ? SUGGESTED_DISPOSITION[d.prediction.triage] : null}
-                  onSaved={() => qc.invalidateQueries({ queryKey: qk.inspection(d.inspection_id) })} />
+                  onSaved={(r) => { setSaved(r.revision); qc.invalidateQueries({ queryKey: qk.inspection(d.inspection_id) }); }} />
+                </>
               ) : <p className="text-muted">Reviews open once the inspection completes.</p>
             ) : <p className="text-muted">Recording a verified label requires the inspector role.</p>}
             <h3 className="mb-2 mt-6 font-bold text-ink">Review history (append-only)</h3>

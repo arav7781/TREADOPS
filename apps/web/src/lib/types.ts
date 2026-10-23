@@ -227,6 +227,7 @@ export interface InspectionSummary {
   thumbnail_url: string;
   triage: Triage | null;
   p_defective: number | null;
+  binary_defective?: boolean | null;
   quality_status: string | null;
   human_label: string | null;
   disposition: string | null;
@@ -703,7 +704,7 @@ export interface Passport {
 export interface CopilotStatus {
   configured: boolean;
   model: string | null;
-  mode: "llm" | "deterministic_fallback";
+  mode: "llm" | "unavailable";
   prompt_version: string;
   prompt_sha256: string;
 }

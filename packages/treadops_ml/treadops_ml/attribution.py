@@ -19,9 +19,9 @@ TRIAGE_COLOURS = {
     "defect_flagged": (214, 51, 72),
 }
 TRIAGE_TEXT = {
-    "good_candidate": "RETREAD CANDIDATE",
-    "manual_review": "EXPERT REVIEW",
-    "defect_flagged": "DEFECT FLAGGED",
+    "good_candidate": "NOT DAMAGED · RETREAD CANDIDATE",
+    "manual_review": "EXPERT CHECK NEEDED",
+    "defect_flagged": "DAMAGED · DEFECT FLAGGED",
 }
 
 

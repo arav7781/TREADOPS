@@ -31,6 +31,28 @@ export function TriageBadge({ triage, large }: { triage: Triage | null | undefin
   );
 }
 
+/**
+ * The quality-check verdict: the policy's binary decision (damaged / not damaged), plus "expert check" when the
+ * triage is uncertain or the image quality is low.
+ */
+export function VerdictBadge({ damaged, triage, quality, large }: {
+  damaged: boolean | null | undefined;
+  triage?: Triage | null;
+  quality?: string | null;
+  large?: boolean;
+}) {
+  if (damaged === null || damaged === undefined) return <Badge>Pending</Badge>;
+  const expert = triage === "manual_review" || quality === "low_quality";
+  return (
+    <span className="inline-flex flex-wrap items-center gap-1.5">
+      <Badge tone={damaged ? "bad" : "good"} className={large ? "px-3.5 py-1 text-base font-bold" : "font-bold"}>
+        {damaged ? "Damaged" : "Not damaged"}
+      </Badge>
+      {expert && <Badge tone="warn">Expert check</Badge>}
+    </span>
+  );
+}
+
 const GATE_TONE: Record<string, Tone> = { passed: "good", failed: "bad", insufficient_evidence: "warn", not_applicable: "neutral" };
 
 export function GateStatus({ status, label }: { status: GateState | string | null | undefined; label?: string }) {

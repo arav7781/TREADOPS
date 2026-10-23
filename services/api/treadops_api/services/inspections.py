@@ -299,6 +299,7 @@ def summary(insp: Inspection, pred: Prediction | None, review: ReviewLabel | Non
         "scenario_id": insp.scenario_id, "metadata_origin": insp.metadata_origin,
         "thumbnail_url": sign_media(insp.image.object_key),
         "triage": pred.triage if pred else None, "p_defective": pred.p_defective if pred else None,
+        "binary_defective": pred.binary_defective if pred else None,
         "quality_status": pred.quality_status if pred else None,
         "human_label": review.label if review else None, "disposition": review.disposition if review else None,
         "model_version": insp.model_tuple.get("registry_version"),
