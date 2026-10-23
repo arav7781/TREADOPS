@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from treadops_ml.common import load_yaml, repo_path, sha256_json
 
 from .. import audit, jobs
-from ..db import get_db
+from ..db import get_db, must_get
 from ..errors import ApiError
 from ..models import DatasetSnapshot, Job, ModelVersion, TrainingRun
 from ..security import Principal, require
@@ -89,7 +89,7 @@ def get_run(run_id: uuid.UUID, p: Principal = Depends(require("viewer")), db: Se
         raise ApiError(404, "not_found", "Training run not found.")
     out = run_view(r, db.get(Job, r.job_id) if r.job_id else None)
     if r.model_version_id:
-        mv = db.get(ModelVersion, r.model_version_id)
+        mv = must_get(db, ModelVersion, r.model_version_id)
         out["model_version"] = {"id": str(mv.id), "gate_status": mv.gate_status, "stage": mv.stage,
                                 "registry_version": mv.registry_version, "bundle_sha256": mv.bundle_sha256}
     return out

@@ -18,7 +18,7 @@ from datetime import UTC, datetime
 import numpy as np
 
 from treadops_api import audit, jobs
-from treadops_api.db import session_scope
+from treadops_api.db import must_get, session_scope
 from treadops_api.errors import ApiError
 from treadops_api.models import Job, ModelVersion
 from treadops_api.services.releases import switch_pointer
@@ -67,14 +67,14 @@ def _release(ctx: JobContext, action: str) -> dict:
                                          f"triage mismatches {readiness['triage_mismatches']}")
     ctx.heartbeat(0.7, "switching pointer")
     with session_scope() as db:
-        mv = db.get(ModelVersion, mv.id)
+        mv = must_get(db, ModelVersion, mv.id)
         try:
             dep = switch_pointer(db, mv=mv, expected_generation=int(p["expected_generation"]), action=action,
                                  approved_by=uuid.UUID(p["approved_by"]), reason=p["reason"], readiness=readiness,
                                  correlation_id=ctx.correlation_id)
         except ApiError as exc:
             raise Permanent(exc.code, exc.message) from exc
-        job = db.get(Job, ctx.job_id, populate_existing=True)
+        job = must_get(db, Job, ctx.job_id, populate_existing=True)
         result = {"deployment_id": str(dep.id), "generation": dep.generation, "bundle_sha256": dep.bundle_sha256,
                   "readiness": readiness}
         jobs.succeed(db, job, result)
@@ -123,5 +123,5 @@ def reconcile(ctx: JobContext) -> dict:
         except Exception as exc:
             raise Transient("registry_unavailable", f"{exc.__class__.__name__}: {str(exc)[:200]}") from exc
     with session_scope() as db:
-        jobs.succeed(db, db.get(Job, ctx.job_id, populate_existing=True), result)
+        jobs.succeed(db, must_get(db, Job, ctx.job_id, populate_existing=True), result)
     return result

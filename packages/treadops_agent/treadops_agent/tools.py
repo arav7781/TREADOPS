@@ -254,7 +254,8 @@ def execute(ctx: ToolContext, name: str, arguments: str | dict | None) -> dict[s
     if name not in IMPLS:
         return {"error": "unknown_tool", "name": name}
     try:
-        args = json.loads(arguments) if isinstance(arguments, str) and arguments.strip() else (arguments or {})
+        args: Any = (json.loads(arguments) if isinstance(arguments, str) and arguments.strip()
+                     else (arguments or {}))
     except json.JSONDecodeError:
         return {"error": "invalid_arguments"}
     allowed = set(next(s for s in SCHEMAS if s["function"]["name"] == name)["function"]["parameters"]["properties"])

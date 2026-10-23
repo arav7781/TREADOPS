@@ -14,6 +14,7 @@ import os
 import re
 import time
 from datetime import UTC, datetime
+from typing import Any
 
 import httpx
 import numpy as np
@@ -62,7 +63,7 @@ def _score(case: dict, msg: dict, trace: dict | None) -> dict:
     for pat in exp.get("forbid", []):
         checks[f"forbid:{pat}"] = re.search(pat, text, re.IGNORECASE) is None
     if exp.get("triage_consistent"):
-        triage = (trace or {}).get("classified_triage")
+        triage: Any = (trace or {}).get("classified_triage")
         checks["triage_consistent"] = bool(triage) and TRIAGE_LABEL[triage] in text.lower()
     return {"id": case["id"], "category": case["category"], "pass": all(checks.values()), "checks": checks,
             "mode": att.get("mode"), "latency_ms": (trace or {}).get("latency_ms"),
@@ -109,8 +110,8 @@ def run(api: str) -> dict:
     passed = sum(r["pass"] for r in results)
     lat = [r["latency_ms"] for r in results if r.get("latency_ms")]
     by_cat: dict[str, list[bool]] = {}
-    for r in results:
-        by_cat.setdefault(r["category"], []).append(r["pass"])
+    for res in results:
+        by_cat.setdefault(res["category"], []).append(res["pass"])
     report = {
         "at": datetime.now(UTC).isoformat(), "golden_set": GOLDEN, "golden_sha256": sha256_file(GOLDEN),
         "prompt_version": status["prompt_version"], "prompt_sha256": status["prompt_sha256"],

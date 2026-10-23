@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Sequence
 
 from fastapi import APIRouter, Depends, Query, Request
 from pydantic import BaseModel, Field
@@ -18,7 +19,7 @@ router = APIRouter(prefix="/v1", tags=["jobs"])
 ML_KINDS = {"training", "snapshot", "replay", "shadow", "monitoring", "registry_reconcile"}
 
 
-def job_view(job: Job, events: list[JobEvent] | None = None) -> dict:
+def job_view(job: Job, events: Sequence[JobEvent] | None = None) -> dict:
     out = {
         "job_id": str(job.id), "kind": job.kind, "queue": job.queue, "status": job.status, "attempt": job.attempt,
         "max_attempts": job.max_attempts, "progress": job.progress, "progress_message": job.progress_message,

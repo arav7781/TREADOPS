@@ -5,12 +5,15 @@ from __future__ import annotations
 from collections.abc import Iterator
 from contextlib import contextmanager
 from functools import lru_cache
+from typing import Any, TypeVar
 
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from .settings import get_settings
+
+T = TypeVar("T")
 
 
 class Base(DeclarativeBase):
@@ -53,3 +56,11 @@ def get_db() -> Iterator[Session]:
         yield s
     finally:
         s.close()
+
+
+def must_get(db: Session, model: type[T], ident: Any, **kw: Any) -> T:
+    """`db.get` for a row that must exist (FK target or already read in this flow); raises if missing."""
+    row = db.get(model, ident, **kw)
+    if row is None:
+        raise LookupError(f"{model.__name__} {ident} not found")
+    return row

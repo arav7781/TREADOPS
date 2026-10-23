@@ -3,11 +3,12 @@ from __future__ import annotations
 import base64
 import uuid
 from datetime import datetime
+from typing import Any, cast
 
 from fastapi import APIRouter, Depends, File, Form, Header, Query, Request, UploadFile
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import ColumnElement, and_, func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, aliased
 
@@ -41,9 +42,9 @@ def create_inspection(
     raw = file.file.read(limit + 1)  # bounded read: never buffer more than the limit + 1 byte
     if len(raw) > limit:
         raise ApiError(413, "payload_too_large", f"Image exceeds {limit} bytes.")
-    kwargs = dict(actor=p, actor_id=p.id, raw=raw, idempotency_key=idempotency_key or "", source=source,
-                  metadata_origin=metadata_origin, line_id=line_id, camera_id=camera_id,
-                  tyre_category=tyre_category, notes=notes)
+    kwargs: dict[str, Any] = dict(actor=p, actor_id=p.id, raw=raw, idempotency_key=idempotency_key or "",
+                                  source=source, metadata_origin=metadata_origin, line_id=line_id,
+                                  camera_id=camera_id, tyre_category=tyre_category, notes=notes)
     try:
         insp, created = svc.accept(db, get_storage(), **kwargs)
     except IntegrityError:  # lost a race creating the same image asset; the asset now exists
@@ -167,8 +168,9 @@ def review_queue(
          .where(Inspection.status == "succeeded", ~has_review))
     if triage:
         q = q.where(Prediction.triage == triage)
-    order = {"p_defective_desc": Prediction.p_defective.desc(), "p_defective_asc": Prediction.p_defective.asc(),
-             "oldest": Inspection.created_at.asc(), "newest": Inspection.created_at.desc()}[sort]
+    order = cast(ColumnElement[Any], {
+        "p_defective_desc": Prediction.p_defective.desc(), "p_defective_asc": Prediction.p_defective.asc(),
+        "oldest": Inspection.created_at.asc(), "newest": Inspection.created_at.desc()}[sort])
     rows = db.execute(q.order_by(order, Inspection.id).limit(limit)).all()
     total = db.execute(select(func.count()).select_from(q.subquery())).scalar_one()
     oldest = db.execute(select(func.min(Inspection.created_at)).select_from(q.subquery())).scalar_one_or_none() \

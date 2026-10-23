@@ -9,11 +9,14 @@ from __future__ import annotations
 import io
 import json
 import time
+import uuid
+from typing import cast
 
+import numpy as np
 from sqlalchemy import select
 
 from treadops_api import jobs
-from treadops_api.db import new_session, session_scope
+from treadops_api.db import must_get, new_session, session_scope
 from treadops_api.errors import ApiError
 from treadops_api.models import ImageAsset, Inspection, Job
 from treadops_api.services import inspections as svc
@@ -39,8 +42,9 @@ def run(ctx: JobContext) -> dict:
             raise Permanent("empty_pool", "no public images registered in the replay pool roles")
         by_id = {str(a.id): a for a in parents}
         events = generate(p["scenario"], int(p["seed"]), int(p["count"]), float(p["rate"]),
-                          [Parent(str(a.id), a.label, a.group_id) for a in parents], cfg=cfg)
-        canon_cache: dict[str, object] = {}
+                          [Parent(str(a.id), cast(str, a.label), cast(str, a.group_id)) for a in parents],
+                          cfg=cfg)
+        canon_cache: dict[uuid.UUID, np.ndarray] = {}
         stats = {"submitted": 0, "accepted": 0, "deduplicated": 0, "rejected": 0, "backpressure_waits": 0,
                  "resumed_skipped": 0}
         accepted_ids = []
@@ -62,7 +66,7 @@ def run(ctx: JobContext) -> dict:
                 ctx.heartbeat(i / len(events), f"event {i}/{len(events)}")  # raises JobCancelled on cancel
             parent = by_id[ev["parent_image_id"]]
             if parent.id not in canon_cache:
-                canon_cache[parent.id] = load_canonical(storage.get(parent.canonical_key))
+                canon_cache[parent.id] = load_canonical(storage.get(cast(str, parent.canonical_key)))
             raw = derivative_bytes(canon_cache[parent.id], ev["transform"])
             key = f"replay:{ctx.job_id}:{ev['duplicate_of'] or ev['event_id']}"
             while True:
@@ -106,5 +110,5 @@ def run(ctx: JobContext) -> dict:
               "operator_drill": "burst_and_outage: pause/restart the inference worker or broker manually during the run"
               if p["scenario"] == "burst_and_outage" else None}
     with session_scope() as s:
-        jobs.succeed(s, s.get(Job, ctx.job_id, populate_existing=True), result)
+        jobs.succeed(s, must_get(s, Job, ctx.job_id, populate_existing=True), result)
     return result

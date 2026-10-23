@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import base64
 
-import mlflow.pyfunc
 import pandas as pd
+from mlflow.pyfunc import PythonModel
 
 
-class TreadOpsBundleModel(mlflow.pyfunc.PythonModel):
+class TreadOpsBundleModel(PythonModel):
     """Input: DataFrame with `image_b64` (raw image bytes, base64). Output: calibrated decision per row."""
 
     def load_context(self, context):

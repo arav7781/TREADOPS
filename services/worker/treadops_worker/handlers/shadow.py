@@ -6,13 +6,14 @@ Nothing here creates inspections, so the challenger can never influence user-vis
 from __future__ import annotations
 
 import uuid
+from typing import cast
 
 import numpy as np
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 
 from treadops_api import audit, jobs
-from treadops_api.db import new_session, session_scope
+from treadops_api.db import must_get, new_session, session_scope
 from treadops_api.models import ImageAsset, Job, ModelVersion, ShadowResult
 from treadops_api.storage import get_storage
 from treadops_ml.common import load_yaml, sha256_bytes
@@ -55,7 +56,7 @@ def run(ctx: JobContext) -> dict:
             for i, a in enumerate(pool):
                 if i % 10 == 0:
                     ctx.heartbeat((si + i / len(pool)) / len(scen), f"{sname} {i}/{len(pool)}")
-                rgb0 = load_canonical(storage.get(a.canonical_key))
+                rgb0 = load_canonical(storage.get(cast(str, a.canonical_key)))
                 canonical, _ = canonical_from_raw(derivative_bytes(rgb0, transforms[sname]), b_ch.preprocess)
                 rgb = load_canonical(canonical)
                 x = to_tensor(letterbox(rgb, b_ch.preprocess)[0], b_ch.preprocess)
@@ -66,8 +67,12 @@ def run(ctx: JobContext) -> dict:
                 p_ch = float(b_ch.p_defective(b_ch.raw_probs(x))[0])
                 p_cl = float(b_cl.p_defective(b_cl.raw_probs(x_cl))[0])
                 t_ch, t_cl = _decide(b_ch, p_ch, rgb), _decide(b_cl, p_cl, rgb)
-                pc.append(p_ch), pl.append(p_cl), tc.append(t_ch), tl.append(t_cl)
-                y.append(a.label == "defective"), groups.append(a.group_id)
+                pc.append(p_ch)
+                pl.append(p_cl)
+                tc.append(t_ch)
+                tl.append(t_cl)
+                y.append(a.label == "defective")
+                groups.append(a.group_id)
                 with session_scope() as s:
                     s.execute(insert(ShadowResult).values(
                         job_id=ctx.job_id, challenger_version_id=challenger.id, champion_version_id=champion.id,
@@ -86,10 +91,12 @@ def run(ctx: JobContext) -> dict:
             out[sname] = {
                 "n": len(y), "triage_agreement": float(np.mean(np.array(tc) == np.array(tl))),
                 "triage_changes": changes, "mean_abs_p_delta": float(np.mean(np.abs(np.array(pc) - np.array(pl)))),
-                "champion": binary_metrics(pc, y_a, b_ch.policy.binary_threshold),
-                "challenger": binary_metrics(pl, y_a, b_cl.policy.binary_threshold),
-                "recall_difference": paired_bootstrap(groups, y_a, pred_ch, pred_cl, "recall"),
-                "specificity_difference": paired_bootstrap(groups, y_a, pred_ch, pred_cl, "specificity"),
+                "champion": binary_metrics(pc, y_a.tolist(), b_ch.policy.binary_threshold),
+                "challenger": binary_metrics(pl, y_a.tolist(), b_cl.policy.binary_threshold),
+                "recall_difference": paired_bootstrap(cast(list[str], groups), y_a.tolist(),
+                                                      pred_ch.tolist(), pred_cl.tolist(), "recall"),
+                "specificity_difference": paired_bootstrap(cast(list[str], groups), y_a.tolist(),
+                                                           pred_ch.tolist(), pred_cl.tolist(), "specificity"),
             }
     finally:
         db.close()
@@ -97,11 +104,11 @@ def run(ctx: JobContext) -> dict:
               "champion_bundle": champion.bundle_sha256, "challenger_bundle": challenger.bundle_sha256,
               "scenarios": out, "user_visible_effect": "none (shadow)"}
     with session_scope() as s:
-        mv = s.get(ModelVersion, challenger.id)
+        mv = must_get(s, ModelVersion, challenger.id)
         if mv.stage == "validated":
             mv.stage = "shadow"
         audit.record(s, action="model.shadow.completed", resource_type="model_version", resource_id=mv.id,
                      correlation_id=ctx.correlation_id,
                      payload={k: {"agreement": v["triage_agreement"]} for k, v in out.items()})
-        jobs.succeed(s, s.get(Job, ctx.job_id, populate_existing=True), report)
+        jobs.succeed(s, must_get(s, Job, ctx.job_id, populate_existing=True), report)
     return report

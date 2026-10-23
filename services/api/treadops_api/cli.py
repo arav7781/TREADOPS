@@ -14,6 +14,7 @@ import json
 import os
 import sys
 from pathlib import Path
+from typing import Any
 
 from sqlalchemy import select
 
@@ -58,6 +59,7 @@ def main(argv: list[str] | None = None) -> int:
     ib = sub.add_parser("import-bundle")
     ib.add_argument("path", type=Path)
     args = ap.parse_args(argv)
+    out: dict[str, Any]
 
     if args.cmd == "ensure-bucket":
         get_storage().ensure_bucket()

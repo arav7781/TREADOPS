@@ -12,7 +12,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm.attributes import flag_modified
 
-from treadops_api.db import new_session, session_scope
+from treadops_api.db import must_get, new_session, session_scope
 from treadops_api.errors import ApiError
 from treadops_api.models import ChatMessage, ChatSession
 from treadops_api.services import inspections as insp_svc
@@ -89,7 +89,7 @@ def start_turn(db, *, actor, session_id: uuid.UUID | None, text: str, image: byt
 def _emit_factory(message_id: uuid.UUID):
     def emit(kind: str, data: dict[str, Any]) -> None:
         with session_scope() as db:
-            m = db.get(ChatMessage, message_id)
+            m = must_get(db, ChatMessage, message_id)
             ev = {"at": datetime.now(UTC).isoformat(), "kind": kind, **data}
             m.attachments = {**m.attachments, "events": [*m.attachments.get("events", []), ev][-40:]}
             flag_modified(m, "attachments")
@@ -109,7 +109,7 @@ def _run_safely(message_id: uuid.UUID, actor, text: str, inspection_id: uuid.UUI
     except Exception as exc:
         log.exception("copilot turn failed")
         with session_scope() as db:
-            m = db.get(ChatMessage, message_id)
+            m = must_get(db, ChatMessage, message_id)
             m.content = "Something went wrong while answering. The error was recorded in the LLMOps trace view."
             m.attachments = {**m.attachments, "status": "error", "error": f"{exc.__class__.__name__}"}
             flag_modified(m, "attachments")
@@ -120,7 +120,7 @@ def run_turn(message_id: uuid.UUID, actor, text: str, inspection_id: uuid.UUID |
     system, version, sha = prompt()
     db = new_session()
     try:
-        msg = db.get(ChatMessage, message_id)
+        msg = must_get(db, ChatMessage, message_id)
         session_id = msg.session_id
         history = _history(db, session_id, message_id)
     finally:
@@ -141,7 +141,7 @@ def run_turn(message_id: uuid.UUID, actor, text: str, inspection_id: uuid.UUID |
     with session_scope() as db:
         tr = tracer.persist(db, status=status, llm_mode=mode, grounding=state.get("grounding"),
                             error=state.get("llm_error"))
-        m = db.get(ChatMessage, message_id)
+        m = must_get(db, ChatMessage, message_id)
         m.content = state.get("final_text") or ""
         m.suggestions = state.get("suggestions", [])
         m.trace_id = tr.id

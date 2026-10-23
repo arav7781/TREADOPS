@@ -85,7 +85,7 @@ def evidence(model_version_id: uuid.UUID, p: Principal = Depends(require("viewer
 
 
 class ShadowIn(BaseModel):
-    max_images: int = Field(120, ge=20, le=400)
+    max_images: int = Field(default=120, ge=20, le=400)
     scenarios: list[str] = Field(default_factory=lambda: ["baseline", "low_light", "camera_blur"])
 
 

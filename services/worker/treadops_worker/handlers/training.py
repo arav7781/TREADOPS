@@ -17,7 +17,7 @@ import pandas as pd
 from sqlalchemy import select
 
 from treadops_api import audit, jobs
-from treadops_api.db import new_session, session_scope
+from treadops_api.db import must_get, new_session, session_scope
 from treadops_api.models import DatasetSnapshot, ImageAsset, Job, TrainingRun
 from treadops_api.services.inspections import active_deployment
 from treadops_api.services.releases import import_bundle
@@ -83,8 +83,8 @@ def run(ctx: JobContext) -> dict:
         raise Transient("training_slot_busy", "another training run holds the training slot")
     work = repo_path("runs/jobs") / str(ctx.job_id)
     try:
-        tr = db.get(TrainingRun, run_id)
-        snap = db.get(DatasetSnapshot, tr.snapshot_id)
+        tr = must_get(db, TrainingRun, run_id)
+        snap = must_get(db, DatasetSnapshot, tr.snapshot_id)
         tr.status, tr.started_at = "running", datetime.now(UTC)
         db.commit()
         if work.exists():
@@ -96,7 +96,7 @@ def run(ctx: JobContext) -> dict:
         def on_epoch(epoch: int, total: int, metrics: dict) -> bool:
             s = new_session()
             try:
-                row = s.get(TrainingRun, run_id)
+                row = must_get(s, TrainingRun, run_id)
                 row.epoch_metrics = [*row.epoch_metrics, {"epoch": epoch, **metrics}]
                 s.commit()
             finally:
@@ -139,7 +139,7 @@ def run(ctx: JobContext) -> dict:
 
     with session_scope() as s:
         mv = import_bundle(s, get_storage(), work / "bundle", training_run_id=run_id)
-        tr = s.get(TrainingRun, run_id)
+        tr = must_get(s, TrainingRun, run_id)
         tr.status, tr.finished_at = "succeeded", datetime.now(UTC)
         tr.model_version_id = mv.id
         tr.artifact_uri = mv.bundle_uri
@@ -152,7 +152,7 @@ def run(ctx: JobContext) -> dict:
                               "bundle_sha256": mv.bundle_sha256})
         result = {"training_run_id": str(run_id), "model_version_id": str(mv.id), "gate_status": mv.gate_status,
                   "bundle_sha256": mv.bundle_sha256}
-        jobs.succeed(s, s.get(Job, ctx.job_id, populate_existing=True), result)
+        jobs.succeed(s, must_get(s, Job, ctx.job_id, populate_existing=True), result)
     shutil.rmtree(work / "data", ignore_errors=True)
     shutil.rmtree(work / "eval_images", ignore_errors=True)
     return result

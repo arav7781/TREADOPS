@@ -9,13 +9,14 @@ from __future__ import annotations
 import io
 import json
 from datetime import UTC, datetime
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
 from sqlalchemy import and_, func, select
 
 from treadops_api import audit, jobs
-from treadops_api.db import new_session, session_scope
+from treadops_api.db import must_get, new_session, session_scope
 from treadops_api.models import DriftAlert, Inspection, Job, MonitoringWindow, Prediction, ReviewLabel
 from treadops_api.services.inspections import active_deployment
 from treadops_api.storage import get_storage
@@ -90,7 +91,7 @@ def _run(ctx: JobContext) -> dict:
         for _insp, pr in rows:
             if pr.embedding_key:
                 emb.append(np.load(io.BytesIO(storage.get(pr.embedding_key))))
-        embedding = {"status": "insufficient_data"}
+        embedding: dict[str, Any] = {"status": "insufficient_data"}
         if emb and cfg["embedding"]["enabled"]:
             proj = (np.stack(emb) - pca["mean"]) @ pca["components"].T
             ref_pc = ref[[c for c in ref.columns if c.startswith("pc_")]].to_numpy()
@@ -114,7 +115,7 @@ def _run(ctx: JobContext) -> dict:
             y = np.array([lb.label == "defective" for _, lb in lab_rows])
             pd_ = np.array([pr.p_defective for pr, _ in lab_rows])
             thr = json.loads((bundle_dir / "policy.json").read_text())["binary_threshold"]
-            labelled.update(binary_metrics(pd_, y, float(thr)))
+            labelled.update(binary_metrics(pd_.tolist(), y.tolist(), float(thr)))
             ages = [(lb.verified_at - pr.created_at).total_seconds() / 3600 for pr, lb in lab_rows]
             labelled["median_label_age_h"] = float(np.median(ages))
             labelled["disagreement_rate"] = float(np.mean((pd_ >= float(thr)) != y))
@@ -158,10 +159,10 @@ def _run(ctx: JobContext) -> dict:
         window = MonitoringWindow(
             window_key=f"{dep.id}:{ids[0]}", deployment_id=dep.id, reference_version=reference_version,
             cohort_sha256=cohort, n_inspections=len(rows), n_distinct_parents=len(parents),
-            first_at=window_start, last_at=max(i.completed_at for i, _ in rows), status=status,
-            descriptor_psi=descriptor_psi, prediction_shift=prediction_shift, embedding_drift=embedding,
-            labelled_quality=labelled, system_health=system, breakdown=breakdown, report_key=report_key,
-            evidently=ev,
+            first_at=window_start, last_at=max(cast(datetime, i.completed_at) for i, _ in rows),
+            status=status, descriptor_psi=descriptor_psi, prediction_shift=prediction_shift,
+            embedding_drift=embedding, labelled_quality=labelled, system_health=system, breakdown=breakdown,
+            report_key=report_key, evidently=ev,
         )
         existing = s.execute(select(MonitoringWindow).where(MonitoringWindow.window_key == window.window_key)
                              ).scalar_one_or_none()
@@ -209,5 +210,5 @@ def _run(ctx: JobContext) -> dict:
                 alerts.append(key)
         result = {"window_id": str(window.id), "status": status, "n": len(rows), "distinct_parents": len(parents),
                   "flagged": flagged, "alerts": alerts, "evidently": ev.get("status")}
-        jobs.succeed(s, s.get(Job, ctx.job_id, populate_existing=True), result)
+        jobs.succeed(s, must_get(s, Job, ctx.job_id, populate_existing=True), result)
     return result

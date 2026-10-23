@@ -12,6 +12,7 @@ from __future__ import annotations
 import io
 import json
 import uuid
+from datetime import datetime
 from typing import Any
 
 import pandas as pd
@@ -90,7 +91,7 @@ def build_snapshot(db: Session, storage: Storage, *, actor_id=None, job_id=None,
         excluded["replay_or_synthetic_derivative"] = n_derivatives
 
     if include_verified_uploads:
-        labels = {}
+        labels: dict[uuid.UUID, tuple[str, datetime]] = {}
         for image_id, label, verified_at in _latest_review_labels(db):
             labels.setdefault(image_id, (label, verified_at))
         uploads = db.execute(select(ImageAsset).where(ImageAsset.image_origin == "user_upload",
@@ -151,7 +152,8 @@ def build_snapshot(db: Session, storage: Storage, *, actor_id=None, job_id=None,
     return snap, True
 
 
-def _row(a: ImageAsset, label: str, label_origin: str, role: str, group: str | None = None) -> dict[str, Any]:
+def _row(a: ImageAsset, label: str | None, label_origin: str, role: str,
+         group: str | None = None) -> dict[str, Any]:
     return {"image_id": str(a.id), "group_id": group or a.group_id, "label": label, "label_origin": label_origin,
             "role": role, "outer_split": "train", "image_origin": a.image_origin,
             "metadata_origin": a.metadata_origin, "canonical_key": a.canonical_key,

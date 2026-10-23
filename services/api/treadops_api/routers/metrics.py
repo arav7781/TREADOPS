@@ -45,8 +45,10 @@ def overview(
     by_status = dict(db.execute(select(Inspection.status, func.count()).where(where)
                                 .group_by(Inspection.status)).all())
     joined = select(Prediction).join(Inspection, Inspection.id == Prediction.inspection_id).where(where).subquery()
-    by_triage = dict(db.execute(select(joined.c.triage, func.count()).group_by(joined.c.triage)).all())
-    by_quality = dict(db.execute(select(joined.c.quality_status, func.count()).group_by(joined.c.quality_status)).all())
+    by_triage: dict[str, int] = dict(db.execute(select(joined.c.triage, func.count())
+                                                .group_by(joined.c.triage)).all())
+    by_quality: dict[str, int] = dict(db.execute(select(joined.c.quality_status, func.count())
+                                                 .group_by(joined.c.quality_status)).all())
     by_origin = dict(db.execute(select(Inspection.metadata_origin, func.count()).where(where)
                                 .group_by(Inspection.metadata_origin)).all())
     lat = db.execute(select(

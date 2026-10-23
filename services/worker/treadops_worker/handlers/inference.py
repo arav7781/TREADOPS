@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 
 from treadops_api import jobs
 from treadops_api.circularity import recommendation
-from treadops_api.db import new_session, session_scope
+from treadops_api.db import must_get, new_session, session_scope
 from treadops_api.models import ImageAsset, Inspection, InspectionStage, Job, Prediction
 from treadops_api.storage import get_storage
 from treadops_ml.attribution import annotate, occlusion_map, render_heatmap
@@ -59,7 +59,7 @@ def run(ctx: JobContext) -> dict[str, Any]:
         insp = db.get(Inspection, ctx.payload["inspection_id"])
         if insp is None:
             raise Permanent("inspection_missing", "inspection row not found")
-        asset = db.get(ImageAsset, insp.image_id)
+        asset = must_get(db, ImageAsset, insp.image_id)
         tup = dict(insp.model_tuple)
         insp.status = "running"
         db.commit()
@@ -140,7 +140,7 @@ def run(ctx: JobContext) -> dict[str, Any]:
                "deployment_id": tup["deployment_id"], "deployment_generation": tup["generation"],
                "model_version": tup.get("registry_version"), "worker": ctx.owner}
     with session_scope() as db:
-        job = db.get(Job, ctx.job_id, populate_existing=True)
+        job = must_get(db, Job, ctx.job_id, populate_existing=True)
         if job.status != "running":
             raise Permanent("job_state_changed", f"job is {job.status}")
         exists = db.execute(select(Prediction.id).where(Prediction.inspection_id == insp.id)).first()
@@ -156,7 +156,7 @@ def run(ctx: JobContext) -> dict[str, Any]:
                 lineage=lineage, attribution=attribution, embedding_key=emb_key,
                 circularity=recommendation(pred.triage, pred.quality_status),
             ))
-        row = db.get(Inspection, insp.id, populate_existing=True)
+        row = must_get(db, Inspection, insp.id, populate_existing=True)
         row.status = "succeeded"
         row.completed_at = datetime.now(UTC)
         result = {"triage": pred.triage, "p_defective": pred.p_defective, "bundle_sha256": bundle.sha}

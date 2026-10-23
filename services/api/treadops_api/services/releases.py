@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 from treadops_ml.bundle import verify_bundle
 
 from .. import audit, jobs
+from ..db import must_get
 from ..errors import ApiError
 from ..models import Deployment, EnvironmentPointer, ModelVersion
 from ..storage import Storage
@@ -111,7 +112,7 @@ def switch_pointer(db: Session, *, mv: ModelVersion, expected_generation: int, a
     previous = db.get(Deployment, ptr.active_deployment_id) if ptr.active_deployment_id else None
     if previous is not None:
         previous.state = "superseded"
-        prev_mv = db.get(ModelVersion, previous.model_version_id)
+        prev_mv = must_get(db, ModelVersion, previous.model_version_id)
         if prev_mv.id != mv.id:
             prev_mv.stage = "rolled_back" if action == "rollback" else "retired"
     manifest = mv.manifest

@@ -34,7 +34,7 @@ def datasets(p: Principal = Depends(require("viewer")), db: Session = Depends(ge
 
 
 class SnapshotIn(BaseModel):
-    description: str | None = Field(None, max_length=500)
+    description: str | None = Field(default=None, max_length=500)
     include_verified_uploads: bool = True
 
 

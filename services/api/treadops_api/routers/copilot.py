@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from treadops_agent import service
 
-from ..db import get_db
+from ..db import get_db, must_get
 from ..errors import ApiError
 from ..models import ChatFeedback, ChatMessage, ChatSession
 from ..security import Principal, require
@@ -80,7 +80,7 @@ def feedback(message_id: uuid.UUID, body: FeedbackIn, p: Principal = Depends(req
     m = db.get(ChatMessage, message_id)
     if m is None or m.role != "assistant":
         raise ApiError(404, "not_found", "Assistant message not found.")
-    sess = db.get(ChatSession, m.session_id)
+    sess = must_get(db, ChatSession, m.session_id)
     if sess.user_id != p.id:
         raise ApiError(403, "forbidden", "You can only rate answers in your own sessions.")
     stmt = insert(ChatFeedback).values(message_id=m.id, user_id=p.id, score=body.score, comment=body.comment)

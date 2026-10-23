@@ -34,12 +34,13 @@ def ledger(since: datetime | None = None, metadata_origin: str | None = None,
     if metadata_origin:
         conds.append(Inspection.metadata_origin == metadata_origin)
     rv = _latest_reviews()
-    dispositions = dict(db.execute(select(rv.c.disposition, func.count()).join(Inspection, Inspection.id ==
-                        rv.c.inspection_id).where(*conds, rv.c.disposition.is_not(None))
-                        .group_by(rv.c.disposition)).all())
-    recommended = dict(db.execute(select(Prediction.circularity["pathway"].astext, func.count())
-                                  .join(Inspection, Inspection.id == Prediction.inspection_id).where(*conds)
-                                  .group_by(Prediction.circularity["pathway"].astext)).all())
+    dispositions: dict[str, int] = dict(db.execute(select(rv.c.disposition, func.count()).join(
+        Inspection, Inspection.id == rv.c.inspection_id).where(*conds, rv.c.disposition.is_not(None))
+        .group_by(rv.c.disposition)).all())
+    recommended: dict[str, int] = dict(db.execute(
+        select(Prediction.circularity["pathway"].astext, func.count())
+        .join(Inspection, Inspection.id == Prediction.inspection_id).where(*conds)
+        .group_by(Prediction.circularity["pathway"].astext)).all())
     agreement = db.execute(select(Prediction.triage, rv.c.disposition, func.count())
                            .join(rv, rv.c.inspection_id == Prediction.inspection_id)
                            .join(Inspection, Inspection.id == Prediction.inspection_id)

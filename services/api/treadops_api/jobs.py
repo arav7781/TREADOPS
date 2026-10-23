@@ -12,11 +12,12 @@ from __future__ import annotations
 import random
 import uuid
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Any, cast
 
-from sqlalchemy import select, text, update
+from sqlalchemy import CursorResult, select, text, update
 from sqlalchemy.orm import Session
 
+from .db import must_get
 from .models import Job, JobEvent, OutboxEvent
 
 KIND_QUEUE = {
@@ -115,7 +116,7 @@ def claim(db: Session, job_id: uuid.UUID, owner: str, lease_s: int) -> Job | Non
     if res is None:
         db.rollback()
         return None
-    job = db.get(Job, job_id, populate_existing=True)
+    job = must_get(db, Job, job_id, populate_existing=True)
     _event(db, job, "queued", "running", f"claimed by {owner}")
     db.commit()
     return job
@@ -136,7 +137,7 @@ def heartbeat(db: Session, job_id: uuid.UUID, owner: str, lease_s: int, progress
     res = db.execute(update(Job).where(Job.id == job_id, Job.lease_owner == owner,
                                        Job.status.in_(("running", "cancellation_requested"))).values(**vals))
     db.commit()
-    if res.rowcount == 0:
+    if cast(CursorResult[Any], res).rowcount == 0:
         raise LeaseLost(f"job {job_id} is no longer leased to {owner}")
     return bool(db.execute(select(Job.cancel_requested).where(Job.id == job_id)).scalar())
 

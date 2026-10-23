@@ -199,7 +199,7 @@ def build(*, llm, model: str | None, ctx: tools.ToolContext, tracer: Tracer, sys
                 attrs["error"] = f"{exc.__class__.__name__}: {str(exc)[:200]}"
                 return {"mode": "deterministic_fallback", "llm_error": attrs["error"]}
         calls = msg.get("tool_calls") or []
-        clean = {"role": "assistant", "content": msg.get("content") or ""}
+        clean: dict[str, Any] = {"role": "assistant", "content": msg.get("content") or ""}
         if calls:
             clean["tool_calls"] = [{"id": c["id"], "type": "function",
                                     "function": {"name": c["function"]["name"],

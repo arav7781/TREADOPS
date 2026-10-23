@@ -27,7 +27,7 @@ def healthz():
     return {"status": "ok", "at": datetime.now(UTC).isoformat()}
 
 
-def _head() -> str:
+def _head() -> str | None:
     return ScriptDirectory.from_config(Config(str(repo_path("alembic.ini")))).get_current_head()
 
 

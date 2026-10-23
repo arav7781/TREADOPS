@@ -58,7 +58,7 @@ class Tracer:
             rec.duration_ms = self._now() - rec.start_ms
             self._stack.pop()
 
-    def add_usage(self, usage: dict[str, int] | None, model: str) -> None:
+    def add_usage(self, usage: dict[str, int] | None, model: str | None) -> None:
         self.n_llm += 1
         self.model = model
         if usage:

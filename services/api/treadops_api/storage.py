@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import builtins
 import threading
 from functools import lru_cache
 from pathlib import Path
@@ -68,7 +69,8 @@ class Storage:
             raise StorageUnavailable(str(exc)) from exc
 
     def list(self, prefix: str) -> list[dict]:
-        out, token = [], None
+        out: list[dict] = []
+        token = None
         while True:
             kw = {"Bucket": self.bucket, "Prefix": prefix}
             if token:
@@ -83,7 +85,7 @@ class Storage:
     def delete(self, key: str) -> None:
         self._client.delete_object(Bucket=self.bucket, Key=key)
 
-    def download_prefix(self, prefix: str, dest: Path) -> list[Path]:
+    def download_prefix(self, prefix: str, dest: Path) -> builtins.list[Path]:
         paths = []
         for obj in self.list(prefix):
             rel = obj["key"][len(prefix):].lstrip("/")
