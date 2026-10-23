@@ -88,7 +88,7 @@ describe("Composer photo attachment", () => {
     rerender(<Composer onSend={onSend} busy={false} photo={result.current} />);
     expect(screen.getByAltText("Selected tyre photo preview")).toBeInTheDocument();
     await userEvent.type(screen.getByLabelText("Message"), "is it retreadable?{Enter}");
-    expect(onSend).toHaveBeenCalledWith("is it retreadable?", png);
+    expect(onSend).toHaveBeenCalledWith("is it retreadable?", png, null);
   });
 
   it("keeps the attach button visible but disabled with the reason for non-inspectors", () => {

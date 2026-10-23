@@ -734,6 +734,40 @@ export interface ChatEvent {
   title?: string;
   duration_ms?: number;
   grounding?: { checked: number; ungrounded: number[]; pass: boolean };
+  frame?: number;
+  time_s?: number | null;
+  verdict?: string;
+  triage?: string;
+  p_defective?: number;
+  camera?: string;
+}
+
+export interface VideoFrameResult {
+  frame: number;
+  time_s: number | null;
+  inspection_id?: string;
+  status: string;
+  verdict?: "damaged" | "not_damaged";
+  triage?: Triage;
+  p_defective?: number;
+  quality_status?: string;
+}
+
+export interface VideoResult {
+  verdict?: "damaged" | "not_damaged";
+  verdict_label?: string;
+  needs_expert_check?: boolean;
+  triage?: Triage;
+  triage_label?: string;
+  p_defective?: number;
+  decisive_frame?: number;
+  decisive_time_s?: number | null;
+  decisive_inspection_id?: string;
+  frames_submitted?: number;
+  frames_classified?: number;
+  frames_low_quality?: number;
+  error?: string;
+  frames: VideoFrameResult[];
 }
 
 export interface ChatPhoto {
@@ -752,7 +786,12 @@ export interface ChatMessage {
   content: string;
   attachments: {
     photo?: ChatPhoto;
+    video?: { source: "clip" | "camera"; duration_s: number | null; frames_considered: number | null;
+      frames: (Omit<ChatPhoto, "url"> & { url: string; time_s: number | null })[] };
     has_photo?: boolean;
+    has_video?: boolean;
+    inspection_ids?: string[];
+    video_result?: VideoResult;
     status?: "pending" | "complete" | "error";
     events?: ChatEvent[];
     inspection_id?: string | null;
@@ -840,3 +879,32 @@ export interface TraceDetail {
   user_message: string | null;
   assistant_message: string | null;
 }
+
+export interface CameraCounts { inspected: number; damaged: number; not_damaged: number; expert_check: number }
+
+export interface Camera {
+  id: string;
+  name: string;
+  code: string;
+  line_id: string | null;
+  stream_url: string;              // always masked by the API
+  simulated: boolean;
+  enabled: boolean;
+  capture_mode: "interval" | "on_change";
+  interval_s: number;
+  change_threshold: number;
+  min_sharpness: number;
+  state: "idle" | "connecting" | "streaming" | "error" | "disabled";
+  last_error: string | null;
+  last_frame_at: string | null;
+  last_capture_at: string | null;
+  live: boolean;
+  fps: number | null;
+  resolution: string | null;
+  frames_read: number;
+  captures: number;
+  last_hour: CameraCounts;
+}
+
+export interface CameraProbe { ok: boolean; width: number; height: number; fps: number | null; snapshot_url: string; stream_url: string }
+

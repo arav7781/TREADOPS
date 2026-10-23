@@ -6,6 +6,7 @@ import { ArrowDown, Camera, ChevronDown, History, ImagePlus, MessageSquare, Plus
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { ChatThread, Composer, CopilotModeBadge, useCopilotSession, usePhotoPicker, useSendTurn } from "@/components/domain/ChatThread";
+import { useVideoPicker } from "@/components/domain/VideoCapture";
 import { useMe } from "@/components/AppShell";
 import { Button, ErrorState, SkeletonRows } from "@/components/ui";
 import { api } from "@/lib/api";
@@ -15,11 +16,13 @@ import { useModels } from "@/lib/hooks";
 import { qk } from "@/lib/query";
 import { hasRole } from "@/lib/roles";
 import type { CopilotStatus } from "@/lib/types";
+import type { VideoSample } from "@/lib/video";
 import { useUrlState } from "@/lib/useUrlState";
 
 interface SessionRow { id: string; title: string; updated_at: string; inspection_id: string | null }
 
 const STARTERS = [
+  "How are the line cameras doing right now?",
   "How reliable is the current model?",
   "How much CO2 does retreading 25 truck casings save?",
   "Is there any drift right now?",
@@ -181,8 +184,10 @@ function Welcome({ canAttach, blockedReason, onAsk }: { canAttach: boolean; bloc
       </h2>
       <p className="max-w-md text-ink-soft">
         {canAttach
-          ? <>Attach a tyre photo <ImagePlus aria-label="with the photo button" className="mx-0.5 inline h-4 w-4 align-[-2px] text-primary" /> or drop it here. I&apos;ll run the YOLO inspection step by step and suggest what to do with the casing.</>
-          : <>Ask about the model, drift or circularity.{blockedReason ? <span className="mt-1 block text-sm text-warn">{blockedReason}</span> : null}</>}
+          ? <>Attach a tyre photo <ImagePlus aria-label="with the photo button" className="mx-0.5 inline h-4 w-4 align-[-2px] text-primary" />
+            or a short video of it turning, or ask about your line cameras. I&apos;ll check it for damage step by step and
+            suggest what to do next.</>
+          : <>Ask about the line cameras, the model, drift or circularity.{blockedReason ? <span className="mt-1 block text-sm text-warn">{blockedReason}</span> : null}</>}
       </p>
       <div className="flex flex-wrap justify-center gap-2">
         {STARTERS.slice(0, 3).map((s) => (
@@ -213,10 +218,11 @@ export function BibView() {
   const photoBlocked = !me.data ? "Loading your role…" : !isInspector ? "Attaching tyre photos requires the inspector role."
     : models.data?.state === "untrained" ? "No trained model is active yet: promote a validated bundle first." : null;
   const photo = usePhotoPicker(photoBlocked);
-  const ask = (text: string, file: File | null = null) => {
-    setProgress(file ? 0 : null);
+  const video = useVideoPicker(photoBlocked);
+  const ask = (text: string, file: File | null = null, clip: VideoSample | null = null) => {
+    setProgress(file || clip ? 0 : null);
     jump();
-    send.mutate({ text, file, sessionId: session || null, onProgress: setProgress }, { onSettled: () => setProgress(null) });
+    send.mutate({ text, file, video: clip, sessionId: session || null, onProgress: setProgress }, { onSettled: () => setProgress(null) });
   };
   const pick = (id: string) => { setUrl({ session: id }); setDrawer(false); };
   const startNew = () => { setUrl({ session: "" }); setDrawer(false); };
@@ -249,7 +255,13 @@ export function BibView() {
         onDragEnter={(e) => { if (e.dataTransfer.types.includes("Files")) setDragging(true); }}
         onDragOver={(e) => e.preventDefault()}
         onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false); }}
-        onDrop={(e) => { e.preventDefault(); setDragging(false); photo.pick(e.dataTransfer.files?.[0]); }}>
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragging(false);
+          const f = e.dataTransfer.files?.[0];
+          if (f?.type.startsWith("video/")) video.startClip(f);
+          else photo.pick(f);
+        }}>
         <header className="flex h-14 items-center gap-3 border-b border-line bg-surface px-4 lg:px-6">
           <button type="button" onClick={() => setDrawer(true)} aria-label="Show conversations" className="rounded-full p-2 text-ink-soft hover:bg-surface-muted md:hidden">
             <History className="h-5 w-5" />
@@ -280,7 +292,8 @@ export function BibView() {
 
         <div className="px-4 pb-3 pt-2 lg:px-6">
           <div className="mx-auto w-full max-w-4xl">
-            <Composer busy={send.isPending} photo={photo} progress={progress} error={send.error} unavailable={unavailable} onSend={(t, f) => ask(t, f)} />
+            <Composer busy={send.isPending} photo={photo} video={video} progress={progress} error={send.error} unavailable={unavailable}
+              onSend={(t, f, clip) => ask(t, f, clip)} />
             <p className="mt-1.5 text-center text-xs text-muted" title={ASSISTANT_DISCLAIMER}>
               Triage aid only · a qualified inspector gives final clearance · not affiliated with Michelin
             </p>

@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import clsx from "clsx";
 import {
   Brain,
+  Camera,
   Check,
   CheckCircle2,
   ChevronDown,
@@ -24,7 +25,9 @@ import {
   Terminal,
   ThumbsDown,
   ThumbsUp,
+  Upload,
   User,
+  Video,
   Wrench,
   X,
   XCircle,
@@ -36,6 +39,7 @@ import { Markdown } from "@/components/domain/Markdown";
 import { ProbabilityPanel } from "@/components/domain/ProbabilityPanel";
 import { ReviewForm } from "@/components/domain/ReviewForm";
 import { PipelineConsole, StageTheatre } from "@/components/domain/StageGallery";
+import { VideoPanel, type VideoPicker } from "@/components/domain/VideoCapture";
 import { QualityBadge, StatusBadge, TriageBadge, VerdictBadge } from "@/components/domain/badges";
 import { Badge, Button, ErrorState, ProgressBar } from "@/components/ui";
 import { api, ApiError, mediaUrl, uploadWithProgress } from "@/lib/api";
@@ -44,6 +48,7 @@ import { humanize, ms } from "@/lib/format";
 import { useInspection } from "@/lib/hooks";
 import { pollWhile, qk } from "@/lib/query";
 import type { ChatEvent, ChatMessage, ChatSessionDetail, ChatTurnStarted, CopilotStatus, Evidence, InspectionDetail } from "@/lib/types";
+import type { VideoSample } from "@/lib/video";
 
 export const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const SUGGESTED_DISPOSITION: Record<string, string> = {
@@ -80,7 +85,10 @@ export function useAnswerStream(sessionId: string | null, messageId: string | un
       const ev = JSON.parse((e as MessageEvent).data) as ChatEvent;
       patch((m) => {
         const events = m.attachments.events ?? [];
-        return received <= events.length ? m : { ...m, attachments: { ...m.attachments, events: [...events, ev] } };
+        if (received <= events.length) return m;
+        const ids = ev.kind === "inspection" && ev.frame !== undefined && ev.inspection_id
+          ? { inspection_ids: [...(m.attachments.inspection_ids ?? []), ev.inspection_id] } : {};
+        return { ...m, attachments: { ...m.attachments, ...ids, events: [...events, ev] } };
       });
     });
     es.addEventListener("inspection", (e) => {
@@ -130,13 +138,18 @@ function useTypewriter(text: string, enabled: boolean): number {
 export function useSendTurn(onStarted: (r: ChatTurnStarted) => void) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ text, file, sessionId, onProgress }: {
-      text: string; file?: File | null; sessionId?: string | null; onProgress?: (f: number) => void;
+    mutationFn: async ({ text, file, video, sessionId, onProgress }: {
+      text: string; file?: File | null; video?: VideoSample | null; sessionId?: string | null; onProgress?: (f: number) => void;
     }) => {
       const form = new FormData();
       form.set("message", text);
       if (sessionId) form.set("session_id", sessionId);
       if (file) form.set("file", file);
+      if (video?.frames.length) {
+        video.frames.forEach((f, i) => form.append("frames", f.blob, `frame-${i + 1}.jpg`));
+        form.set("video", JSON.stringify({ source: video.source, duration_s: video.duration, frames_considered: video.considered,
+          times: video.frames.map((f) => f.time) }));
+      }
       return uploadWithProgress<ChatTurnStarted>("/api/v1/copilot/messages", form, { onProgress });
     },
     onSuccess: (r) => {
@@ -421,6 +434,73 @@ function InspectionInChat({ id, canReview, animate, revealed, onRevealed }: {
   );
 }
 
+function FrameTile({ id, frame, time, decisive }: { id: string; frame: number; time: number | null; decisive: boolean }) {
+  const q = useInspection(id);
+  const d = q.data;
+  const p = d?.prediction;
+  const src = mediaUrl(p?.classified_image_url ?? d?.image.url);
+  const running = !d || d.status === "queued" || d.status === "running";
+  return (
+    <li className={clsx("pop-in min-w-0 overflow-hidden rounded-xl border bg-surface", decisive ? "border-brand-yellow ring-2 ring-brand-yellow" : "border-line")}>
+      <div className="relative aspect-square bg-navy">
+        {src && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={src} alt={`Frame ${frame + 1}`} className="h-full w-full object-cover" />
+        )}
+        {running && <span className="absolute inset-0 flex items-center justify-center bg-black/35"><Loader2 aria-hidden className="h-6 w-6 animate-spin text-white" /></span>}
+        <span className="mono absolute left-1 top-1 rounded bg-black/65 px-1 text-[10px] text-white">#{frame + 1}{time !== null ? ` · ${time.toFixed(1)} s` : ""}</span>
+      </div>
+      <div className="flex flex-col items-start gap-1 p-1.5">
+        {p ? <VerdictBadge damaged={p.binary_defective} triage={p.triage} quality={p.quality_status} />
+          : <span className="text-xs text-muted">{humanize(d?.status ?? "queued")}</span>}
+        {p && <span className="mono text-[11px] text-muted">p {p.p_defective.toFixed(3)}</span>}
+      </div>
+    </li>
+  );
+}
+
+/** A video turn: every sampled frame is its own inspection; the tyre verdict comes from the worst frame. */
+function VideoInChat({ ids, events, result, canReview, animate, revealed, onRevealed }: {
+  ids: string[];
+  events: ChatEvent[];
+  result: ChatMessage["attachments"]["video_result"];
+  canReview: boolean;
+  animate: boolean;
+  revealed: boolean;
+  onRevealed: () => void;
+}) {
+  const times = new Map(events.filter((e) => e.kind === "inspection" && e.frame !== undefined).map((e) => [e.frame!, e.time_s ?? null]));
+  const decisive = result?.decisive_inspection_id;
+  return (
+    <section className="space-y-3" aria-label="Video inspection">
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <Video aria-hidden className="h-4 w-4 text-primary" />
+        <span className="font-semibold text-ink">Video inspection</span>
+        <span className="text-muted">{ids.length} frame{ids.length === 1 ? "" : "s"}, one inspection each</span>
+      </div>
+      {result?.verdict && (
+        <div className="stage-in flex flex-wrap items-center gap-2 rounded-xl border border-line bg-surface p-3" data-testid="video-verdict">
+          <span className="font-bold text-ink">Tyre verdict</span>
+          <VerdictBadge damaged={result.verdict === "damaged"} triage={result.triage} large />
+          <span className="text-sm text-ink-soft">
+            worst of {result.frames_classified} frames: #{(result.decisive_frame ?? 0) + 1}
+            {result.decisive_time_s != null ? ` at ${result.decisive_time_s.toFixed(1)} s` : ""}, p(defective) {result.p_defective?.toFixed(3)}
+          </span>
+        </div>
+      )}
+      <ol className="grid grid-cols-3 gap-2 sm:grid-cols-6" aria-label="Frames">
+        {ids.map((id, i) => <FrameTile key={id} id={id} frame={i} time={times.get(i) ?? null} decisive={id === decisive} />)}
+      </ol>
+      {decisive && (
+        <div>
+          <p className="mb-2 text-sm font-semibold text-ink">Decisive frame #{(result?.decisive_frame ?? 0) + 1}: full pipeline</p>
+          <InspectionInChat id={decisive} canReview={canReview} animate={animate} revealed={revealed} onRevealed={onRevealed} />
+        </div>
+      )}
+    </section>
+  );
+}
+
 function Feedback({ message }: { message: ChatMessage }) {
   const [score, setScore] = useState<number | null>(null);
   const m = useMutation({
@@ -465,7 +545,10 @@ function AssistantMessage({ m, onSuggest, canReview, onRetry }: {
   const [live] = useState(pending);
   const [revealed, setRevealed] = useState(!pending);
   const markRevealed = useCallback(() => setRevealed(true), []);
-  const showAnswer = !pending && (!a.inspection_id || revealed);
+  const frameIds = a.inspection_ids ?? [];
+  const isVideo = frameIds.length > 0 || Boolean(a.has_video);
+  // Photos and video wait for the (decisive) frame's pipeline to play; a video with no decisive frame does not.
+  const showAnswer = !pending && (revealed || (isVideo ? !a.video_result?.decisive_inspection_id : !a.inspection_id));
   const typed = useTypewriter(m.content, live && showAnswer && a.status !== "error");
   const typing = showAnswer && typed < m.content.length;
   return (
@@ -474,7 +557,9 @@ function AssistantMessage({ m, onSuggest, canReview, onRetry }: {
       <div className="min-w-0 flex-1 space-y-3 pt-1">
         <p className="headline text-base text-primary">{ASSISTANT_NAME}</p>
         <AgentTimeline events={a.events ?? []} pending={pending} />
-        {a.inspection_id && <InspectionInChat id={a.inspection_id} canReview={canReview} animate={live} revealed={revealed} onRevealed={markRevealed} />}
+        {isVideo ? (frameIds.length > 0 && <VideoInChat ids={frameIds} events={a.events ?? []} result={a.video_result} canReview={canReview}
+          animate={live} revealed={revealed} onRevealed={markRevealed} />)
+          : a.inspection_id && <InspectionInChat id={a.inspection_id} canReview={canReview} animate={live} revealed={revealed} onRevealed={markRevealed} />}
         {!pending && !showAnswer && (
           <p className="flex items-center gap-2 text-sm text-muted"><Loader2 aria-hidden className="h-4 w-4 animate-spin" /> {ASSISTANT_NAME} is walking through the pipeline…</p>
         )}
@@ -519,6 +604,7 @@ function AssistantMessage({ m, onSuggest, canReview, onRetry }: {
 
 function UserMessage({ m }: { m: ChatMessage }) {
   const photo = m.attachments?.photo;
+  const video = m.attachments?.video;
   const src = mediaUrl(photo?.url);
   return (
     <div className="stage-in flex justify-end gap-3" data-role="user">
@@ -535,7 +621,24 @@ function UserMessage({ m }: { m: ChatMessage }) {
             </figcaption>
           </figure>
         )}
-        {(m.content || !photo) && (
+        {video && (
+          <figure className="ml-auto w-fit max-w-full overflow-hidden rounded-2xl rounded-tr-sm border border-line bg-surface p-2">
+            <ol className="flex gap-1.5 overflow-x-auto" aria-label="Video frames you sent">
+              {video.frames.map((f, i) => (
+                <li key={i} className="relative shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={mediaUrl(f.url) ?? ""} alt={`Frame ${i + 1}`} className="h-20 w-24 rounded-lg object-cover" />
+                  {f.time_s != null && <span className="mono absolute bottom-1 left-1 rounded bg-black/65 px-1 text-[10px] text-white">{f.time_s.toFixed(1)} s</span>}
+                </li>
+              ))}
+            </ol>
+            <figcaption className="mono px-1 pt-1.5 text-xs text-muted">
+              {video.source === "camera" ? "live camera" : "video clip"}{video.duration_s ? ` · ${video.duration_s.toFixed(1)} s` : ""} ·
+              {" "}{video.frames.length}{video.frames_considered ? ` of ${video.frames_considered}` : ""} frames · metadata stripped
+            </figcaption>
+          </figure>
+        )}
+        {(m.content || (!photo && !video)) && (
           <div className="ml-auto w-fit rounded-2xl rounded-tr-sm bg-navy px-4 py-2.5 text-white">
             {m.content || <span className="italic opacity-80">Photo attached</span>}
           </div>
@@ -575,10 +678,11 @@ export function ChatThread({ messages, onSuggest, canReview = false, autoScroll 
   );
 }
 
-export function Composer({ onSend, busy, photo, progress, placeholder, error, unavailable = null }: {
-  onSend: (text: string, file: File | null) => void;
+export function Composer({ onSend, busy, photo, video, progress, placeholder, error, unavailable = null }: {
+  onSend: (text: string, file: File | null, video: VideoSample | null) => void;
   busy: boolean;
   photo: PhotoPicker;
+  video?: VideoPicker;
   progress?: number | null;
   placeholder?: string;
   error?: unknown;
@@ -587,7 +691,9 @@ export function Composer({ onSend, busy, photo, progress, placeholder, error, un
 }) {
   const [text, setText] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLInputElement>(null);
   const textRef = useRef<HTMLTextAreaElement>(null);
+  const [menu, setMenu] = useState(false);
   useEffect(() => { // grow with the text up to ~6 lines, shrink back after sending
     const t = textRef.current;
     if (!t) return;
@@ -601,18 +707,23 @@ export function Composer({ onSend, busy, photo, progress, placeholder, error, un
   useEffect(() => { if (file) textRef.current?.focus(); }, [file]); // a photo was just attached: ask about it
   const preview = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
+  const videoPending = Boolean(video?.mode) && !video?.ready;
   const submit = () => {
-    if (busy || unavailable || (!text.trim() && !file)) return;
-    onSend(text.trim(), file);
+    if (busy || unavailable || videoPending || (!text.trim() && !file && !video?.ready)) return;
+    onSend(text.trim(), file, video?.ready ? video.sample : null);
     setText("");
     photo.clear();
+    video?.clear();
     if (fileRef.current) fileRef.current.value = "";
+    if (videoRef.current) videoRef.current.value = "";
     textRef.current?.focus();
   };
   const blocked = photo.blockedReason;
+  const pickFile = (f: File | undefined) => (f?.type.startsWith("video/") && video ? video.startClip(f) : photo.pick(f));
   return (
     <form className="rounded-2xl border border-line-strong bg-surface p-2 shadow-[0_8px_30px_rgb(0_0_0/0.08)] focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/25" onSubmit={(e) => { e.preventDefault(); submit(); }} aria-label={`Chat composer for ${ASSISTANT_NAME}`}
-      onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); photo.pick(e.dataTransfer.files?.[0]); }}>
+      onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); pickFile(e.dataTransfer.files?.[0]); }}>
+      {video && <VideoPanel video={video} />}
       {preview && (
         <div className="mb-2 flex items-center gap-3 rounded-xl bg-surface-muted p-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -633,13 +744,35 @@ export function Composer({ onSend, busy, photo, progress, placeholder, error, un
             blocked ? "cursor-not-allowed opacity-40" : "cursor-pointer hover:bg-primary-soft")}>
           <ImagePlus aria-hidden className="h-5 w-5" /><span className="sr-only">Attach a tyre photo</span>
         </label>
+        {video && (
+          <div className="relative">
+            <input ref={videoRef} id="chat-video" type="file" accept="video/*" className="sr-only" disabled={Boolean(blocked)}
+              onChange={(e) => { setMenu(false); video.startClip(e.target.files?.[0]); }} />
+            <button type="button" aria-haspopup="menu" aria-expanded={menu} disabled={Boolean(blocked)} onClick={() => setMenu((m) => !m)}
+              title={blocked ?? "Send a video of the tyre turning"}
+              className={clsx("flex h-11 w-11 items-center justify-center rounded-full text-primary", blocked ? "cursor-not-allowed opacity-40" : "hover:bg-primary-soft")}>
+              <Video aria-hidden className="h-5 w-5" /><span className="sr-only">Attach a tyre video</span>
+            </button>
+            {menu && (
+              <div role="menu" className="stage-in absolute bottom-12 left-0 z-20 w-56 rounded-xl border border-line bg-surface p-1 shadow-xl">
+                <label role="menuitem" htmlFor="chat-video" className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-surface-muted">
+                  <Upload aria-hidden className="h-4 w-4 text-primary" /> Upload a clip
+                </label>
+                <button role="menuitem" type="button" onClick={() => { setMenu(false); video.startCamera(); }}
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-surface-muted">
+                  <Camera aria-hidden className="h-4 w-4 text-primary" /> Record with camera
+                </button>
+              </div>
+            )}
+          </div>
+        )}
         <label htmlFor="chat-text" className="sr-only">Message</label>
         <textarea ref={textRef} id="chat-text" rows={1} disabled={Boolean(unavailable)} value={text} onChange={(e) => setText(e.target.value)} maxLength={4000}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); } }}
-          onPaste={(e) => { const f = e.clipboardData.files?.[0]; if (f) { e.preventDefault(); photo.pick(f); } }}
-          placeholder={placeholder ?? (file ? "Add a question (optional)…" : `Message ${ASSISTANT_NAME}…`)}
+          onPaste={(e) => { const f = e.clipboardData.files?.[0]; if (f) { e.preventDefault(); pickFile(f); } }}
+          placeholder={placeholder ?? (file || video?.ready ? "Add a question (optional)…" : `Message ${ASSISTANT_NAME}…`)}
           className="chat-input max-h-40 min-h-11 w-full resize-none bg-transparent px-2 py-2.5 text-base text-ink placeholder:text-muted" />
-        <Button type="submit" busy={busy} disabled={Boolean(unavailable)} aria-label="Send" className="h-11 w-11 shrink-0 rounded-full! px-0!">{busy ? null : <Send aria-hidden className="h-5 w-5" />}</Button>
+        <Button type="submit" busy={busy} disabled={Boolean(unavailable) || videoPending} aria-label="Send" className="h-11 w-11 shrink-0 rounded-full! px-0!">{busy ? null : <Send aria-hidden className="h-5 w-5" />}</Button>
       </div>
       {progress != null && file === null && busy && (
         <div className="mt-2" aria-live="polite"><ProgressBar value={progress} label="Photo upload progress" /></div>
