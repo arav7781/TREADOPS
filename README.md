@@ -187,7 +187,28 @@ docs/                     adr/, runbooks/, kb/, evidence/, assets/ (README banne
 - Low-light robustness is weak (recall ~0.75 at 45 % brightness).
 - Training ran on Apple Silicon (MPS) and CPU, not the RTX 4050 profile in the blueprint (ADR 0002).
 
+## Documentation
+
+| | |
+|---|---|
+| [docs/README.md](docs/README.md) | Index: ADRs, runbooks, evidence, copilot knowledge base |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Setup, ground rules, checks to run, commit and PR conventions |
+| [SECURITY.md](SECURITY.md) | Private vulnerability reporting, security controls and known limitations |
+| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Contributor Covenant 2.1 |
+| [SUPPORT.md](SUPPORT.md) | Where to ask for help |
+| [CHANGELOG.md](CHANGELOG.md) | What changed, by version |
+| [CITATION.cff](CITATION.cff) | How to cite TreadOps (GitHub shows "Cite this repository") |
+
 ## Licence and attribution
 
-AGPL-3.0-only (Ultralytics YOLO is AGPL-3.0; see `DEPENDENCIES.md`). Dataset: Pathmanaban P. et al., "Digital
-images of defective and good condition tyres", Mendeley Data V1, doi:10.17632/bn7ch8tvyp.1, CC BY 4.0.
+TreadOps is licensed under the **GNU Affero General Public License v3.0 only**: see [LICENSE](LICENSE). Ultralytics
+YOLO is AGPL-3.0, which sets the project licence; if you run a modified TreadOps as a network service, AGPL section
+13 requires you to offer its users the source of your version.
+
+- [NOTICE.md](NOTICE.md): copyright, third-party components, fonts, data attribution and trademarks.
+- [docs/licenses/](docs/licenses/README.md): every runtime dependency and its licence, generated from the lock files
+  (`make licenses`).
+- Dataset: Pathmanaban P. et al., "Digital images of defective and good condition tyres", Mendeley Data V1,
+  doi:10.17632/bn7ch8tvyp.1, CC BY 4.0. The images are not stored in this repository.
+- Not affiliated with or endorsed by Michelin. MICHELIN and Bibendum are trademarks of Compagnie Générale des
+  Établissements Michelin.
