@@ -2,9 +2,15 @@
 
 from __future__ import annotations
 
+import asyncio
+import json
+import time
 import uuid
+from collections.abc import AsyncIterator
 
-from fastapi import APIRouter, Depends, File, Form, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
+from fastapi.concurrency import run_in_threadpool
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
@@ -12,13 +18,15 @@ from sqlalchemy.orm import Session
 
 from treadops_agent import service
 
-from ..db import get_db, must_get
+from ..db import get_db, must_get, new_session
 from ..errors import ApiError
 from ..models import ChatFeedback, ChatMessage, ChatSession
 from ..security import Principal, require, sign_media
 from ..settings import get_settings
 
 router = APIRouter(prefix="/v1", tags=["copilot"])
+STREAM_POLL_SECONDS = 0.25
+STREAM_MAX_SECONDS = 300
 
 
 def message_view(m: ChatMessage) -> dict:
@@ -69,6 +77,59 @@ def session(session_id: uuid.UUID, p: Principal = Depends(require("viewer")), db
     msgs = db.execute(select(ChatMessage).where(ChatMessage.session_id == s.id)
                       .order_by(ChatMessage.created_at)).scalars().all()
     return {"id": str(s.id), "title": s.title, "messages": [message_view(m) for m in msgs]}
+
+
+def _owned_message(message_id: uuid.UUID, user_id: uuid.UUID) -> dict:
+    db = new_session()
+    try:
+        m = db.get(ChatMessage, message_id)
+        sess = db.get(ChatSession, m.session_id) if m is not None else None
+        if m is None or m.role != "assistant" or sess is None or sess.user_id != user_id:
+            raise ApiError(404, "not_found", "Assistant message not found.")
+        return message_view(m)
+    finally:
+        db.close()
+
+
+def _sse(event: str, data: object) -> str:
+    return f"event: {event}\ndata: {json.dumps(data, default=str)}\n\n"
+
+
+@router.get("/copilot/messages/{message_id}/stream", response_class=StreamingResponse,
+            responses={200: {"content": {"text/event-stream": {}}}})
+async def stream(message_id: uuid.UUID, request: Request, p: Principal = Depends(require("viewer"))):
+    """Server-sent events for one answer: `step` for each agent/pipeline event as it is recorded, `inspection` once
+    the YOLO tool has created one, and `done` with the final, guardrail-checked message. The answer text is only
+    sent after the output guardrails have seen all of it."""
+    first = await run_in_threadpool(_owned_message, message_id, p.id)
+
+    async def events() -> AsyncIterator[str]:
+        sent, inspection, msg = 0, None, first
+        deadline = time.monotonic() + STREAM_MAX_SECONDS
+        last_beat = time.monotonic()
+        while True:
+            att = msg["attachments"]
+            steps = att.get("events") or []
+            for ev in steps[min(sent, len(steps)):]:  # the stored list is capped, so never index past its end
+                yield _sse("step", ev)
+            sent = max(sent, len(steps))
+            if att.get("inspection_id") and att["inspection_id"] != inspection:
+                inspection = att["inspection_id"]
+                yield _sse("inspection", {"inspection_id": inspection})
+            if att.get("status") != "pending":
+                yield _sse("done", msg)
+                return
+            if time.monotonic() > deadline or await request.is_disconnected():
+                yield _sse("timeout", {"message": "Stream closed; the answer will still appear on reload."})
+                return
+            if time.monotonic() - last_beat > 10:
+                last_beat = time.monotonic()
+                yield ": keep-alive\n\n"
+            await asyncio.sleep(STREAM_POLL_SECONDS)
+            msg = await run_in_threadpool(_owned_message, message_id, p.id)
+
+    return StreamingResponse(events(), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache, no-transform", "X-Accel-Buffering": "no"})
 
 
 class FeedbackIn(BaseModel):

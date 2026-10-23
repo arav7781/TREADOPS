@@ -5,7 +5,8 @@ import { isSameOrigin } from "@/lib/origin";
 export const SESSION_COOKIE = "treadops_session";
 const FORWARD_REQUEST_HEADERS = ["content-type", "idempotency-key", "x-correlation-id", "x-request-id", "accept"];
 const FORWARD_RESPONSE_HEADERS = ["content-type", "x-request-id", "location", "retry-after", "cache-control",
-  "idempotent-replay"];
+  "idempotent-replay", "x-accel-buffering"];
+const HEADERS_TIMEOUT_MS = 15_000;
 
 export function apiBase(): string {
   return (process.env.API_INTERNAL_URL ?? "http://127.0.0.1:8000").replace(/\/$/, "");
@@ -69,6 +70,11 @@ export async function forward(request: Request, upstreamPath: string, token: str
   const method = request.method.toUpperCase();
   const hasBody = method !== "GET" && method !== "HEAD";
   let upstream: Response;
+  // The timeout covers the wait for response headers only, so long bodies (server-sent events, reports) keep
+  // streaming; the upstream request is cancelled as soon as the browser goes away.
+  const headersTimeout = new AbortController();
+  const timer = setTimeout(() => headersTimeout.abort(new DOMException("upstream headers timeout", "TimeoutError")),
+    HEADERS_TIMEOUT_MS);
   try {
     upstream = await fetch(url, {
       method,
@@ -78,7 +84,7 @@ export async function forward(request: Request, upstreamPath: string, token: str
       ...(hasBody ? { duplex: "half" } : {}),
       cache: "no-store",
       redirect: "manual",
-      signal: AbortSignal.timeout(15_000),
+      signal: AbortSignal.any([headersTimeout.signal, request.signal]),
     } as RequestInit);
   } catch (err) {
     const name = (err as { name?: string })?.name;
@@ -87,6 +93,8 @@ export async function forward(request: Request, upstreamPath: string, token: str
         headers.get("x-request-id"), true);
     }
     return errorResponse(502, "api_unavailable", "The TreadOps API is unreachable.", headers.get("x-request-id"), true);
+  } finally {
+    clearTimeout(timer);
   }
   const out = new Headers();
   for (const name of FORWARD_RESPONSE_HEADERS) {

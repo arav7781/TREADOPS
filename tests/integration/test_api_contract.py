@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import threading
 import uuid
 
@@ -187,3 +188,27 @@ def test_copilot_photo_turn_and_agent_tool_creates_the_inspection(client, monkey
     assert any(k == "inspection" for k, _ in events)
     detail = client.get(f"/v1/inspections/{ctx.inspection_id}", headers=h).json()
     assert detail["source"] == "copilot" and detail["deployment"]["generation"] >= 1
+
+
+def test_copilot_answer_streams_its_steps_and_final_message(client, monkeypatch):
+    """SSE replays every recorded step in order, then `done` with the guarded answer; only the owner may listen."""
+    from treadops_agent import service
+
+    monkeypatch.setattr(service._pool, "submit", lambda fn, *args: fn(*args))  # finish the turn synchronously
+    h = login(client, "inspector")
+    r = client.post("/v1/copilot/messages", headers=h, data={"message": "How should I photograph a tyre?"})
+    assert r.status_code == 202, r.text
+    msg_id = r.json()["assistant_message_id"]
+    stored = next(m for m in client.get(f"/v1/copilot/sessions/{r.json()['session_id']}", headers=h).json()["messages"]
+                  if m["id"] == msg_id)
+
+    res = client.get(f"/v1/copilot/messages/{msg_id}/stream", headers=h)
+    assert res.status_code == 200 and res.headers["content-type"].startswith("text/event-stream")
+    frames = [f for f in res.text.split("\n\n") if f.startswith("event:")]
+    kinds = [f.split("\n", 1)[0].removeprefix("event: ") for f in frames]
+    assert kinds[-1] == "done" and kinds.count("step") == len(stored["attachments"]["events"]) > 3
+    done = json.loads(frames[-1].split("data: ", 1)[1])
+    assert done["content"] == stored["content"] and done["attachments"]["status"] == "complete"
+
+    other = login(client, "viewer")
+    assert client.get(f"/v1/copilot/messages/{msg_id}/stream", headers=other).status_code == 404
