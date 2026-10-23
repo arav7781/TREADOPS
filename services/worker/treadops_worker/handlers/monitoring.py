@@ -49,11 +49,17 @@ def run(ctx: JobContext) -> dict:
         ref = pd.read_parquet(bundle_dir / "reference_features.parquet")
         pca = np.load(bundle_dir / "reference_pca.npz")
         reference_version = sha256_file(bundle_dir / "reference_features.parquet")[:16]
-        rows = db.execute(
-            select(Inspection, Prediction).join(Prediction, Prediction.inspection_id == Inspection.id)
-            .where(Inspection.status == "succeeded").order_by(Inspection.completed_at.desc())
-            .limit(int(cfg["window_size"]))
-        ).all()
+        # A window is defined by the completion count that triggered it (inspections N-499..N in completion
+        # order), so late-running jobs still evaluate the window they were scheduled for.
+        size = int(cfg["window_size"])
+        base = (select(Inspection, Prediction).join(Prediction, Prediction.inspection_id == Inspection.id)
+                .where(Inspection.status == "succeeded"))
+        upto = ctx.payload.get("completed")
+        if upto:
+            rows = db.execute(base.order_by(Inspection.completed_at.asc(), Inspection.id)
+                              .offset(max(0, int(upto) - size)).limit(min(size, int(upto)))).all()[::-1]
+        else:
+            rows = db.execute(base.order_by(Inspection.completed_at.desc()).limit(size)).all()
         if not rows:
             raise Permanent("no_data", "no completed inspections yet")
         ids = [i.id for i, _ in rows]
@@ -154,8 +160,8 @@ def run(ctx: JobContext) -> dict:
         alerts = []
         if status == "alert_candidate":
             prev = s.execute(select(MonitoringWindow).where(MonitoringWindow.id != window.id,
-                                                            MonitoringWindow.created_at < window.created_at)
-                             .order_by(MonitoringWindow.created_at.desc()).limit(int(cfg["consecutive_windows"]) - 1)
+                                                            MonitoringWindow.last_at < window.last_at)
+                             .order_by(MonitoringWindow.last_at.desc()).limit(int(cfg["consecutive_windows"]) - 1)
                              ).scalars().all()
             for feature in flagged:
                 persistent = all(w.status == "alert_candidate" and (

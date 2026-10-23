@@ -147,7 +147,7 @@ services:
     depends_on:
       migrate: {condition: service_completed_successfully}
       redis: {condition: service_healthy}
-    command: ["celery", "-A", "treadops_worker.celery_app", "worker", "-Q", "ops", "-c", "1",
+    command: ["celery", "-A", "treadops_worker.celery_app", "worker", "-Q", "ops", "-c", "2",
               "-n", "ops@%h", "--prefetch-multiplier", "1", "--loglevel", "INFO"]
 
   training-worker-cpu:

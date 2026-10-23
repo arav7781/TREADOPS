@@ -63,15 +63,18 @@ def maybe_schedule_monitoring(every: int = 200) -> str | None:
     try:
         done = db.execute(select(func.count()).select_from(Inspection)
                           .where(Inspection.status == "succeeded")).scalar_one()
-        bucket = done // every
-        if bucket == 0:
-            return None
-        key = f"monitoring:completions:{bucket * every}"
-        if db.execute(text("SELECT 1 FROM jobs WHERE dedupe_key = :k"), {"k": key}).first():
+        bucket = None
+        for b in range(1, done // every + 1):  # every boundary gets its own window, even if several were missed
+            key = f"monitoring:completions:{b * every}"
+            if not db.execute(text("SELECT 1 FROM jobs WHERE dedupe_key = :k"), {"k": key}).first():
+                bucket = b
+                break
+        if bucket is None:
             return None
         last = db.execute(select(func.max(MonitoringWindow.created_at))).scalar_one_or_none()
-        jobs.create_job(db, kind="monitoring", dedupe_key=key, payload={"trigger": "completions", "completed": done,
-                                                                       "previous_window_at": str(last)})
+        jobs.create_job(db, kind="monitoring", dedupe_key=key,
+                        payload={"trigger": "completions", "completed": bucket * every, "observed_completed": done,
+                                 "previous_window_at": str(last)})
         db.commit()
         return key
     finally:

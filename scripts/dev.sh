@@ -15,7 +15,7 @@ cmd_for() {
     api) echo "$PY/uvicorn treadops_api.main:app --host 127.0.0.1 --port 8000" ;;
     dispatcher) echo "$PY/python -m treadops_worker.dispatcher" ;;
     inference) echo "$PY/celery -A treadops_worker.celery_app worker -Q inference -n inference@%h --pool=solo --loglevel INFO" ;;
-    ops) echo "$PY/celery -A treadops_worker.celery_app worker -Q ops -n ops@%h --pool=solo --loglevel INFO" ;;
+    ops) echo "$PY/celery -A treadops_worker.celery_app worker -Q ops -n ops@%h --pool=threads --concurrency 2 --loglevel INFO" ;;
     training) echo "env TRAIN_DEVICE=${TRAIN_DEVICE_DEV:-mps} $PY/celery -A treadops_worker.celery_app worker -Q training -n training@%h --pool=solo --loglevel INFO" ;;
     web) echo "npm --prefix apps/web run dev -- --port $WEB_PORT" ;;
     *) echo "unknown service $1" >&2; return 1 ;;
