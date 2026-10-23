@@ -180,3 +180,51 @@ def test_rel04_rollback_restores_previous_bundle_and_registry_reconciles(client,
     with dbmod.session_scope() as s:
         assert s.get(Job, uuid.UUID(recon_id)).status == "succeeded"
     assert any(c[0] == "alias" and c[1][1] == "champion" for c in calls)
+
+
+def test_rel_api_promotion_happy_path_and_failed_gate_block(client):
+    """The admin endpoint creates a promotion job the worker can run; failing gates are refused up front."""
+    import json
+    import shutil
+
+    from treadops_api.services.releases import import_bundle
+    from treadops_api.storage import get_storage
+    from treadops_worker.tasks import run_job
+
+    from .conftest import fixture_bundle
+
+    with dbmod.session_scope() as s:
+        mv_id = import_bundle(s, get_storage(), fixture_bundle()).id
+    h = login(client, "admin")
+    r = client.post("/v1/deployments/promote", headers=h,
+                    json={"model_version_id": str(mv_id), "expected_generation": 0,
+                          "reason": "fixture passes its gates in the test database"})
+    assert r.status_code == 202, r.text
+    run_job(r.json()["job_id"])
+    gen, sha = _pointer()
+    assert gen == 1 and sha
+    detail = client.get(f"/v1/jobs/{r.json()['job_id']}", headers=h).json()
+    assert detail["kind"] == "promotion" and detail["status"] == "succeeded"
+    assert detail["result"]["readiness"]["status"] == "ready"
+
+    failing = fixture_bundle().parent / "bundle-failing"
+    if failing.exists():
+        shutil.rmtree(failing)
+    shutil.copytree(fixture_bundle(), failing)
+    gate = json.loads((failing / "gate_report.json").read_text())
+    gate["status"] = "failed"
+    (failing / "gate_report.json").write_text(json.dumps(gate))
+    from .conftest import _rehash
+
+    _rehash(failing)
+    with dbmod.session_scope() as s:
+        bad = import_bundle(s, get_storage(), failing)
+        bad_id, stage = bad.id, bad.stage
+    assert stage == "rejected"
+    blocked = client.post("/v1/deployments/promote", headers=h,
+                          json={"model_version_id": str(bad_id), "expected_generation": 1,
+                                "reason": "should be refused by the gate"})
+    assert blocked.status_code == 409 and blocked.json()["error"]["code"] == "gate_not_passed"
+    with dbmod.session_scope() as s:
+        assert s.execute(select(AuditEvent).where(AuditEvent.action == "release.blocked")).scalars().first()
+    assert _pointer() == (gen, sha)

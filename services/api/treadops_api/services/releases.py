@@ -21,6 +21,7 @@ from ..models import Deployment, EnvironmentPointer, ModelVersion
 from ..storage import Storage
 from .inspections import ENV, active_deployment
 
+JOB_KIND = {"promote": "promotion", "rollback": "rollback"}
 STAGE_FOR_GATE = {"passed": "validated", "failed": "rejected", "insufficient_evidence": "candidate"}
 
 
@@ -85,7 +86,7 @@ def request_release(db: Session, *, actor, action: str, model_version_id: uuid.U
         if mv.gate_status != "passed":
             raise ApiError(409, "gate_not_passed", "Rollback target no longer passes its gates.")
     job = jobs.create_job(
-        db, kind=action, dedupe_key=f"{action}:{mv.id}:gen{expected_generation}:{uuid.uuid4().hex[:8]}",
+        db, kind=JOB_KIND[action], dedupe_key=f"{action}:{mv.id}:gen{expected_generation}:{uuid.uuid4().hex[:8]}",
         payload={"model_version_id": str(mv.id), "expected_generation": expected_generation, "reason": reason.strip(),
                  "approved_by": str(actor.id)},
         actor_id=actor.id, correlation_id=correlation_id, resource_type="model_version", resource_id=str(mv.id),
