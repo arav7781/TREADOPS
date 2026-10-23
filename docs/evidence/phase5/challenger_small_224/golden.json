@@ -1,0 +1,93 @@
+{
+  "items": [
+    {
+      "file": "golden/06a99981-673e-580f-8566-d4ec6bc1c803.jpg",
+      "image_id": "06a99981-673e-580f-8566-d4ec6bc1c803",
+      "label": "defective",
+      "p_defective": 0.9999653128722055,
+      "raw_probs": [
+        1.0,
+        1.8904120737753387e-23
+      ],
+      "triage": "defect_flagged"
+    },
+    {
+      "file": "golden/08adf6aa-f5d6-50bf-b5a4-50e5e6ea8074.jpg",
+      "image_id": "08adf6aa-f5d6-50bf-b5a4-50e5e6ea8074",
+      "label": "defective",
+      "p_defective": 0.9999653128722055,
+      "raw_probs": [
+        1.0,
+        1.4532991698956721e-08
+      ],
+      "triage": "defect_flagged"
+    },
+    {
+      "file": "golden/0da6dcdb-ac60-5a08-8015-82756e780bf4.jpg",
+      "image_id": "0da6dcdb-ac60-5a08-8015-82756e780bf4",
+      "label": "defective",
+      "p_defective": 0.04947140896492687,
+      "raw_probs": [
+        0.00957421399652958,
+        0.9904257655143738
+      ],
+      "triage": "good_candidate"
+    },
+    {
+      "file": "golden/0e4aeb51-60dd-5b02-81a8-e136f9db1c43.jpg",
+      "image_id": "0e4aeb51-60dd-5b02-81a8-e136f9db1c43",
+      "label": "defective",
+      "p_defective": 0.2954826161269899,
+      "raw_probs": [
+        0.20362254977226257,
+        0.796377420425415
+      ],
+      "triage": "manual_review"
+    },
+    {
+      "file": "golden/0c576e4e-14e6-52fc-a339-069c3aadac0c.jpg",
+      "image_id": "0c576e4e-14e6-52fc-a339-069c3aadac0c",
+      "label": "good",
+      "p_defective": 0.0041835963802423805,
+      "raw_probs": [
+        0.00018605006334837526,
+        0.999813973903656
+      ],
+      "triage": "good_candidate"
+    },
+    {
+      "file": "golden/15d17389-4829-571f-b8bc-95bfce7793eb.jpg",
+      "image_id": "15d17389-4829-571f-b8bc-95bfce7793eb",
+      "label": "good",
+      "p_defective": 0.44030838211776413,
+      "raw_probs": [
+        0.40695762634277344,
+        0.5930423736572266
+      ],
+      "triage": "manual_review"
+    },
+    {
+      "file": "golden/189c21eb-368b-5b81-88d1-737f734c9103.jpg",
+      "image_id": "189c21eb-368b-5b81-88d1-737f734c9103",
+      "label": "good",
+      "p_defective": 0.46874806268633157,
+      "raw_probs": [
+        0.45104119181632996,
+        0.5489587783813477
+      ],
+      "triage": "manual_review"
+    },
+    {
+      "file": "golden/21ab3c0e-99bb-5952-b688-07500266fce4.jpg",
+      "image_id": "21ab3c0e-99bb-5952-b688-07500266fce4",
+      "label": "good",
+      "p_defective": 3.468712779454872e-05,
+      "raw_probs": [
+        4.261667463367758e-09,
+        1.0
+      ],
+      "triage": "good_candidate"
+    }
+  ],
+  "tolerance_abs": 0.0001
+}

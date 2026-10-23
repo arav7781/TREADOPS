@@ -1,0 +1,19 @@
+{
+  "best_pt_sha256": "8960359c818b1296b37316d9c168c624bf71d8c677fb93156be92a35067a355e",
+  "class_names": {
+    "0": "defective",
+    "1": "good"
+  },
+  "final_test_run": true,
+  "preprocess_sha256": "f514d3e30a023990d8340045e8cc39de87ad6ee684d3fdee368fe8ea01b866e5",
+  "role_counts": {
+    "calibration": 137,
+    "policy": 138,
+    "test": 277
+  },
+  "role_hashes": {
+    "calibration": "90235deb8e9b361f68a627774a51094f0e620e41fdf7770ce0c65482d55e46b5",
+    "policy": "e1c0dfe97bf917e7ffb55e643b90d2f5fcb86e2fe73610e27438f4fdae0fd4a2",
+    "test": "6e427d492c132eb17925367b1eb7b569cd9c0dc9e4b8fb9fcdbb7fbae7cb4ddf"
+  }
+}

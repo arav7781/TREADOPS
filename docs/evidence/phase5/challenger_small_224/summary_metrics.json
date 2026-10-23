@@ -1,0 +1,12 @@
+{
+  "binary_threshold": 0.222118,
+  "calibration_temperature": 1.569571270692387,
+  "gate_average_precision": 0.992244292950014,
+  "gate_defect_recall": 0.9666666666666667,
+  "gate_specificity": 0.92,
+  "model_p95_ms_cpu": 12.603291193954647,
+  "test_average_precision": 0.9902915051005425,
+  "test_brier": 0.04420005784373972,
+  "test_defect_recall": 0.9533333333333334,
+  "test_specificity": 0.937007874015748
+}

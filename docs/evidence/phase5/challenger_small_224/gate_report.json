@@ -1,0 +1,111 @@
+{
+  "comparative": {
+    "reason": "no champion supplied",
+    "status": "not_applicable"
+  },
+  "evidence_label": "development evidence (outer validation: calibration + policy roles)",
+  "hard_gates": [
+    {
+      "detail": {
+        "fit_or_selection_ids_in_protected_roles": 0,
+        "split_checks": {
+          "groups_in_multiple_roles": 0,
+          "image_ids_unassigned": 0,
+          "original_sha_in_multiple_roles": 0
+        }
+      },
+      "id": "no_critical_leakage",
+      "status": "passed"
+    },
+    {
+      "detail": {
+        "best_pt_sha256": true,
+        "git_sha": true,
+        "mlflow_run_id": true,
+        "preprocess_sha256": true,
+        "pretrained_sha256": true,
+        "recipe_sha256": true,
+        "split_sha256": true,
+        "uv_lock_sha256": true
+      },
+      "id": "lineage_complete",
+      "status": "passed"
+    },
+    {
+      "detail": "all gate-cohort outputs finite",
+      "id": "finite_probabilities",
+      "status": "passed"
+    },
+    {
+      "detail": {
+        "defective": 0,
+        "good": 1
+      },
+      "id": "class_mapping",
+      "status": "passed"
+    },
+    {
+      "detail": {
+        "max_abs_probability_error": 1.8477439880371094e-06,
+        "mean_abs_probability_error": 7.40892541174295e-08,
+        "n_images": 120,
+        "triage_agreement": 1.0
+      },
+      "id": "onnx_parity",
+      "status": "passed"
+    }
+  ],
+  "quality_targets": [
+    {
+      "ci95": [
+        0.9243482033720778,
+        0.9856795681925687
+      ],
+      "id": "defect_recall",
+      "numerator": 145,
+      "status": "passed",
+      "support": 150,
+      "target": 0.95,
+      "value": 0.9666666666666667
+    },
+    {
+      "ci95": [
+        0.8589881010251044,
+        0.9559669678765792
+      ],
+      "id": "specificity",
+      "numerator": 115,
+      "status": "passed",
+      "support": 125,
+      "target": 0.9,
+      "value": 0.92
+    }
+  ],
+  "rule": "any failed -> failed; else any insufficient -> insufficient_evidence; else passed",
+  "schema_version": 1,
+  "status": "passed",
+  "threshold": 0.222118,
+  "triage": {
+    "defect_flagged": {
+      "count": 135,
+      "defective": 134,
+      "fraction": 0.4909090909090909,
+      "good": 1
+    },
+    "defective_support": 150,
+    "false_negatives_routed_to_good_candidate": 4,
+    "good_candidate": {
+      "count": 118,
+      "defective": 4,
+      "fraction": 0.4290909090909091,
+      "good": 114
+    },
+    "manual_review": {
+      "count": 22,
+      "defective": 12,
+      "fraction": 0.08,
+      "good": 10
+    },
+    "n": 275
+  }
+}

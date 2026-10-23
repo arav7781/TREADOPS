@@ -1,0 +1,10 @@
+{
+  "leakage": {
+    "groups_in_multiple_roles": 0,
+    "image_ids_unassigned": 0,
+    "original_sha_in_multiple_roles": 0
+  },
+  "manifest_sha256": "07bb52a6f7366830f294d30a9dd8fb5eb8b16d92d9ebbf17ff91ac143bba95a4",
+  "snapshot_id": "2538d65c-520f-4c26-95f9-5c51e231e94b",
+  "split_sha256": "f3fa4eeedaaf92236443f13dd2c71c6ce86c3cdfb03ee89b6dc638be18d71959"
+}

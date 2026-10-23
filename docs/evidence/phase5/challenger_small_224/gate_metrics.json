@@ -1,0 +1,274 @@
+{
+  "binary": {
+    "accuracy": {
+      "ci95": [
+        0.9119659996219406,
+        0.9666694837202173
+      ],
+      "denominator": 275,
+      "numerator": 260,
+      "status": "ok",
+      "value": 0.9454545454545454
+    },
+    "confusion": {
+      "fn": 5,
+      "fp": 10,
+      "tn": 115,
+      "tp": 145
+    },
+    "defect_recall": {
+      "ci95": [
+        0.9243482033720778,
+        0.9856795681925687
+      ],
+      "denominator": 150,
+      "numerator": 145,
+      "status": "ok",
+      "value": 0.9666666666666667
+    },
+    "precision": {
+      "ci95": [
+        0.8853221138473646,
+        0.9645819411190846
+      ],
+      "denominator": 155,
+      "numerator": 145,
+      "status": "ok",
+      "value": 0.9354838709677419
+    },
+    "specificity": {
+      "ci95": [
+        0.8589881010251044,
+        0.9559669678765792
+      ],
+      "denominator": 125,
+      "numerator": 115,
+      "status": "ok",
+      "value": 0.92
+    },
+    "support": {
+      "defective": 150,
+      "good": 125,
+      "total": 275
+    },
+    "threshold": 0.222118
+  },
+  "by_role": {
+    "calibration": {
+      "accuracy": {
+        "ci95": [
+          0.9375986084606317,
+          0.99252524172193
+        ],
+        "denominator": 137,
+        "numerator": 134,
+        "status": "ok",
+        "value": 0.9781021897810219
+      },
+      "confusion": {
+        "fn": 2,
+        "fp": 1,
+        "tn": 61,
+        "tp": 73
+      },
+      "defect_recall": {
+        "ci95": [
+          0.9078851173641037,
+          0.9926563110599679
+        ],
+        "denominator": 75,
+        "numerator": 73,
+        "status": "ok",
+        "value": 0.9733333333333334
+      },
+      "precision": {
+        "ci95": [
+          0.9273464340550494,
+          0.9976105366229554
+        ],
+        "denominator": 74,
+        "numerator": 73,
+        "status": "ok",
+        "value": 0.9864864864864865
+      },
+      "specificity": {
+        "ci95": [
+          0.9141327965227978,
+          0.997147132862919
+        ],
+        "denominator": 62,
+        "numerator": 61,
+        "status": "ok",
+        "value": 0.9838709677419355
+      },
+      "support": {
+        "defective": 75,
+        "good": 62,
+        "total": 137
+      },
+      "threshold": 0.222118
+    },
+    "policy": {
+      "accuracy": {
+        "ci95": [
+          0.854156248228562,
+          0.9495579894782292
+        ],
+        "denominator": 138,
+        "numerator": 126,
+        "status": "ok",
+        "value": 0.9130434782608695
+      },
+      "confusion": {
+        "fn": 3,
+        "fp": 9,
+        "tn": 54,
+        "tp": 72
+      },
+      "defect_recall": {
+        "ci95": [
+          0.8888701283966873,
+          0.9863039358464245
+        ],
+        "denominator": 75,
+        "numerator": 72,
+        "status": "ok",
+        "value": 0.96
+      },
+      "precision": {
+        "ci95": [
+          0.8021290523648956,
+          0.9404324362128174
+        ],
+        "denominator": 81,
+        "numerator": 72,
+        "status": "ok",
+        "value": 0.8888888888888888
+      },
+      "specificity": {
+        "ci95": [
+          0.7502543398002094,
+          0.9229805170259359
+        ],
+        "denominator": 63,
+        "numerator": 54,
+        "status": "ok",
+        "value": 0.8571428571428571
+      },
+      "support": {
+        "defective": 75,
+        "good": 63,
+        "total": 138
+      },
+      "threshold": 0.222118
+    }
+  },
+  "evidence_label": "development evidence (outer validation: calibration + policy roles)",
+  "finite_probabilities": true,
+  "parents": 127,
+  "probabilistic": {
+    "average_precision": 0.992244292950014,
+    "brier": 0.03886971692794426,
+    "ece": 0.037400730368788264,
+    "n": 275,
+    "nll": 0.13208758303216406,
+    "reliability": [
+      {
+        "bin": 0,
+        "count": 114,
+        "hi": 0.1,
+        "lo": 0.0,
+        "mean_predicted": 0.012351325447179371,
+        "observed_defective_rate": 0.03508771929824561
+      },
+      {
+        "bin": 1,
+        "count": 5,
+        "hi": 0.2,
+        "lo": 0.1,
+        "mean_predicted": 0.14378981852605138,
+        "observed_defective_rate": 0.0
+      },
+      {
+        "bin": 2,
+        "count": 6,
+        "hi": 0.30000000000000004,
+        "lo": 0.2,
+        "mean_predicted": 0.24321980699719128,
+        "observed_defective_rate": 0.8333333333333334
+      },
+      {
+        "bin": 3,
+        "count": 6,
+        "hi": 0.4,
+        "lo": 0.30000000000000004,
+        "mean_predicted": 0.33795468370308673,
+        "observed_defective_rate": 0.3333333333333333
+      },
+      {
+        "bin": 4,
+        "count": 4,
+        "hi": 0.5,
+        "lo": 0.4,
+        "mean_predicted": 0.4616811023024964,
+        "observed_defective_rate": 0.25
+      },
+      {
+        "bin": 5,
+        "count": 1,
+        "hi": 0.6000000000000001,
+        "lo": 0.5,
+        "mean_predicted": 0.5218161283931148,
+        "observed_defective_rate": 0.0
+      },
+      {
+        "bin": 6,
+        "count": 4,
+        "hi": 0.7000000000000001,
+        "lo": 0.6000000000000001,
+        "mean_predicted": 0.6773693252570898,
+        "observed_defective_rate": 1.0
+      },
+      {
+        "bin": 8,
+        "count": 5,
+        "hi": 0.9,
+        "lo": 0.8,
+        "mean_predicted": 0.8582987469927235,
+        "observed_defective_rate": 1.0
+      },
+      {
+        "bin": 9,
+        "count": 130,
+        "hi": 1.0,
+        "lo": 0.9,
+        "mean_predicted": 0.9920128915544734,
+        "observed_defective_rate": 0.9923076923076923
+      }
+    ],
+    "status": "ok"
+  },
+  "triage": {
+    "defect_flagged": {
+      "count": 135,
+      "defective": 134,
+      "fraction": 0.4909090909090909,
+      "good": 1
+    },
+    "defective_support": 150,
+    "false_negatives_routed_to_good_candidate": 4,
+    "good_candidate": {
+      "count": 118,
+      "defective": 4,
+      "fraction": 0.4290909090909091,
+      "good": 114
+    },
+    "manual_review": {
+      "count": 22,
+      "defective": 12,
+      "fraction": 0.08,
+      "good": 10
+    },
+    "n": 275
+  }
+}

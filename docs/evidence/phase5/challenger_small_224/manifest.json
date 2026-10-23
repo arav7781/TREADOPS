@@ -1,0 +1,130 @@
+{
+  "bundle_sha256": "4bdf10e66e0e44dc87b042933908099b6538c42a22b6686e7bce53739bf26676",
+  "evaluation": {
+    "gate_status": "passed",
+    "role_counts": {
+      "calibration": 137,
+      "policy": 138,
+      "test": 277
+    },
+    "role_hashes": {
+      "calibration": "90235deb8e9b361f68a627774a51094f0e620e41fdf7770ce0c65482d55e46b5",
+      "policy": "e1c0dfe97bf917e7ffb55e643b90d2f5fcb86e2fe73610e27438f4fdae0fd4a2",
+      "test": "6e427d492c132eb17925367b1eb7b569cd9c0dc9e4b8fb9fcdbb7fbae7cb4ddf"
+    }
+  },
+  "files": {
+    "best.pt": "8960359c818b1296b37316d9c168c624bf71d8c677fb93156be92a35067a355e",
+    "calibration.json": "7efb47129dbab0cb4037261e84015e97c652ca19df0cce4ce4f3c9e2962c5c33",
+    "class_mapping.json": "ea1333b24384b1cebfbb4b319c521a8ee5fb79e56a82c4192b084da0685ca8f6",
+    "gate_report.json": "1e1134ab2e68e091544b2a75d3b33b7bce1fd9a0c36b40670b15ab1450c59127",
+    "golden.json": "5f9e518b1c6f311c2e7868cfb0733784f9c03a9728b1cd7458c5aabd4c6cc26a",
+    "golden/06a99981-673e-580f-8566-d4ec6bc1c803.jpg": "a7e83dcff801108e3abe17490d49b0f627aca19a10e0e5ceb6d109b138ae0432",
+    "golden/08adf6aa-f5d6-50bf-b5a4-50e5e6ea8074.jpg": "af52c9f0b1c50ef7c46d8a4f54a607759d96774a4ef907aac531aa3f3b9e6fa0",
+    "golden/0c576e4e-14e6-52fc-a339-069c3aadac0c.jpg": "f24ad577f43f0ecf495cf2e65157419bb78886f56bcee695c8cf5c195f1811e9",
+    "golden/0da6dcdb-ac60-5a08-8015-82756e780bf4.jpg": "49ba04de56e6c6398085d56e38c6dd4de213f6374c1d5365bd5b295341a8b8b1",
+    "golden/0e4aeb51-60dd-5b02-81a8-e136f9db1c43.jpg": "695d6c831db8d76f36d982710ea35ba0d9a4525f7e845d62109660c3b9cc7a2b",
+    "golden/15d17389-4829-571f-b8bc-95bfce7793eb.jpg": "141fb7fa3de0e861f9974f16c0c8868777a1082344c61e53c0b3b3f94e117b91",
+    "golden/189c21eb-368b-5b81-88d1-737f734c9103.jpg": "28329e21665466c688f013bcfa96e3f3cea92e8d1b1a177f9a21966e34e8c55f",
+    "golden/21ab3c0e-99bb-5952-b688-07500266fce4.jpg": "c3b5bf68c5c1e8fd3d363eecb5b224b1cb78c675eb4f00c1fe29993ee2c228c2",
+    "metrics.json": "8bd0c9588e8af38aac8e896207ed6485682e6d6490d0710f6cd96f9b2d0c5e9f",
+    "model.onnx": "3acd78827f4b1a40621949080ec2e84b60ad93d137f55a3ad67dedf771bd4f97",
+    "model_card.md": "dc04257875a5599f0d7a2f83035de857b145c6568346f03b221d1515740614bd",
+    "policy.json": "1c92e209f91dfd774d8da599b770cade35760b044f9df31b5de6e9d3f44fc758",
+    "preprocess.json": "b804cc33864beb910d65aa5f376330cc7f941103cce4eeb31d05432b3b382e44",
+    "reference_features.parquet": "da50842684163c4cbf0558141dbf2f4f523aa81cf1a03758a5ac8761e4529adf",
+    "reference_pca.npz": "781793b0f970fc314805868eb05095fdfe02060b3dd4f91f0f4c848472e1261d"
+  },
+  "lineage": {
+    "best_pt_sha256": "8960359c818b1296b37316d9c168c624bf71d8c677fb93156be92a35067a355e",
+    "dataset_snapshot_id": "2538d65c-520f-4c26-95f9-5c51e231e94b",
+    "git_dirty": false,
+    "git_sha": "01f638a8c8b06e342796fb6920ce873e6fd4799a",
+    "mlflow_run_id": "26b7f5302f5447ffb949ecc8d627a2e4",
+    "preprocess_sha256": "f514d3e30a023990d8340045e8cc39de87ad6ee684d3fdee368fe8ea01b866e5",
+    "pretrained_sha256": "816790029d5df3fef358f03c8144b96339d8824ee25577aeda8be0963e5c5f09",
+    "recipe_sha256": "03dfa0247d154d44c31b19ba11150acf2579af709cb6b30af53409b939af38d5",
+    "split_sha256": "ddf516172d7bc4d90530997190b91e8e62f984bfd5a08bb220c3bdef1e106d0e",
+    "training_run_name": "job-ebf03bab",
+    "uv_lock_sha256": "1298cab6c2f952275c8a69c9f5d92cdb3934914aae7b2919fa0655ae0135fc37"
+  },
+  "model_family": "yolo26s-cls",
+  "monitoring": {
+    "cohort": "outer validation (calibration + policy roles)",
+    "cohort_ids_sha256": "395aa4bd3141f71bfe9e5d25444ddc71375ad54e59c5d442683ffcde2c0965d4",
+    "descriptor_version": "v1",
+    "descriptors": [
+      "brightness",
+      "contrast",
+      "blur_variance",
+      "saturation",
+      "aspect_ratio"
+    ],
+    "distinct_parents": 127,
+    "encoder": {
+      "dim": 1280,
+      "pooling": "head.pool+L2",
+      "sha256": "0dd6f8dbc448870ac98a3cbb7156f923f7ce21fed3755d4019169ffffd279e81",
+      "weights": "/Users/aravsaxena/Downloads/mlops/TREADOPS/models/pretrained/yolo26n-cls.pt"
+    },
+    "explained_variance": 0.6301884651184082,
+    "n": 275,
+    "pca_components": 16,
+    "pca_sha256": "781793b0f970fc314805868eb05095fdfe02060b3dd4f91f0f4c848472e1261d"
+  },
+  "registry": {
+    "name": "treadops-yolo-classify",
+    "version": "2"
+  },
+  "reproducibility": {
+    "git_dirty": false,
+    "git_sha": "01f638a8c8b06e342796fb6920ce873e6fd4799a",
+    "pretrained_sha256": "816790029d5df3fef358f03c8144b96339d8824ee25577aeda8be0963e5c5f09",
+    "recipe_sha256": "03dfa0247d154d44c31b19ba11150acf2579af709cb6b30af53409b939af38d5",
+    "split_sha256": "ddf516172d7bc4d90530997190b91e8e62f984bfd5a08bb220c3bdef1e106d0e",
+    "uv_lock_sha256": "1298cab6c2f952275c8a69c9f5d92cdb3934914aae7b2919fa0655ae0135fc37"
+  },
+  "schema_version": 1,
+  "serving": {
+    "approved_device": "cpu",
+    "calibration_version": "v1",
+    "class_names": {
+      "0": "defective",
+      "1": "good"
+    },
+    "policy_version": "v1",
+    "precision": "fp32",
+    "preprocess_sha256": "f514d3e30a023990d8340045e8cc39de87ad6ee684d3fdee368fe8ea01b866e5",
+    "preprocess_version": "v1",
+    "runtimes": [
+      "native",
+      "onnx"
+    ]
+  },
+  "task": "classify",
+  "training": {
+    "effective_train_ids_sha256": "9ab0d628590403e6e6895136cbac87e9260aa866b1f675c18b33be074c0bb2f0",
+    "fitted_image_count": 1084,
+    "hardware": {
+      "cpu_brand": "Apple M5",
+      "cpu_count": 10,
+      "cuda": false,
+      "machine": "arm64",
+      "mps": true,
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "python": "3.11.15",
+      "ram_bytes": 17179869184,
+      "torch": "2.14.1",
+      "torch_threads": 8
+    },
+    "mlflow_run_id": "26b7f5302f5447ffb949ecc8d627a2e4",
+    "packages": {
+      "numpy": "2.4.6",
+      "onnxruntime": "1.31.0",
+      "torch": "2.14.1",
+      "torchvision": "0.29.1",
+      "ultralytics": "8.4.183"
+    },
+    "run_name": "job-ebf03bab"
+  }
+}
