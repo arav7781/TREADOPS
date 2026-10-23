@@ -13,11 +13,12 @@
 
 # TreadOps — casing circularity with YOLO26, governed MLOps and a guarded copilot
 
-TreadOps turns a phone photo of a tyre into a **casing-intake decision** for a retreading operation:
-*retread intake*, *expert inspection*, or *end-of-life material recovery*. An Ultralytics YOLO26 classifier
-triages the photo, every preprocessing step is shown with its real timing, a human inspector gives final
-clearance, and a sustainability ledger estimates the raw material and CO₂e kept in use, counting only
-**inspector-verified** retreads. Around that sits a complete MLOps loop (DVC, MLflow, gated promotion,
+TreadOps is a **tyre quality-inspection platform**. A photo or short video of a tyre gets a verdict,
+**damaged or not damaged**, from an Ultralytics YOLO26 classifier, with an "expert check" flag when the model is
+uncertain or the image is poor. Every preprocessing step is shown with its real timing, and a human inspector
+gives final clearance. For casings at a retreading operation, the same decision drives a circular pathway
+(*retread intake*, *expert inspection* or *end-of-life material recovery*), and a sustainability ledger
+estimates the raw material and CO₂e kept in use, counting only **inspector-verified** retreads. Around that sits a complete MLOps loop (DVC, MLflow, gated promotion,
 rollback, drift monitoring, operational replay) and a multimodal **LangGraph copilot, "Bib"**, with guardrails and
 LLMOps tracing. Inspection happens inside the chat: the photo goes to Bib, and Bib's YOLO tool runs the pipeline.
 
@@ -89,7 +90,7 @@ resolvable ✅.
 2.07 across consecutive windows; alerts opened only after two windows above 0.20 and duplicates merged. Mean
 p(defective) fell 0.53 → 0.44 as images darkened, matching the stress-test recall drop.
 
-**Tests:** 58 unit, 9 data/ML (on the real data and artifacts) and 26 integration tests against real
+**Tests:** 72 unit, 9 data/ML (on the real data and artifacts) and 28 integration tests against real
 PostgreSQL/Redis/object storage (API-01..04, JOB-01..04, REL-01..04, DB-01 and regressions), 38 web component
 tests and 20 Playwright journeys against the live stack — all passing; GitHub CI (lint, mypy, contract diff,
 migrations, tests, web build, Docker images) is green.
@@ -141,10 +142,14 @@ Demo users are `viewer@`, `inspector@`, `mlengineer@` and `admin@treadops.local`
 
 ### Bib (copilot) LLM
 
-Set `LLM_BASE_URL`, `LLM_API_KEY` and `LLM_MODEL` for any OpenAI-compatible endpoint (OpenAI, Azure OpenAI,
-LiteLLM, vLLM, Ollama `/v1`). Without them, the copilot runs a deterministic, tool-grounded planner and labels its
-traces `deterministic_fallback`. The system prompt is versioned in `configs/prompts/`; `make eval-copilot` runs
-the golden set and logs results to MLflow.
+Bib is **LLM-only**: every answer and follow-up suggestion is written by the model, which fetches facts with
+tools (the YOLO inspection tools, model evidence, drift, knowledge base). Set `LLM_BASE_URL`, `LLM_API_KEY` and
+`LLM_MODEL` in `.env` (git-ignored; never in `.env.example`, which CI checks) for any OpenAI-compatible endpoint
+(OpenAI, Azure OpenAI, a LiteLLM gateway, vLLM, Ollama `/v1`). Without them the chat refuses with
+`llm_not_configured`; a failed or filtered model call is retried once and then shown as an error, never replaced
+by a templated answer. Guardrails still run on both sides as safety checks. The system prompt is versioned in
+`configs/prompts/`; `make eval-copilot` runs the golden set against the configured model and logs to MLflow
+(prompt v5: 15/15 on two consecutive runs with `azure/deepSeek-V4-Flash`).
 
 ### Name and visual design
 

@@ -34,7 +34,9 @@ test("a photo turn runs the YOLO tool and shows its stages, steps and result ins
   await expect(page.locator('[data-kind="tool_call"]').filter({ hasText: "classify_tyre_image" }).first()).toBeVisible({ timeout: 60_000 });
   await expect(page.locator('[data-stage="classified"] img')).toBeVisible({ timeout: 120_000 });
   await expect(page.getByTestId("chat-result")).toBeVisible({ timeout: 120_000 });
-  await expect(page.getByText(/Triage: (Retread candidate|Expert review|Defect flagged)/).first()).toBeVisible({ timeout: 120_000 });
+  // The answer is written by the LLM; it must lead with the tool's verdict (exact wording is the model's own).
+  await expect(page.getByTestId("chat-result").getByText(/^(Damaged|Not damaged)$/).first()).toBeVisible({ timeout: 120_000 });
+  await expect(page.locator('[data-role="assistant"]').last().getByText(/\b(Damaged|Not damaged)\b/).first()).toBeVisible({ timeout: 120_000 });
   await expect(page.getByText(/qualified inspector/).first()).toBeVisible();
 });
 

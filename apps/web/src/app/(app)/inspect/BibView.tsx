@@ -14,6 +14,7 @@ import { ago } from "@/lib/format";
 import { useModels } from "@/lib/hooks";
 import { qk } from "@/lib/query";
 import { hasRole } from "@/lib/roles";
+import type { CopilotStatus } from "@/lib/types";
 import { useUrlState } from "@/lib/useUrlState";
 
 interface SessionRow { id: string; title: string; updated_at: string; inspection_id: string | null }
@@ -198,6 +199,9 @@ export function BibView() {
   const me = useMe();
   const models = useModels();
   const [{ session }, setUrl] = useUrlState(["session"] as const);
+  const llm = useQuery({ queryKey: qk.copilotStatus, queryFn: () => api<CopilotStatus>("/v1/copilot/status"), staleTime: 60_000 });
+  const unavailable = llm.data && !llm.data.configured
+    ? "Bib needs a language model: set LLM_BASE_URL, LLM_API_KEY and LLM_MODEL in .env and restart the API." : null;
   const sessions = useQuery({ queryKey: qk.copilotSessions, queryFn: () => api<{ items: SessionRow[] }>("/v1/copilot/sessions"), refetchInterval: 30_000 });
   const thread = useCopilotSession(session || null);
   const send = useSendTurn((r) => setUrl({ session: r.session_id }));
@@ -276,7 +280,7 @@ export function BibView() {
 
         <div className="px-4 pb-3 pt-2 lg:px-6">
           <div className="mx-auto w-full max-w-4xl">
-            <Composer busy={send.isPending} photo={photo} progress={progress} error={send.error} onSend={(t, f) => ask(t, f)} />
+            <Composer busy={send.isPending} photo={photo} progress={progress} error={send.error} unavailable={unavailable} onSend={(t, f) => ask(t, f)} />
             <p className="mt-1.5 text-center text-xs text-muted" title={ASSISTANT_DISCLAIMER}>
               Triage aid only · a qualified inspector gives final clearance · not affiliated with Michelin
             </p>

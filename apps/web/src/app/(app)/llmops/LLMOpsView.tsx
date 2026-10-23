@@ -69,7 +69,7 @@ export function LLMOpsView() {
   // Every empty value says why, rather than a bare 0 or n/a. No LLM calls means nothing was billed: $0.00 is exact.
   const tokenHint = calls > 0
     ? `${num(calls)} LLM calls · cache hit ${d?.tokens.cache_hit_rate === null ? "none reported" : pct(d?.tokens.cache_hit_rate ?? null)}`
-    : llmOn === false ? "LLM not configured: answers are deterministic, no tokens used" : "no LLM calls in the last 7 days";
+    : llmOn === false ? "LLM not configured: Bib is unavailable" : "no LLM calls in the last 7 days";
   const costValue = calls === 0 ? "$0.00" : d?.cost_usd === null ? "Unpriced" : `$${(d?.cost_usd ?? 0).toFixed(4)}`;
   const costHint = calls === 0 ? "no LLM calls, nothing billed"
     : d?.cost_usd === null ? `add ${status.data?.model ?? "the model"} to pricing_per_million_tokens in configs/copilot.yaml`
@@ -87,12 +87,11 @@ export function LLMOpsView() {
             <div className="mb-6 flex flex-wrap items-start gap-3 rounded-2xl border border-accent bg-accent-soft p-4 text-ink" role="status">
               <Zap aria-hidden className="mt-0.5 h-5 w-5 shrink-0" />
               <div className="min-w-0 flex-1">
-                <p className="font-bold">Bib is running without an LLM</p>
+                <p className="font-bold">Bib is unavailable: no language model is configured</p>
                 <p className="text-sm text-ink-soft">
-                  Every answer comes from the deterministic, tool-grounded planner, so tokens, cost and cache hits are
-                  zero by definition. Set <code className="mono">LLM_BASE_URL</code>, <code className="mono">LLM_API_KEY</code> and{" "}
+                  Bib answers only through an LLM. Set <code className="mono">LLM_BASE_URL</code>, <code className="mono">LLM_API_KEY</code> and{" "}
                   <code className="mono">LLM_MODEL</code> in <code className="mono">.env</code> (any OpenAI-compatible endpoint, or a local
-                  Ollama model) and restart the API; LLM metrics appear from the next turn.
+                  Ollama model) and restart the API; token, cost and cache metrics appear from the next turn.
                 </p>
               </div>
             </div>
@@ -103,8 +102,8 @@ export function LLMOpsView() {
             <Stat label="Tokens" icon={<Zap className="h-5 w-5" />} value={calls > 0 ? num(d.tokens.prompt + d.tokens.completion) : "No LLM calls"}
               hint={tokenHint} />
             <Stat label="Cost" icon={<Coins className="h-5 w-5" />} value={costValue} hint={costHint} />
-            <Stat label="Fallback rate" icon={<Zap className="h-5 w-5" />} tone="warn" value={pct(fallback)}
-              hint={llmOn === false ? "LLM not configured: every answer is deterministic and tool-grounded" : "turns answered by the deterministic planner"} />
+            <Stat label="Rule-based answers" icon={<Zap className="h-5 w-5" />} tone="warn" value={pct(fallback)}
+              hint="legacy turns from before Bib became LLM-only" />
             <Stat label="Grounding pass" icon={<ShieldCheck className="h-5 w-5" />} tone="good" value={pct(d.grounding.pass_rate)} hint={`${d.grounding.passed}/${d.grounding.checked} turns`} />
             <Stat label="Feedback" icon={<ThumbsUp className="h-5 w-5" />}
               value={d.feedback.up + d.feedback.down === 0 ? "No ratings yet" : `${d.feedback.up} 👍 · ${d.feedback.down} 👎`}

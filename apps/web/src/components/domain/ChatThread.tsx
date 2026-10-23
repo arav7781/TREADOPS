@@ -36,7 +36,7 @@ import { Markdown } from "@/components/domain/Markdown";
 import { ProbabilityPanel } from "@/components/domain/ProbabilityPanel";
 import { ReviewForm } from "@/components/domain/ReviewForm";
 import { PipelineConsole, StageTheatre } from "@/components/domain/StageGallery";
-import { QualityBadge, StatusBadge, TriageBadge } from "@/components/domain/badges";
+import { QualityBadge, StatusBadge, TriageBadge, VerdictBadge } from "@/components/domain/badges";
 import { Badge, Button, ErrorState, ProgressBar } from "@/components/ui";
 import { api, ApiError, mediaUrl, uploadWithProgress } from "@/lib/api";
 import { ASSISTANT_NAME } from "@/lib/brand";
@@ -320,8 +320,9 @@ function ChatResult({ d, canReview }: { d: InspectionDetail; canReview: boolean 
   return (
     <div className="stage-in mt-3 rounded-2xl border border-line bg-surface p-4" data-testid="chat-result">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="font-bold text-ink">Result</span>
-        <TriageBadge triage={p.triage} large />
+        <span className="font-bold text-ink">Quality check</span>
+        <VerdictBadge damaged={p.binary_defective} triage={p.triage} quality={p.quality_status} large />
+        <TriageBadge triage={p.triage} />
         <QualityBadge status={p.quality_status} reasons={p.quality.reasons} />
       </div>
       <p className="mt-1 text-sm text-ink-soft">{p.triage_reason}</p>
@@ -489,7 +490,7 @@ function AssistantMessage({ m, onSuggest, canReview, onRetry }: {
         )}
         {showAnswer && !typing && (
           <div className="flex flex-wrap items-center gap-2 border-t border-line pt-2 text-sm">
-            {a.mode && <Badge tone={a.mode === "llm" ? "primary" : "neutral"} title="How this answer was produced">{a.mode === "llm" ? "LLM + tools" : "Deterministic fallback"}</Badge>}
+            {a.mode && <Badge tone={a.mode === "llm" ? "primary" : "neutral"} title="How this answer was produced">{a.mode === "llm" ? "LLM + tools" : "Rule-based (legacy)"}</Badge>}
             {a.grounding && <Badge tone={a.grounding.pass ? "good" : "warn"}><ShieldCheck aria-hidden className="h-3.5 w-3.5" />
               {a.grounding.pass ? "grounded" : `${a.grounding.ungrounded.length} unverified figure(s)`}</Badge>}
             {(a.guardrails ?? []).filter((g) => g !== "disclaimer").map((g) => <Badge key={g} tone="warn">{humanize(g)}</Badge>)}
@@ -574,13 +575,15 @@ export function ChatThread({ messages, onSuggest, canReview = false, autoScroll 
   );
 }
 
-export function Composer({ onSend, busy, photo, progress, placeholder, error }: {
+export function Composer({ onSend, busy, photo, progress, placeholder, error, unavailable = null }: {
   onSend: (text: string, file: File | null) => void;
   busy: boolean;
   photo: PhotoPicker;
   progress?: number | null;
   placeholder?: string;
   error?: unknown;
+  /** Why Bib cannot take a message right now (for example no LLM configured); disables the composer. */
+  unavailable?: string | null;
 }) {
   const [text, setText] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
@@ -599,7 +602,7 @@ export function Composer({ onSend, busy, photo, progress, placeholder, error }: 
   const preview = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
   const submit = () => {
-    if (busy || (!text.trim() && !file)) return;
+    if (busy || unavailable || (!text.trim() && !file)) return;
     onSend(text.trim(), file);
     setText("");
     photo.clear();
@@ -631,16 +634,17 @@ export function Composer({ onSend, busy, photo, progress, placeholder, error }: 
           <ImagePlus aria-hidden className="h-5 w-5" /><span className="sr-only">Attach a tyre photo</span>
         </label>
         <label htmlFor="chat-text" className="sr-only">Message</label>
-        <textarea ref={textRef} id="chat-text" rows={1} value={text} onChange={(e) => setText(e.target.value)} maxLength={4000}
+        <textarea ref={textRef} id="chat-text" rows={1} disabled={Boolean(unavailable)} value={text} onChange={(e) => setText(e.target.value)} maxLength={4000}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); } }}
           onPaste={(e) => { const f = e.clipboardData.files?.[0]; if (f) { e.preventDefault(); photo.pick(f); } }}
           placeholder={placeholder ?? (file ? "Add a question (optional)…" : `Message ${ASSISTANT_NAME}…`)}
           className="chat-input max-h-40 min-h-11 w-full resize-none bg-transparent px-2 py-2.5 text-base text-ink placeholder:text-muted" />
-        <Button type="submit" busy={busy} aria-label="Send" className="h-11 w-11 shrink-0 rounded-full! px-0!">{busy ? null : <Send aria-hidden className="h-5 w-5" />}</Button>
+        <Button type="submit" busy={busy} disabled={Boolean(unavailable)} aria-label="Send" className="h-11 w-11 shrink-0 rounded-full! px-0!">{busy ? null : <Send aria-hidden className="h-5 w-5" />}</Button>
       </div>
       {progress != null && file === null && busy && (
         <div className="mt-2" aria-live="polite"><ProgressBar value={progress} label="Photo upload progress" /></div>
       )}
+      {unavailable && <p className="mt-2 text-sm font-semibold text-bad" role="status">{unavailable}</p>}
       {photo.error && <p className="mt-2 text-sm font-semibold text-bad" role="alert">{photo.error}</p>}
       {error ? <div className="mt-2"><ErrorState error={error} title={error instanceof ApiError && error.status === 403 ? undefined : "Message not sent"} /></div> : null}
     </form>
@@ -651,8 +655,8 @@ export function CopilotModeBadge() {
   const s = useQuery({ queryKey: qk.copilotStatus, queryFn: () => api<CopilotStatus>("/v1/copilot/status"), staleTime: 60_000 });
   if (!s.data) return null;
   return (
-    <Badge tone={s.data.mode === "llm" ? "primary" : "neutral"} title={`prompt ${s.data.prompt_version} · ${s.data.prompt_sha256.slice(0, 12)}`}>
-      {s.data.mode === "llm" ? `LLM: ${s.data.model}` : "LLM not configured · deterministic tool-grounded mode"}
+    <Badge tone={s.data.mode === "llm" ? "primary" : "bad"} title={`prompt ${s.data.prompt_version} · ${s.data.prompt_sha256.slice(0, 12)}`}>
+      {s.data.mode === "llm" ? `LLM: ${s.data.model}` : "LLM not configured · Bib unavailable"}
     </Badge>
   );
 }
