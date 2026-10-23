@@ -1,4 +1,6 @@
-import { renderHook, screen, within } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, renderHook, screen, within } from "@testing-library/react";
+import type { ReactNode } from "react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -32,21 +34,41 @@ describe("ChatThread", () => {
     expect(steps.map((s) => s.getAttribute("data-kind"))).toEqual(["start", "guard_input", "tool_call", "stage", "tool_result"]);
     expect(within(steps[4]).getByText("classify_tyre_image → Defect flagged, p(defective) 0.97")).toBeInTheDocument();
     expect(within(steps[4]).getByText("+2.0s")).toBeInTheDocument();
-    expect(screen.getByText("Bib is working…")).toBeInTheDocument();
+    expect(screen.getByText("Finished the YOLO inspection")).toBeInTheDocument(); // live status from the latest step
   });
 
-  it("keeps the latest turn's steps open but collapses earlier turns, and offers follow-ups", async () => {
+  it("folds the steps away once an answer is ready; a click opens them; follow-ups and copy are offered", async () => {
     const onSuggest = vi.fn();
     const done: ChatMessage = { id: "a2", role: "assistant", content: "**Triage: Defect flagged**", suggestions: ["Show the preprocessing stages"],
       trace_id: "t1", created_at: at(0), attachments: { status: "complete", events, mode: "deterministic_fallback", grounding: { checked: 2, ungrounded: [], pass: true } } };
-    const latest = { ...done, id: "a3", suggestions: [] };
-    renderWithQuery(<ChatThread messages={[done, latest]} onSuggest={onSuggest} autoScroll={false} />);
-    expect(screen.getAllByRole("list", { name: "Agent steps" })).toHaveLength(1); // only the latest is expanded
-    await userEvent.click(screen.getAllByRole("button", { name: /Agent steps · 5 events · 2.0 s/ })[0]);
-    expect(screen.getAllByRole("list", { name: "Agent steps" })).toHaveLength(2);
+    renderWithQuery(<ChatThread messages={[done]} onSuggest={onSuggest} autoScroll={false} />);
+    expect(screen.queryByRole("list", { name: "Agent steps" })).toBeNull(); // collapsed (hidden from assistive tech)
+    await userEvent.click(screen.getByRole("button", { name: /5 steps · 2.0 s/ }));
+    expect(screen.getByRole("list", { name: "Agent steps" })).toBeInTheDocument();
     await userEvent.click(within(screen.getByRole("group", { name: "Suggested follow-ups" })).getByText("Show the preprocessing stages"));
     expect(onSuggest).toHaveBeenCalledWith("Show the preprocessing stages");
-    expect(screen.getAllByText("grounded")).toHaveLength(2);
+    expect(screen.getByText("grounded")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Copy answer" })).toBeInTheDocument();
+  });
+
+  it("collapses the live steps by itself when the answer completes", () => {
+    const base = { id: "a4", role: "assistant" as const, content: "", suggestions: [], trace_id: null, created_at: at(0) };
+    const client = new QueryClient();
+    const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+    const { rerender } = render(<ChatThread messages={[{ ...base, attachments: { status: "pending", events } }]} onSuggest={() => {}} autoScroll={false} />, { wrapper });
+    expect(screen.getByRole("list", { name: "Agent steps" })).toBeInTheDocument();
+    rerender(<ChatThread messages={[{ ...base, content: "Done.", attachments: { status: "complete", events } }]} onSuggest={() => {}} autoScroll={false} />);
+    expect(screen.queryByRole("list", { name: "Agent steps" })).toBeNull();
+  });
+
+  it("offers to ask again when an answer failed", async () => {
+    const onSuggest = vi.fn();
+    const asked: ChatMessage = { ...user, id: "u9", attachments: {} };
+    const failed: ChatMessage = { id: "a9", role: "assistant", content: "Something went wrong.", suggestions: [], trace_id: null, created_at: at(1),
+      attachments: { status: "error", events: [] } };
+    renderWithQuery(<ChatThread messages={[asked, failed]} onSuggest={onSuggest} autoScroll={false} />);
+    await userEvent.click(screen.getByRole("button", { name: "Ask again" }));
+    expect(onSuggest).toHaveBeenCalledWith("Can this casing be retreaded?");
   });
 
   it("describes the inspection event with its pinned deployment", () => {

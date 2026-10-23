@@ -4,15 +4,18 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import clsx from "clsx";
 import {
   Brain,
+  Check,
   CheckCircle2,
   ChevronDown,
   ClipboardCheck,
+  Copy,
   ImagePlus,
   Layers,
   Leaf,
   Loader2,
   PenLine,
   Recycle,
+  RotateCcw,
   ScanLine,
   Search,
   Send,
@@ -194,15 +197,54 @@ export function eventText(e: ChatEvent): string {
   }
 }
 
-/** The LangGraph run as it happens: guardrails, planning, tool calls, pipeline stages, composition. */
-export function AgentTimeline({ events, pending, defaultOpen = false }: { events: ChatEvent[]; pending: boolean; defaultOpen?: boolean }) {
-  const [open, setOpen] = useState(defaultOpen);
-  if (!events.length) {
-    return pending ? <p className="flex items-center gap-2 text-sm text-muted"><Loader2 aria-hidden className="h-4 w-4 animate-spin" /> Starting the agent…</p> : null;
+const TOOL_LABEL: Record<string, string> = {
+  classify_tyre_image: "the YOLO inspection", search_knowledge: "a knowledge-base search",
+  get_inspection: "an inspection lookup", get_preprocessing_trace: "the preprocessing trace",
+};
+
+/** What Bib is doing right now, in plain words, from its latest recorded step. */
+export function statusLine(e: ChatEvent | undefined): string {
+  if (!e) return "Starting…";
+  const tool = e.tool ? TOOL_LABEL[e.tool] ?? humanize(e.tool) : "a tool";
+  switch (e.kind) {
+    case "start": return "Reading your message";
+    case "guard_input": return e.status === "blocked" ? "Blocked by the input guardrails" : "Input guardrails passed";
+    case "plan": return "Planning the next step";
+    case "tool_call": return `Running ${tool}`;
+    case "inspection": return "YOLO inspection created, waiting for the worker";
+    case "tool_progress": return e.message ?? `Running ${tool}`;
+    case "stage": return `Stage ${e.stage}: ${e.title}`;
+    case "tool_result": return `Finished ${tool}`;
+    case "compose": return "Writing the answer";
+    case "guard_output": return "Checking the answer";
+    default: return e.message ?? humanize(e.kind);
   }
-  const t0 = Date.parse(events[0].at);
-  const total = (Date.parse(events[events.length - 1].at) - t0) / 1000;
-  const expanded = pending || open;
+}
+
+/** Seconds since `since`, ticking once a second while `active`. */
+function useElapsed(since: string | undefined, active: boolean): number | null {
+  const [now, setNow] = useState(0);
+  useEffect(() => {
+    if (!active) return;
+    const tick = () => setNow(Date.now());
+    const first = setTimeout(tick, 0);
+    const id = setInterval(tick, 1000);
+    return () => { clearTimeout(first); clearInterval(id); };
+  }, [active]);
+  return since && now ? Math.max(0, (now - Date.parse(since)) / 1000) : null;
+}
+
+/**
+ * The LangGraph run as it happens. Opens by itself while Bib works and folds away when the answer is ready;
+ * a click overrides either way.
+ */
+export function AgentTimeline({ events, pending }: { events: ChatEvent[]; pending: boolean }) {
+  const [userOpen, setUserOpen] = useState<boolean | null>(null);
+  const expanded = userOpen ?? pending;
+  const elapsed = useElapsed(events[0]?.at, pending);
+  if (!events.length && !pending) return null;
+  const t0 = events.length ? Date.parse(events[0].at) : 0;
+  const total = events.length ? (Date.parse(events[events.length - 1].at) - t0) / 1000 : 0;
   // Consecutive pipeline stages read better as one row of chips; the theatre below shows each one in full.
   const rows: ChatEvent[][] = [];
   for (const e of events) {
@@ -212,41 +254,47 @@ export function AgentTimeline({ events, pending, defaultOpen = false }: { events
   }
   return (
     <div className="border-l-2 border-line pl-3">
-      <button type="button" onClick={() => setOpen((o) => !o)} disabled={pending} aria-expanded={expanded}
-        className="flex w-full items-center gap-2 py-1 text-left text-sm font-medium text-muted hover:text-ink">
-        {pending ? <Loader2 aria-hidden className="h-4 w-4 animate-spin text-primary" /> : <CheckCircle2 aria-hidden className="h-4 w-4 text-good" />}
-        {pending ? `${ASSISTANT_NAME} is working…` : `Agent steps · ${events.length} events · ${total.toFixed(1)} s`}
-        {!pending && <ChevronDown aria-hidden className={clsx("ml-auto h-4 w-4 transition", open && "rotate-180")} />}
+      <button type="button" onClick={() => setUserOpen(!expanded)} aria-expanded={expanded}
+        className="flex w-full items-center gap-2 py-1 text-left text-sm text-muted hover:text-ink">
+        {pending ? <Loader2 aria-hidden className="h-4 w-4 shrink-0 animate-spin text-primary" /> : <CheckCircle2 aria-hidden className="h-4 w-4 shrink-0 text-good" />}
+        <span className={clsx("min-w-0 truncate", pending && "font-medium text-ink")} aria-live="polite">
+          {pending ? statusLine(events[events.length - 1]) : `${events.length} steps · ${total.toFixed(1)} s`}
+        </span>
+        {pending && elapsed !== null && <span className="mono shrink-0 text-xs text-muted">{Math.floor(elapsed)} s</span>}
+        <ChevronDown aria-hidden className={clsx("ml-auto h-4 w-4 shrink-0 transition", expanded && "rotate-180")} />
       </button>
-      {expanded && (
-        <ol className="space-y-1 py-1 text-[13px]" aria-live="polite" aria-label="Agent steps">
-          {rows.map((group, i) => {
-            const e = group[group.length - 1];
-            const meta = STEP[e.kind];
-            const Icon = e.kind === "tool_result" ? (e.ok ? CheckCircle2 : XCircle) : meta?.icon ?? Sparkles;
-            const tone = e.kind === "tool_result" ? (e.ok ? "text-good" : "text-bad") : meta?.tone ?? "text-muted";
-            const last = pending && i === rows.length - 1;
-            return (
-              <li key={`${group[0].at}-${i}`} data-kind={e.kind} className="log-in flex items-start gap-2">
-                <Icon aria-hidden className={clsx("mt-0.5 h-3.5 w-3.5 shrink-0", tone, (last || e.kind === "tool_progress") && pending && "animate-pulse")} />
-                {e.kind === "stage" ? (
-                  <span className="flex min-w-0 flex-1 flex-wrap gap-1" title={group.map(eventText).join("\n")}>
-                    {group.map((g) => (
-                      <span key={g.stage} className="pop-in mono rounded-full bg-accent-soft px-2 py-px text-xs text-ink">{g.stage} {g.name} · {ms(g.duration_ms ?? 0)}</span>
-                    ))}
-                  </span>
-                ) : (
-                  <span className={clsx("min-w-0 flex-1 break-words", e.kind === "tool_call" ? "mono text-ink-soft" : "text-ink")}>
-                    {eventText(e)}
-                    {e.kind === "guard_input" && e.status === "blocked" && <Badge tone="bad" className="ml-2">blocked</Badge>}
-                  </span>
-                )}
-                <span className="mono shrink-0 text-muted">+{((Date.parse(e.at) - t0) / 1000).toFixed(1)}s</span>
-              </li>
-            );
-          })}
-        </ol>
-      )}
+      <div className={clsx("grid transition-[grid-template-rows] duration-300 ease-out", expanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}
+        aria-hidden={!expanded} inert={!expanded}>
+        <div className="overflow-hidden">
+          <ol className="space-y-1 py-1 text-[13px]" aria-label="Agent steps">
+            {rows.map((group, i) => {
+              const e = group[group.length - 1];
+              const meta = STEP[e.kind];
+              const Icon = e.kind === "tool_result" ? (e.ok ? CheckCircle2 : XCircle) : meta?.icon ?? Sparkles;
+              const tone = e.kind === "tool_result" ? (e.ok ? "text-good" : "text-bad") : meta?.tone ?? "text-muted";
+              const last = pending && i === rows.length - 1;
+              return (
+                <li key={`${group[0].at}-${i}`} data-kind={e.kind} className="log-in flex items-start gap-2">
+                  <Icon aria-hidden className={clsx("mt-0.5 h-3.5 w-3.5 shrink-0", tone, (last || e.kind === "tool_progress") && pending && "animate-pulse")} />
+                  {e.kind === "stage" ? (
+                    <span className="flex min-w-0 flex-1 flex-wrap gap-1" title={group.map(eventText).join("\n")}>
+                      {group.map((g) => (
+                        <span key={g.stage} className="pop-in mono rounded-full bg-accent-soft px-2 py-px text-xs text-ink">{g.stage} {g.name} · {ms(g.duration_ms ?? 0)}</span>
+                      ))}
+                    </span>
+                  ) : (
+                    <span className={clsx("min-w-0 flex-1 break-words", e.kind === "tool_call" ? "mono text-ink-soft" : "text-ink")}>
+                      {eventText(e)}
+                      {e.kind === "guard_input" && e.status === "blocked" && <Badge tone="bad" className="ml-2">blocked</Badge>}
+                    </span>
+                  )}
+                  <span className="mono shrink-0 text-muted">+{((Date.parse(e.at) - t0) / 1000).toFixed(1)}s</span>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+      </div>
     </div>
   );
 }
@@ -392,7 +440,24 @@ function Feedback({ message }: { message: ChatMessage }) {
   );
 }
 
-function AssistantMessage({ m, onSuggest, canReview, latest }: { m: ChatMessage; onSuggest: (s: string) => void; canReview: boolean; latest: boolean }) {
+function CopyAnswer({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button type="button" aria-label={copied ? "Copied" : "Copy answer"} title={copied ? "Copied" : "Copy answer"}
+      onClick={() => navigator.clipboard?.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); }, () => null)}
+      className="rounded-lg p-1.5 text-muted hover:bg-surface-muted hover:text-ink">
+      {copied ? <Check className="h-4 w-4 text-good" /> : <Copy className="h-4 w-4" />}
+    </button>
+  );
+}
+
+function AssistantMessage({ m, onSuggest, canReview, onRetry }: {
+  m: ChatMessage;
+  onSuggest: (s: string) => void;
+  canReview: boolean;
+  /** Re-ask the question that produced a failed answer (text only; a photo must be attached again). */
+  onRetry?: () => void;
+}) {
   const a = m.attachments ?? {};
   const pending = a.status === "pending";
   // A turn watched live plays the pipeline first and reveals the answer after it; history renders at once.
@@ -403,16 +468,21 @@ function AssistantMessage({ m, onSuggest, canReview, latest }: { m: ChatMessage;
   const typed = useTypewriter(m.content, live && showAnswer && a.status !== "error");
   const typing = showAnswer && typed < m.content.length;
   return (
-    <div className="flex gap-3" data-role="assistant">
+    <div className="stage-in flex gap-3" data-role="assistant">
       <BibAvatar />
       <div className="min-w-0 flex-1 space-y-3 pt-1">
         <p className="headline text-base text-primary">{ASSISTANT_NAME}</p>
-        <AgentTimeline events={a.events ?? []} pending={pending} defaultOpen={latest} />
+        <AgentTimeline events={a.events ?? []} pending={pending} />
         {a.inspection_id && <InspectionInChat id={a.inspection_id} canReview={canReview} animate={live} revealed={revealed} onRevealed={markRevealed} />}
         {!pending && !showAnswer && (
           <p className="flex items-center gap-2 text-sm text-muted"><Loader2 aria-hidden className="h-4 w-4 animate-spin" /> {ASSISTANT_NAME} is walking through the pipeline…</p>
         )}
-        {!showAnswer ? null : a.status === "error" ? <p className="text-bad">{m.content}</p> : (
+        {!showAnswer ? null : a.status === "error" ? (
+          <div className="flex flex-wrap items-center gap-3 rounded-xl bg-bad-soft px-4 py-3">
+            <p className="text-bad">{m.content}</p>
+            {onRetry && <Button variant="secondary" className="ml-auto" onClick={onRetry}><RotateCcw aria-hidden className="h-4 w-4" /> Ask again</Button>}
+          </div>
+        ) : (
           <div aria-live={typing ? "off" : "polite"} aria-busy={typing}>
             <Markdown text={typing ? `${balance(m.content.slice(0, typed))} ▍` : m.content} />
           </div>
@@ -426,6 +496,7 @@ function AssistantMessage({ m, onSuggest, canReview, latest }: { m: ChatMessage;
             {(a.tools ?? []).length > 0 && <span className="text-muted">tools: {a.tools?.join(", ")}</span>}
             <span className="ml-auto flex items-center gap-2">
               {m.trace_id && <Link href={`/llmops?trace=${m.trace_id}`} className="text-primary-ink hover:underline">trace</Link>}
+              {m.content && <CopyAnswer text={m.content} />}
               <Feedback message={m} />
             </span>
           </div>
@@ -449,7 +520,7 @@ function UserMessage({ m }: { m: ChatMessage }) {
   const photo = m.attachments?.photo;
   const src = mediaUrl(photo?.url);
   return (
-    <div className="flex justify-end gap-3" data-role="user">
+    <div className="stage-in flex justify-end gap-3" data-role="user">
       <div className="max-w-[85%] space-y-2">
         {photo && (
           <figure className="ml-auto w-fit overflow-hidden rounded-2xl rounded-tr-sm border border-line bg-surface">
@@ -486,16 +557,18 @@ export function ChatThread({ messages, onSuggest, canReview = false, autoScroll 
   const end = useRef<HTMLDivElement>(null);
   const last = messages[messages.length - 1];
   const newest = messages.findLast((m) => m.role === "assistant");
-  const latestAssistant = newest?.id;
   useAnswerStream(sessionId, newest?.id, newest?.attachments?.status === "pending");
   useEffect(() => {
     if (autoScroll) end.current?.scrollIntoView?.({ behavior: "smooth", block: "end" });
   }, [autoScroll, messages.length, last?.content, last?.attachments?.events?.length]);
   return (
     <div className="space-y-5">
-      {messages.map((m) => m.role === "user"
-        ? <UserMessage key={m.id} m={m} />
-        : <AssistantMessage key={m.id} m={m} onSuggest={onSuggest} canReview={canReview} latest={m.id === latestAssistant} />)}
+      {messages.map((m, i) => {
+        if (m.role === "user") return <UserMessage key={m.id} m={m} />;
+        const asked = messages[i - 1]?.role === "user" ? messages[i - 1].content : "";
+        return <AssistantMessage key={m.id} m={m} onSuggest={onSuggest} canReview={canReview}
+          onRetry={asked ? () => onSuggest(asked) : undefined} />;
+      })}
       <div ref={end} />
     </div>
   );
@@ -518,7 +591,11 @@ export function Composer({ onSend, busy, photo, progress, placeholder, error }: 
     t.style.height = "auto";
     t.style.height = `${Math.min(t.scrollHeight, 160)}px`;
   }, [text]);
+  useEffect(() => { // ready to type on desktop; phones keep the keyboard closed until tapped
+    if (window.matchMedia?.("(pointer: fine)").matches) textRef.current?.focus();
+  }, []);
   const { file } = photo;
+  useEffect(() => { if (file) textRef.current?.focus(); }, [file]); // a photo was just attached: ask about it
   const preview = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
   const submit = () => {
@@ -527,10 +604,11 @@ export function Composer({ onSend, busy, photo, progress, placeholder, error }: 
     setText("");
     photo.clear();
     if (fileRef.current) fileRef.current.value = "";
+    textRef.current?.focus();
   };
   const blocked = photo.blockedReason;
   return (
-    <form className="rounded-2xl border border-line-strong bg-surface p-2 shadow-[0_8px_30px_rgb(0_0_0/0.08)] focus-within:border-ink" onSubmit={(e) => { e.preventDefault(); submit(); }} aria-label={`Chat composer for ${ASSISTANT_NAME}`}
+    <form className="rounded-2xl border border-line-strong bg-surface p-2 shadow-[0_8px_30px_rgb(0_0_0/0.08)] focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/25" onSubmit={(e) => { e.preventDefault(); submit(); }} aria-label={`Chat composer for ${ASSISTANT_NAME}`}
       onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); photo.pick(e.dataTransfer.files?.[0]); }}>
       {preview && (
         <div className="mb-2 flex items-center gap-3 rounded-xl bg-surface-muted p-2">
@@ -557,7 +635,7 @@ export function Composer({ onSend, busy, photo, progress, placeholder, error }: 
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); } }}
           onPaste={(e) => { const f = e.clipboardData.files?.[0]; if (f) { e.preventDefault(); photo.pick(f); } }}
           placeholder={placeholder ?? (file ? "Add a question (optional)…" : `Message ${ASSISTANT_NAME}…`)}
-          className="max-h-40 min-h-11 w-full resize-none bg-transparent px-2 py-2.5 text-base text-ink outline-none placeholder:text-muted focus-visible:outline-none" />
+          className="chat-input max-h-40 min-h-11 w-full resize-none bg-transparent px-2 py-2.5 text-base text-ink placeholder:text-muted" />
         <Button type="submit" busy={busy} aria-label="Send" className="h-11 w-11 shrink-0 rounded-full! px-0!">{busy ? null : <Send aria-hidden className="h-5 w-5" />}</Button>
       </div>
       {progress != null && file === null && busy && (

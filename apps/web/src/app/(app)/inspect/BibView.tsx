@@ -33,26 +33,48 @@ const GRAPH = [
   ["suggest", "next steps for the inspector"],
 ] as const;
 
-/** Keep the newest content in view while the user is at the bottom; leave them alone once they scroll up. */
+/**
+ * Follow new content while the reader is at the bottom. Only the reader can unpin (wheel, touch, keys, scrollbar):
+ * smooth and programmatic scrolls pass through intermediate positions and must not stop the follow. New content
+ * that arrives while unpinned lights the jump button instead.
+ */
 function useStickToBottom(resetKey: string) {
   const scroller = useRef<HTMLDivElement>(null);
   const content = useRef<HTMLDivElement>(null);
   const pinned = useRef(true);
+  const userInputAt = useRef(-Infinity);
   const [atBottom, setAtBottom] = useState(true);
+  const [unread, setUnread] = useState(false);
   useEffect(() => {
     const s = scroller.current;
     const c = content.current;
     if (!s || !c) return;
-    const toBottom = () => s.scrollTo({ top: s.scrollHeight });
+    const markUser = () => { userInputAt.current = performance.now(); };
     const onScroll = () => {
-      const near = s.scrollHeight - s.scrollTop - s.clientHeight < 96;
-      pinned.current = near;
-      setAtBottom(near);
+      const near = s.scrollHeight - s.scrollTop - s.clientHeight < 80;
+      if (near) {
+        pinned.current = true;
+        setUnread(false);
+      } else if (performance.now() - userInputAt.current < 1000) {
+        pinned.current = false;
+      }
+      setAtBottom(near || pinned.current);
     };
-    s.addEventListener("scroll", onScroll, { passive: true });
-    const ro = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(() => { if (pinned.current) toBottom(); });
+    const onGrow = () => {
+      if (pinned.current) s.scrollTop = s.scrollHeight;
+      else setUnread(true);
+    };
+    const opts = { passive: true } as const;
+    s.addEventListener("scroll", onScroll, opts);
+    const inputs = ["wheel", "touchmove", "pointerdown", "keydown"] as const;
+    for (const ev of inputs) s.addEventListener(ev, markUser, opts);
+    const ro = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(onGrow);
     ro?.observe(c);
-    return () => { s.removeEventListener("scroll", onScroll); ro?.disconnect(); };
+    return () => {
+      s.removeEventListener("scroll", onScroll);
+      for (const ev of inputs) s.removeEventListener(ev, markUser);
+      ro?.disconnect();
+    };
   }, []);
   useEffect(() => { // a conversation opens at its latest message; the welcome screen opens at the top
     pinned.current = Boolean(resetKey);
@@ -60,9 +82,11 @@ function useStickToBottom(resetKey: string) {
   }, [resetKey]);
   const jump = () => {
     pinned.current = true;
+    setUnread(false);
+    setAtBottom(true);
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: "smooth" });
   };
-  return { scroller, content, atBottom, jump };
+  return { scroller, content, atBottom, unread, jump };
 }
 
 function groupByDay(rows: SessionRow[]): [string, SessionRow[]][] {
@@ -180,7 +204,7 @@ export function BibView() {
   const [progress, setProgress] = useState<number | null>(null);
   const [dragging, setDragging] = useState(false);
   const [drawer, setDrawer] = useState(false);
-  const { scroller, content, atBottom, jump } = useStickToBottom(session);
+  const { scroller, content, atBottom, unread, jump } = useStickToBottom(session);
   const isInspector = hasRole(me.data?.roles, "inspector");
   const photoBlocked = !me.data ? "Loading your role…" : !isInspector ? "Attaching tyre photos requires the inspector role."
     : models.data?.state === "untrained" ? "No trained model is active yet: promote a validated bundle first." : null;
@@ -246,6 +270,7 @@ export function BibView() {
           <button type="button" onClick={jump} aria-label="Jump to the latest message"
             className="pop-in absolute bottom-32 right-5 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-line-strong bg-surface text-ink shadow-md hover:bg-surface-muted">
             <ArrowDown aria-hidden className="h-5 w-5" />
+            {unread && <span aria-hidden className="pulse-dot absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-surface bg-brand-yellow" />}
           </button>
         )}
 

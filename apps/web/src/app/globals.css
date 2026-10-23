@@ -132,6 +132,11 @@ html.chat-mode .site-footer {
   border-radius: 6px;
 }
 
+/* The chat box shows focus on its whole composer instead (ring on the form), so the field itself has none. */
+textarea.chat-input:focus-visible {
+  outline: none;
+}
+
 .card {
   background: var(--surface);
   border: 1px solid var(--line);
