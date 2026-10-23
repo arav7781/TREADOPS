@@ -23,7 +23,7 @@ router = APIRouter(tags=["health"])
 
 
 @router.get("/healthz")
-def healthz():
+async def healthz():  # event loop, no threadpool and no database: liveness only
     return {"status": "ok", "at": datetime.now(UTC).isoformat()}
 
 

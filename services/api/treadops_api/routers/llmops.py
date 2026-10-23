@@ -7,7 +7,7 @@ import uuid
 from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import Float, cast, func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
 from treadops_ml.common import repo_path
@@ -53,7 +53,7 @@ def overview(since: datetime | None = None, p: Principal = Depends(require("ml_e
                          .group_by(ChatFeedback.score)).all())
     trunc = func.date_trunc("hour", LLMTrace.created_at)
     series = db.execute(select(trunc.label("t"), func.count(), func.percentile_cont(0.95).within_group(LLMTrace.latency_ms),
-                               func.sum(cast(func.jsonb_array_length(LLMTrace.guardrail_flags) > 0, Float)))
+                               func.sum(case((func.jsonb_array_length(LLMTrace.guardrail_flags) > 0, 1), else_=0)))
                         .where(w).group_by("t").order_by("t")).all()
     return {
         "since": since.isoformat(), "turns": n,

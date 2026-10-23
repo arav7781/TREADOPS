@@ -6,7 +6,9 @@ inspection pinned to the active deployment tuple, job and outbox event -> 202. C
 
 from __future__ import annotations
 
+import json
 import uuid
+from functools import lru_cache
 from typing import Any
 
 from sqlalchemy import func, select
@@ -129,6 +131,10 @@ def accept(
     if dep is None:
         raise ApiError(503, "model_unavailable", "No trained model available. Promote a validated bundle first.",
                        retry_after=30)
+    # Pin the deployment tuple at acceptance, then release the pooled connection: image processing is CPU-bound
+    # and must not hold a database connection (a burst of uploads would otherwise exhaust the pool).
+    dep_id, dep_generation, pinned = dep.id, dep.generation, model_tuple(dep)
+    db.rollback()
 
     try:
         ing = ingest(raw, _limits(), PreprocessContract())
@@ -172,8 +178,8 @@ def accept(
                           payload={"inspection_id": str(inspection_id)}, actor_id=actor_id,
                           resource_type="inspection", resource_id=str(inspection_id))
     insp = Inspection(
-        id=inspection_id, image=asset, job_id=job.id, deployment_id=dep.id, deployment_generation=dep.generation,
-        model_tuple=model_tuple(dep), status="queued", source=source, line_id=line_id, camera_id=camera_id,
+        id=inspection_id, image=asset, job_id=job.id, deployment_id=dep_id, deployment_generation=dep_generation,
+        model_tuple=pinned, status="queued", source=source, line_id=line_id, camera_id=camera_id,
         scenario_id=scenario_id, replay_job_id=replay_job_id, replay_sequence=replay_sequence,
         metadata_origin=metadata_origin, tyre_category=tyre_category, notes=notes,
         idempotency_key=idempotency_key, request_hash=request_hash, created_by=actor_id,
@@ -201,6 +207,18 @@ def accepted_body(insp: Inspection) -> dict[str, Any]:
         "metadata_origin": insp.metadata_origin, "poll_after_ms": 1500,
         "status_url": f"/v1/inspections/{insp.id}",
     }
+
+
+@lru_cache(maxsize=32)
+def _bundle_policy(bundle_sha: str) -> dict[str, Any] | None:
+    """Policy thresholds of an immutable bundle (for predictions stored before lineage carried them)."""
+    from ..storage import get_storage
+
+    try:
+        pol = json.loads(get_storage().get(f"bundles/{bundle_sha}/policy.json"))
+    except Exception:
+        return None
+    return {k: pol.get(k) for k in ("version", "binary_threshold", "triage_low", "triage_high")}
 
 
 def _review_dict(r: ReviewLabel, reviewer: User | None) -> dict[str, Any]:
@@ -257,6 +275,7 @@ def detail(db: Session, insp: Inspection, include_timeline: bool = True) -> dict
             "binary_defective": pred.binary_defective, "quality_status": pred.quality_status,
             "quality": pred.quality, "timing": pred.timing, "lineage": pred.lineage,
             "attribution": pred.attribution, "circularity": pred.circularity,
+            "policy": pred.lineage.get("policy") or _bundle_policy(pred.lineage.get("bundle_sha256", "")),
             "heatmap_url": next((st["image_url"] for st in out["stages"] if st["name"] == "attribution"), None),
             "classified_image_url": next((st["image_url"] for st in out["stages"] if st["name"] == "classified"), None),
         }

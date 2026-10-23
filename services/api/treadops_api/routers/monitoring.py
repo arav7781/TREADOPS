@@ -7,6 +7,8 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from treadops_ml.common import load_yaml
+
 from .. import audit, jobs
 from ..db import get_db
 from ..errors import ApiError
@@ -36,7 +38,12 @@ def windows(limit: int = Query(20, ge=1, le=100), p: Principal = Depends(require
             db: Session = Depends(get_db)):
     rows = db.execute(select(MonitoringWindow).order_by(MonitoringWindow.created_at.desc()).limit(limit)).scalars().all()
     latest = rows[0] if rows else None
+    cfg = load_yaml("configs/drift.yaml")
     return {"items": [window_view(w) for w in rows],
+            "thresholds": {"psi_alert_candidate": cfg["psi_alert_candidate"], "consecutive_windows":
+                           cfg["consecutive_windows"], "min_distinct_parents": cfg["min_distinct_parents"],
+                           "window_size": cfg["window_size"], "evaluate_every": cfg["evaluate_every"],
+                           "embedding_auc_alert": cfg["embedding"]["auc_alert"]},
             "state": "no_windows" if latest is None else latest.status,
             "message": None if rows else "No monitoring window yet: one is computed every 200 completed inspections "
                                          "(or run one now)."}

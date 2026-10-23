@@ -254,10 +254,13 @@ def execute(ctx: ToolContext, name: str, arguments: str | dict | None) -> dict[s
     if name not in IMPLS:
         return {"error": "unknown_tool", "name": name}
     try:
-        args: Any = (json.loads(arguments) if isinstance(arguments, str) and arguments.strip()
-                     else (arguments or {}))
+        args: Any = json.loads(arguments) if isinstance(arguments, str) and arguments.strip() else arguments
     except json.JSONDecodeError:
         return {"error": "invalid_arguments"}
+    if args in (None, "") or (isinstance(args, str) and not args.strip()):
+        args = {}
+    if not isinstance(args, dict):  # LLMs occasionally send a list, number or bare string
+        return {"error": "invalid_arguments", "message": "tool arguments must be a JSON object"}
     allowed = set(next(s for s in SCHEMAS if s["function"]["name"] == name)["function"]["parameters"]["properties"])
     args = {k: v for k, v in args.items() if k in allowed}  # never pass unexpected arguments through
     try:

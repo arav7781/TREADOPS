@@ -6,7 +6,7 @@ import uuid
 from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import and_, func, select
+from sqlalchemy import and_, func, select, text
 from sqlalchemy.orm import Session
 
 from .. import circularity
@@ -37,10 +37,11 @@ def ledger(since: datetime | None = None, metadata_origin: str | None = None,
     dispositions: dict[str, int] = dict(db.execute(select(rv.c.disposition, func.count()).join(
         Inspection, Inspection.id == rv.c.inspection_id).where(*conds, rv.c.disposition.is_not(None))
         .group_by(rv.c.disposition)).all())
+    pathway = Prediction.circularity["pathway"].astext.label("pathway")  # group by the label: one bound key
     recommended: dict[str, int] = dict(db.execute(
-        select(Prediction.circularity["pathway"].astext, func.count())
+        select(pathway, func.count())
         .join(Inspection, Inspection.id == Prediction.inspection_id).where(*conds)
-        .group_by(Prediction.circularity["pathway"].astext)).all())
+        .group_by(text("pathway"))).all())
     agreement = db.execute(select(Prediction.triage, rv.c.disposition, func.count())
                            .join(rv, rv.c.inspection_id == Prediction.inspection_id)
                            .join(Inspection, Inspection.id == Prediction.inspection_id)

@@ -138,7 +138,9 @@ def run(ctx: JobContext) -> dict[str, Any]:
     total_ms = (time.perf_counter() - t_start) * 1000
     lineage = {**bundle.lineage(), "image_sha256": asset.original_sha256, "image_id": str(asset.id),
                "deployment_id": tup["deployment_id"], "deployment_generation": tup["generation"],
-               "model_version": tup.get("registry_version"), "worker": ctx.owner}
+               "model_version": tup.get("registry_version"), "worker": ctx.owner,
+               "policy": {"version": bundle.policy.version, "binary_threshold": bundle.policy.binary_threshold,
+                          "triage_low": bundle.policy.triage_low, "triage_high": bundle.policy.triage_high}}
     with session_scope() as db:
         job = must_get(db, Job, ctx.job_id, populate_existing=True)
         if job.status != "running":

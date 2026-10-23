@@ -142,3 +142,12 @@ def test_list_endpoints_enforce_page_size(client):
     h = login(client, "viewer")
     assert client.get("/v1/inspections?limit=101", headers=h).status_code == 422
     assert client.get("/v1/inspections?limit=100", headers=h).status_code == 200
+
+
+def test_aggregate_endpoints_return_200_with_data(client):
+    """Regression: the ledger GROUP BY on a JSON key and the LLMOps boolean cast both returned 500."""
+    h = login(client, "admin")
+    for path in ("/v1/circularity/ledger", "/v1/llmops/overview", "/v1/metrics/overview", "/v1/monitoring/windows"):
+        r = client.get(path, headers=h)
+        assert r.status_code == 200, (path, r.text[:300])
+    assert "psi_alert_candidate" in client.get("/v1/monitoring/windows", headers=h).json()["thresholds"]

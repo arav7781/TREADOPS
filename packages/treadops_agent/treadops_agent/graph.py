@@ -136,7 +136,7 @@ def plan_fallback(text: str, has_attachment: bool) -> list[tuple[str, dict[str, 
         calls.append(("classify_tyre_image", {}))
     m = re.search(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", low)
     if m and not has_attachment:
-        calls.append(("get_preprocessing_trace" if re.search(r"preprocess|stage|letterbox|step", low)
+        calls.append(("get_preprocessing_trace" if re.search(r"\b(preprocess\w*|stages?|letterbox\w*|pipeline)\b", low)
                       else "get_inspection", {"inspection_id": m.group(0)}))
     if re.search(r"\b(model|accuracy|recall|specificity|gate|reliab|evidence)", low):
         calls.append(("get_model_status", {}))

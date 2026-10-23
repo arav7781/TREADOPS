@@ -109,6 +109,8 @@ def allowed_numbers(tool_results: list[dict[str, Any]]) -> list[float]:
             return
         if isinstance(o, int | float):
             vals.append(float(o))
+        elif isinstance(o, str):  # figures quoted from stage logs ("r=0.2188", "scale 0.341") are tool output too
+            vals.extend(float(x) for x in re.findall(r"(?<![\w.])\d+(?:\.\d+)?", o))
         elif isinstance(o, dict):
             for v in o.values():
                 walk(v)
@@ -127,6 +129,13 @@ def grounded(value: float, allowed: list[float]) -> bool:
             if abs(cand - value) <= 0.006 or (cand and abs(cand - value) / abs(cand) < 0.01):
                 return True
     return False
+
+
+def _clause_before(low: str, pos: int, width: int = 40) -> str:
+    """Up to `width` characters before `pos`, never reaching back past the start of the sentence."""
+    window = low[max(0, pos - width) : pos]
+    cut = max(window.rfind(c) for c in ".!?\n")
+    return window[cut + 1 :] if cut >= 0 else window
 
 
 @dataclass
@@ -166,14 +175,14 @@ def check_output(text: str, *, tool_results: list[dict[str, Any]], system_prompt
 
     # 3) certification / safety claims
     for pat in g["certification_patterns"]:
-        for m in list(re.finditer(pat, low)):
-            window = low[max(0, m.start() - 40) : m.start()]
-            if re.search(r"\b(not|never|cannot|can't|isn't|no)\b", window):
-                continue  # negated statements ("cannot certify") are fine
-            events.append(GuardEvent("output", "certification_claim", "rewrite", {"pattern": pat}))
-            text = re.sub(pat, "[requires inspector clearance]", text, flags=re.IGNORECASE)
+        # Rewrite only the un-negated matches, right to left so earlier offsets stay valid.
+        claims = [m for m in re.finditer(pat, text, flags=re.IGNORECASE)
+                  if not re.search(r"\b(not|never|cannot|can't|isn't|no)\b", _clause_before(low, m.start()))]
+        if claims:
+            events.append(GuardEvent("output", "certification_claim", "rewrite", {"pattern": pat, "count": len(claims)}))
+            for m in reversed(claims):
+                text = text[: m.start()] + "[requires inspector clearance]" + text[m.end():]
             low = text.lower()
-            break
 
     # 4) grounding of figures
     allowed = allowed_numbers(tool_results)

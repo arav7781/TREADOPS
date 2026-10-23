@@ -76,3 +76,34 @@ def test_knowledge_retrieval_returns_cited_sections():
     hits = search("how much CO2 does a retread save", 2)
     assert hits and hits[0]["id"].startswith("kb-003")
     assert search("blurred dark photo")[0]["id"].startswith(("kb-004", "kb-001"))
+
+
+def test_only_unnegated_certification_claims_are_rewritten():
+    cls = {"triage": "good_candidate", "p_defective": 0.03}
+    v = g.check_output("The model does not certify tyres. This casing is certified for reuse.", tool_results=[cls],
+                       system_prompt=SYSTEM, classification=cls, fallback_summary=None)
+    assert "does not certify" in v.text and "is [requires inspector clearance]" in v.text
+
+
+def test_figures_quoted_from_stage_logs_are_grounded():
+    tool = {"stages": [{"title": "Letterbox", "log": ["aspect preserved: 1024x768 -> 224x168 (r=0.2188)"]}]}
+    v = g.check_output("The resize ratio was 0.2188.", tool_results=[tool], system_prompt=SYSTEM,
+                       classification=None, fallback_summary=None)
+    assert v.grounding["pass"]
+
+
+def test_fallback_planner_does_not_confuse_next_steps_with_preprocessing():
+    from treadops_agent.graph import plan_fallback
+
+    iid = "c65b0e94-c703-4d63-ae5a-b7bc051b0f0d"
+    assert plan_fallback(f"Explain inspection {iid} and recommend next steps", False)[0][0] == "get_inspection"
+    assert plan_fallback(f"show the preprocessing stages for {iid}", False)[0][0] == "get_preprocessing_trace"
+
+
+@pytest.mark.parametrize("args", ["[1]", "3", '"text"', "   "])
+def test_tool_executor_rejects_non_object_arguments(args):
+    from treadops_agent import tools
+
+    ctx = tools.ToolContext(actor=None)
+    out = tools.execute(ctx, "search_knowledge", args)
+    assert out.get("error") in ("invalid_arguments", "bad_arguments")
