@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
-import { BrandMark, Wordmark } from "@/components/BrandMark";
+import { Logo } from "@/components/BrandMark";
 import { TreadArc } from "@/components/ui";
 
 import { LoginForm } from "./LoginForm";
@@ -12,9 +12,8 @@ export default function LoginPage() {
   return (
     <main className="relative flex min-h-screen flex-col overflow-hidden bg-black text-white">
       <TreadArc className="-right-40 top-24 h-[42rem] w-[42rem] text-white/[0.05]" />
-      <header className="relative flex h-16 items-center gap-2.5 px-4 lg:px-10">
-        <BrandMark />
-        <Wordmark />
+      <header className="relative flex h-20 items-center px-4 lg:px-10">
+        <Logo onDark priority className="h-10 w-auto" />
       </header>
       <div className="relative mx-auto grid w-full max-w-6xl flex-1 items-center gap-10 px-4 py-10 lg:grid-cols-[1.1fr_1fr] lg:px-8">
         <div>

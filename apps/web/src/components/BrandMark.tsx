@@ -1,14 +1,23 @@
-/** TreadOps' own mark: a casing in profile with tread blocks. Deliberately not a Michelin logo. */
-export function BrandMark({ className = "h-9 w-9" }: { className?: string }) {
-  return (
-    <svg aria-hidden viewBox="0 0 36 36" className={`shrink-0 ${className}`}>
-      <circle cx="18" cy="18" r="17" fill="var(--brand-yellow)" />
-      <circle cx="18" cy="18" r="11" fill="none" stroke="#000" strokeWidth="4" strokeDasharray="4.2 2.6" />
-      <circle cx="18" cy="18" r="4.5" fill="#000" />
-    </svg>
-  );
+import Image from "next/image";
+
+import logo from "../../public/brand/treadops-logo.png";
+import logoOnDark from "../../public/brand/treadops-logo-on-dark.png";
+import mark from "../../public/brand/treadops-mark.png";
+import markOnDark from "../../public/brand/treadops-mark-on-dark.png";
+
+/**
+ * The TreadOps logo (supplied by the authors). `onDark` swaps the blue wordmark for white so it stays legible on
+ * the black header, navy footer and sign-in page; the yellow stays.
+ */
+export function Logo({ onDark = false, className = "h-9 w-auto", priority = false }: {
+  onDark?: boolean;
+  className?: string;
+  priority?: boolean;
+}) {
+  return <Image src={onDark ? logoOnDark : logo} alt="TreadOps" className={className} priority={priority} />;
 }
 
-export function Wordmark({ className = "text-2xl" }: { className?: string }) {
-  return <span className={`headline text-white ${className}`}>TreadOps</span>;
+/** Just the tyre "T" mark, for tight spaces. */
+export function LogoMark({ onDark = false, className = "h-9 w-9" }: { onDark?: boolean; className?: string }) {
+  return <Image src={onDark ? markOnDark : mark} alt="" aria-hidden className={className} />;
 }

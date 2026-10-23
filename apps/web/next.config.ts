@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   /* config options here */
   cacheComponents: true,
   devIndicators: false,
+  images: { qualities: [75] }, // Next 16 requires an explicit allowlist
   async redirects() {
     return [
       { source: "/", destination: "/dashboard", permanent: false },

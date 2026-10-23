@@ -24,7 +24,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 
-import { BrandMark, Wordmark } from "@/components/BrandMark";
+import { Logo } from "@/components/BrandMark";
 import { shortSha } from "@/lib/format";
 import { useMe, useModels } from "@/lib/hooks";
 import { hasRole, primaryRole } from "@/lib/roles";
@@ -219,9 +219,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           {me.data && <span><span className="text-white">{me.data.display_name}</span> · <span className="capitalize">{primaryRole(me.data.roles)}</span></span>}
         </div>
         <div className="flex h-16 items-center gap-8 px-4 lg:px-6 xl:px-10">
-          <Link href="/dashboard" className="flex shrink-0 items-center gap-2.5" aria-label="TreadOps home">
-            <BrandMark />
-            <Wordmark />
+          <Link href="/dashboard" className="flex shrink-0 items-center" aria-label="TreadOps home">
+            <Logo onDark priority className="h-8 w-auto sm:h-9" />
           </Link>
           <Suspense fallback={<DesktopNav roles={roles} pathname="" />}>
             <DesktopNavWithPath roles={roles} />
@@ -244,7 +243,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <footer className="site-footer bg-navy text-white">
         <div className="mx-auto flex max-w-[1400px] flex-col gap-3 px-4 py-8 lg:flex-row lg:items-center lg:gap-10 lg:px-8">
-          <span className="flex items-center gap-2.5"><BrandMark className="h-8 w-8" /><Wordmark className="text-xl" /></span>
+          <Logo onDark className="h-8 w-auto shrink-0" />
           <p className="text-sm text-white/70">
             Triage aid only: final clearance requires a qualified inspector. Public photographs; operational metadata in
             replays is simulated. Independent prototype, not affiliated with or endorsed by Michelin.

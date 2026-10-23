@@ -79,7 +79,9 @@ Operational metadata in replays (lines, cameras, scenarios) is **simulated** and
 
 ## Images in this repository
 
-`docs/assets/treadops-banner.jpg` is the project banner supplied by the authors for this README.
+`docs/assets/treadops-banner.jpg` is the project banner supplied by the authors for this README. The TreadOps logo
+and the icons derived from it (`apps/web/public/brand/`, `apps/web/src/app/icon.png`, `apple-icon.png`) are the
+authors' own mark; the white variant for dark backgrounds is a recolouring of it.
 
 ## Trademarks and affiliation
 
