@@ -1,0 +1,11 @@
+id: small_224_seed43
+model: yolo26s-cls.pt
+epochs: 60
+imgsz: 224
+batch: 16
+optimizer: AdamW
+lr0: 0.001
+patience: 10
+seed: 43
+workers: 2
+augment: {hflip: 0.5, vflip: 0.0, rotate_deg: 10, brightness: 0.2, contrast: 0.2, saturation: 0.2}
