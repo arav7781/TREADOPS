@@ -167,3 +167,24 @@ def test_job04_single_training_slot(client):
     c1 = client.post(f"/v1/jobs/{jid}/cancel", headers=h)
     c2 = client.post(f"/v1/jobs/{jid}/cancel", headers=h)
     assert c1.json()["status"] == c2.json()["status"] == "cancelled"
+
+
+def test_worker_that_lost_its_lease_stops(client):
+    """After the sweeper recovers an expired lease, the old worker's next heartbeat raises LeaseLost."""
+    from treadops_api.models import Job as JobRow
+
+    with dbmod.session_scope() as s:
+        j = jobs.create_job(s, kind="snapshot", dedupe_key=f"lease-{uuid.uuid4()}", payload={})
+        jid = j.id
+    s = dbmod.new_session()
+    assert jobs.claim(s, jid, "worker-a", 60) is not None
+    assert jobs.heartbeat(s, jid, "worker-a", 60, 0.5, "half way") is False
+    with dbmod.session_scope() as s2:
+        s2.get(JobRow, jid).lease_expires_at = datetime.now(UTC) - timedelta(seconds=1)
+    assert jobs.recover_stale(s) == 1  # host slept: lease expired and the job moved to retry_wait
+    with pytest.raises(jobs.LeaseLost):
+        jobs.heartbeat(s, jid, "worker-a", 60)
+    s.close()
+    with dbmod.session_scope() as s3:
+        row = s3.get(JobRow, jid)
+        assert row.status == "retry_wait" and row.progress == 0.5

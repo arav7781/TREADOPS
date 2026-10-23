@@ -15,7 +15,7 @@ from sqlalchemy import select
 from treadops_api import jobs
 from treadops_api.db import new_session, session_scope
 from treadops_api.errors import ApiError
-from treadops_api.models import ImageAsset, Job
+from treadops_api.models import ImageAsset, Inspection, Job
 from treadops_api.services import inspections as svc
 from treadops_api.storage import get_storage
 from treadops_ml.common import load_yaml
@@ -41,10 +41,19 @@ def run(ctx: JobContext) -> dict:
         events = generate(p["scenario"], int(p["seed"]), int(p["count"]), float(p["rate"]),
                           [Parent(str(a.id), a.label, a.group_id) for a in parents], cfg=cfg)
         canon_cache: dict[str, object] = {}
-        stats = {"submitted": 0, "accepted": 0, "deduplicated": 0, "rejected": 0, "backpressure_waits": 0}
+        stats = {"submitted": 0, "accepted": 0, "deduplicated": 0, "rejected": 0, "backpressure_waits": 0,
+                 "resumed_skipped": 0}
         accepted_ids = []
-        t0 = time.monotonic()
+        # Resumable: a retried replay skips events whose idempotency keys already produced inspections.
+        done_keys = set(db.execute(select(Inspection.idempotency_key).where(Inspection.replay_job_id == ctx.job_id))
+                        .scalars())
+        pending = [e for e in events if f"replay:{ctx.job_id}:{e['duplicate_of'] or e['event_id']}" not in done_keys
+                   or e["duplicate_of"]]
+        stats["resumed_skipped"] = len(events) - len(pending)
+        t0 = time.monotonic() - (pending[0]["offset_s"] if pending else 0.0)
         for i, ev in enumerate(events):
+            if ev not in pending:
+                continue
             target = t0 + ev["offset_s"]
             delay = target - time.monotonic()
             if delay > 0:

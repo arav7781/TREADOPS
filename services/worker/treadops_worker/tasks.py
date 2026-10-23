@@ -131,6 +131,8 @@ def run_job(job_id: str) -> None:
     try:
         HANDLERS[ctx.kind](ctx)
         log.info("job %s (%s) finished", job_id, ctx.kind)
+    except jobs.LeaseLost as exc:  # another actor owns the outcome now; do not touch the job row
+        log.warning("job %s (%s) abandoned: %s", job_id, ctx.kind, exc)
     except JobCancelled:
         db = new_session()
         try:

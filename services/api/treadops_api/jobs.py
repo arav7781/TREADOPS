@@ -121,17 +121,23 @@ def claim(db: Session, job_id: uuid.UUID, owner: str, lease_s: int) -> Job | Non
     return job
 
 
+class LeaseLost(RuntimeError):
+    """This worker no longer owns the job (lease expired and the sweeper moved it on). Stop immediately."""
+
+
 def heartbeat(db: Session, job_id: uuid.UUID, owner: str, lease_s: int, progress: float | None = None,
               message: str | None = None) -> bool:
-    """Extend the lease; returns True if cancellation has been requested."""
+    """Extend the lease; returns True if cancellation has been requested. Raises LeaseLost if not the owner."""
     vals: dict[str, Any] = {"lease_expires_at": now() + timedelta(seconds=lease_s), "updated_at": now()}
     if progress is not None:
         vals["progress"] = max(0.0, min(1.0, progress))
     if message is not None:
         vals["progress_message"] = message[:300]
-    db.execute(update(Job).where(Job.id == job_id, Job.lease_owner == owner,
-                                 Job.status.in_(("running", "cancellation_requested"))).values(**vals))
+    res = db.execute(update(Job).where(Job.id == job_id, Job.lease_owner == owner,
+                                       Job.status.in_(("running", "cancellation_requested"))).values(**vals))
     db.commit()
+    if res.rowcount == 0:
+        raise LeaseLost(f"job {job_id} is no longer leased to {owner}")
     return bool(db.execute(select(Job.cancel_requested).where(Job.id == job_id)).scalar())
 
 

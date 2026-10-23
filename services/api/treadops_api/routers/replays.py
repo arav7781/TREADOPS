@@ -47,7 +47,7 @@ def start(body: ReplayIn, request: Request, p: Principal = Depends(require("ml_e
         raise ApiError(503, "model_unavailable", "No trained model available; replays need an active deployment.")
     job = jobs.create_job(db, kind="replay", dedupe_key=f"replay:{uuid.uuid4()}", payload=body.model_dump(),
                           actor_id=p.id, correlation_id=request.state.request_id, resource_type="replay",
-                          max_attempts=1)
+                          max_attempts=3)  # resumable: retries skip already-submitted events
     audit.record(db, actor=p, action="replay.requested", resource_type="job", resource_id=job.id,
                  correlation_id=request.state.request_id, payload=body.model_dump())
     db.commit()

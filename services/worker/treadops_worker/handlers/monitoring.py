@@ -25,7 +25,7 @@ from treadops_ml.metrics import binary_metrics, latency_summary
 from treadops_ml.monitoring import domain_classifier_auc, evidently_report, psi
 
 from ..runtime import bundles
-from ..tasks import JobContext, Permanent, handler
+from ..tasks import JobContext, Permanent, Transient, handler
 
 
 def _labelled(db, ids) -> dict:
@@ -38,6 +38,19 @@ def _labelled(db, ids) -> dict:
 
 @handler("monitoring")
 def run(ctx: JobContext) -> dict:
+    """Overlap protection: one window at a time (alert merging reads previous windows)."""
+    db = new_session()
+    owner = f"{ctx.owner}:{ctx.job_id}"
+    try:
+        if not jobs.acquire_lease(db, "monitoring", owner, ttl_s=600):
+            raise Transient("monitoring_busy", "another monitoring window is being computed")
+        return _run(ctx)
+    finally:
+        jobs.release_lease(db, "monitoring", owner)
+        db.close()
+
+
+def _run(ctx: JobContext) -> dict:
     cfg = load_yaml("configs/drift.yaml")
     storage = get_storage()
     db = new_session()
