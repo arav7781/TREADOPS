@@ -38,14 +38,8 @@
 
   --radius-card: 1rem;
   --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px rgb(0 0 0 / 0.05);
-  /* Height of the sticky header: utility row (lg+) plus the 4rem navigation row. */
+  /* Height of the sticky header (one 4rem navigation row). */
   --header-h: 4rem;
-}
-
-@media (min-width: 64rem) {
-  :root {
-    --header-h: 6.25rem;
-  }
 }
 
 @theme inline {

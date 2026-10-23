@@ -25,9 +25,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { Logo } from "@/components/BrandMark";
-import { shortSha } from "@/lib/format";
-import { useMe, useModels } from "@/lib/hooks";
-import { hasRole, primaryRole } from "@/lib/roles";
+import { useMe } from "@/lib/hooks";
+import { hasRole } from "@/lib/roles";
 import type { Role } from "@/lib/types";
 
 interface NavItem {
@@ -85,7 +84,7 @@ function DesktopNav({ roles, pathname }: { roles: string[] | undefined; pathname
     return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onKey); };
   }, [open]);
   return (
-    <nav ref={ref} aria-label="Primary" className="hidden h-full min-w-0 flex-1 items-center gap-7 lg:flex">
+    <nav ref={ref} aria-label="Primary" className="hidden h-full min-w-0 flex-1 items-center gap-6 lg:flex xl:gap-8">
       {GROUPS.map((g) => {
         const items = visible(roles, g.items);
         if (!items.length) return null;
@@ -191,14 +190,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const me = useMe();
-  const models = useModels();
 
   const signOut = async () => {
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
     router.replace("/login");
   };
 
-  const active = models.data?.active;
   const roles = me.data?.roles;
   return (
     <div className="flex min-h-screen flex-col">
@@ -207,20 +204,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         Skip to content
       </a>
       <header className="sticky top-0 z-40 bg-black text-white">
-        <div className="hidden h-9 items-center justify-end gap-6 border-b border-white/10 px-6 text-sm text-white/75 lg:flex xl:px-10">
-          <span className="font-bold tracking-wide text-brand-yellow">LOCAL · DEMO DATA</span>
-          <span className="flex items-center gap-1.5" aria-live="polite">
-            <span aria-hidden className={clsx("h-2 w-2 rounded-full", active ? "bg-good" : "bg-warn")} />
-            {models.isLoading ? "Loading model…" : models.isError ? "Model status unavailable" : active
-              ? <>Model <strong className="text-white">{active.model_family} v{active.registry_version ?? "?"}</strong>
-                <span className="mono text-white/50">{shortSha(active.bundle_sha256, 8)} · gen {models.data?.generation}</span></>
-              : "No trained model available"}
-          </span>
-          {me.data && <span><span className="text-white">{me.data.display_name}</span> · <span className="capitalize">{primaryRole(me.data.roles)}</span></span>}
-        </div>
-        <div className="flex h-16 items-center gap-8 px-4 lg:px-6 xl:px-10">
-          <Link href="/dashboard" className="flex shrink-0 items-center" aria-label="TreadOps home">
-            <Logo onDark priority className="h-8 w-auto sm:h-9" />
+        <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-3 px-4 lg:px-8">
+          <Link href="/dashboard" className="mr-4 flex shrink-0 items-center xl:mr-8" aria-label="TreadOps home">
+            <Logo onDark priority className="h-8 w-auto" />
           </Link>
           <Suspense fallback={<DesktopNav roles={roles} pathname="" />}>
             <DesktopNavWithPath roles={roles} />
