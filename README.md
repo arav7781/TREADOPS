@@ -5,8 +5,8 @@ TreadOps turns a phone photo of a tyre into a **casing-intake decision** for a r
 triages the photo, every preprocessing step is shown with its real timing, a human inspector gives final
 clearance, and a sustainability ledger estimates the raw material and CO₂e kept in use, counting only
 **inspector-verified** retreads. Around that sits a complete MLOps loop (DVC, MLflow, gated promotion,
-rollback, drift monitoring, operational replay) and a multimodal **LangGraph copilot** with guardrails and
-LLMOps tracing.
+rollback, drift monitoring, operational replay) and a multimodal **LangGraph copilot, "Bib"**, with guardrails and
+LLMOps tracing. Inspection happens inside the chat: the photo goes to Bib, and Bib's YOLO tool runs the pipeline.
 
 > Independent engineering prototype by Arav Saxena (23070126018) and Mahi Laddha (23070126069), SIT Pune —
 > AI & Machine Learning. Inspired by public descriptions of Michelin's TreadVision AI casing inspection
@@ -17,8 +17,8 @@ LLMOps tracing.
 
 | Role | Flow |
 |---|---|
-| Inspector | Drop a tyre photo on **Inspect** and watch the live pipeline: ingest (EXIF orientation, metadata stripped) → canonical image → 224×224 letterbox (padding tinted; no centre crop) → R/G/B tensor planes → image-quality screen → YOLO inference with calibrated probability → occlusion heatmap → annotated **classified image** and a recommended circular pathway. Record good / defective / unjudgeable plus a disposition in **Reviews**. |
-| Anyone | Ask the **Copilot** about a photo ("Can this casing be retreaded?"). It classifies through the deployed YOLO model, explains the decision, cites the knowledge base and suggests next steps, without ever certifying a tyre as safe. |
+| Inspector | Open **Bib · Inspect & ask** and attach, drop or paste a tyre photo in the chat. Bib (a LangGraph agent) calls its `classify_tyre_image` tool, which creates a pinned inspection; the chat then shows the agent's steps (guardrails, plan, tool calls, timings) and plays the real pipeline stage by stage: ingest (EXIF orientation, metadata stripped) → canonical image → 224×224 letterbox (padding tinted; no centre crop) → R/G/B tensor planes → image-quality screen → YOLO inference with calibrated probability → occlusion heatmap → annotated **classified image**. The result card, circular pathway, grounded answer and follow-up suggestions follow, and the inspector can record a review without leaving the chat. |
+| Anyone | Ask Bib about the model, drift or circularity ("How much CO2 does retreading 25 truck casings save?"). Answers cite the knowledge base and tool outputs and never certify a tyre as safe. Viewers can chat; attaching photos requires the inspector role. |
 | ML engineer | Create an eligible snapshot, train an allowlisted recipe, compare gate evidence, run shadow evaluation, run deterministic replays (low light, blur, prior shift, burst), and review drift alerts. |
 | Admin | Promote or roll back with a reason and expected generation; audit everything. |
 
@@ -77,8 +77,8 @@ resolvable ✅.
 p(defective) fell 0.53 → 0.44 as images darkened, matching the stress-test recall drop.
 
 **Tests:** 58 unit, 9 data/ML (on the real data and artifacts) and 25 integration tests against real
-PostgreSQL/Redis/object storage (API-01..04, JOB-01..04, REL-01..04, DB-01 and regressions), 30 web component
-tests and 17 Playwright journeys against the live stack — all passing; GitHub CI (lint, mypy, contract diff,
+PostgreSQL/Redis/object storage (API-01..04, JOB-01..04, REL-01..04, DB-01 and regressions), 36 web component
+tests and 20 Playwright journeys against the live stack — all passing; GitHub CI (lint, mypy, contract diff,
 migrations, tests, web build, Docker images) is green.
 
 ## Architecture
@@ -97,7 +97,7 @@ flowchart TB
   I & O & T --> P & S
   T --> M[MLflow<br/>runs + registry aliases]
   V[DVC pipeline<br/>prepare → split → train → evaluate → export_parity → package] --> M
-  A --> C[Copilot: LangGraph<br/>guard_input → plan ⇄ tools → guard_output]
+  A --> C[Bib copilot: LangGraph<br/>guard_input → plan ⇄ tools → guard_output]
   C -->|classify_tyre_image| A
 ```
 
@@ -126,12 +126,18 @@ make dev            # API :8000, workers, web on http://localhost:3100
 Demo users are `viewer@`, `inspector@`, `mlengineer@` and `admin@treadops.local`; the password is
 `DEMO_PASSWORD` in `.env`. `make up` runs everything in containers instead (CPU profile).
 
-### Copilot LLM
+### Bib (copilot) LLM
 
 Set `LLM_BASE_URL`, `LLM_API_KEY` and `LLM_MODEL` for any OpenAI-compatible endpoint (OpenAI, Azure OpenAI,
 LiteLLM, vLLM, Ollama `/v1`). Without them, the copilot runs a deterministic, tool-grounded planner and labels its
 traces `deterministic_fallback`. The system prompt is versioned in `configs/prompts/`; `make eval-copilot` runs
 the golden set and logs results to MLflow.
+
+### Name and visual design
+
+The copilot is called **Bib**, a nod to Bibendum, the Michelin Man. The UI palette (blue `#27509b`, navy `#00205b`,
+yellow `#fce500`) is inspired by Michelin's public website, and the type is Barlow (open source). TreadOps uses no
+Michelin logo, mascot artwork or proprietary typeface, and is not affiliated with or endorsed by Michelin.
 
 ## Sustainability ledger
 
