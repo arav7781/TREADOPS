@@ -1,0 +1,139 @@
+{
+  "comparative": {
+    "champion_bundle_sha256": "4bdf10e66e0e44dc87b042933908099b6538c42a22b6686e7bce53739bf26676",
+    "max_recall_drop_pp": 2.0,
+    "recall_difference": {
+      "ci95": [
+        -0.04725346831646047,
+        0.016044937036398088
+      ],
+      "difference": -0.013333333333333308,
+      "metric": "recall",
+      "parents": 127,
+      "resamples": 1000,
+      "seed": 42,
+      "status": "ok",
+      "support": 150
+    },
+    "rule": "candidate recall - champion recall >= -max_drop (point estimate) with CI reported",
+    "specificity_difference": {
+      "ci95": [
+        0.008757549611734281,
+        0.15667909734174784
+      ],
+      "difference": 0.05599999999999994,
+      "metric": "specificity",
+      "parents": 127,
+      "resamples": 1000,
+      "seed": 42,
+      "status": "ok",
+      "support": 125
+    },
+    "status": "passed"
+  },
+  "evidence_label": "development evidence (outer validation: calibration + policy roles)",
+  "hard_gates": [
+    {
+      "detail": {
+        "fit_or_selection_ids_in_protected_roles": 0,
+        "split_checks": {
+          "groups_in_multiple_roles": 0,
+          "image_ids_unassigned": 0,
+          "original_sha_in_multiple_roles": 0
+        }
+      },
+      "id": "no_critical_leakage",
+      "status": "passed"
+    },
+    {
+      "detail": {
+        "best_pt_sha256": true,
+        "git_sha": true,
+        "mlflow_run_id": true,
+        "preprocess_sha256": true,
+        "pretrained_sha256": true,
+        "recipe_sha256": true,
+        "split_sha256": true,
+        "uv_lock_sha256": true
+      },
+      "id": "lineage_complete",
+      "status": "passed"
+    },
+    {
+      "detail": "all gate-cohort outputs finite",
+      "id": "finite_probabilities",
+      "status": "passed"
+    },
+    {
+      "detail": {
+        "defective": 0,
+        "good": 1
+      },
+      "id": "class_mapping",
+      "status": "passed"
+    },
+    {
+      "detail": {
+        "max_abs_probability_error": 2.9206275939941406e-06,
+        "mean_abs_probability_error": 9.219120787065547e-08,
+        "n_images": 120,
+        "triage_agreement": 1.0
+      },
+      "id": "onnx_parity",
+      "status": "passed"
+    }
+  ],
+  "quality_targets": [
+    {
+      "ci95": [
+        0.9068135271280356,
+        0.9772134509633353
+      ],
+      "id": "defect_recall",
+      "numerator": 143,
+      "status": "passed",
+      "support": 150,
+      "target": 0.95,
+      "value": 0.9533333333333334
+    },
+    {
+      "ci95": [
+        0.9318110012180654,
+        0.991804743537176
+      ],
+      "id": "specificity",
+      "numerator": 122,
+      "status": "passed",
+      "support": 125,
+      "target": 0.9,
+      "value": 0.976
+    }
+  ],
+  "rule": "any failed -> failed; else any insufficient -> insufficient_evidence; else passed",
+  "schema_version": 1,
+  "status": "passed",
+  "threshold": 0.843939,
+  "triage": {
+    "defect_flagged": {
+      "count": 148,
+      "defective": 143,
+      "fraction": 0.5381818181818182,
+      "good": 5
+    },
+    "defective_support": 150,
+    "false_negatives_routed_to_good_candidate": 1,
+    "good_candidate": {
+      "count": 117,
+      "defective": 1,
+      "fraction": 0.4254545454545455,
+      "good": 116
+    },
+    "manual_review": {
+      "count": 10,
+      "defective": 6,
+      "fraction": 0.03636363636363636,
+      "good": 4
+    },
+    "n": 275
+  }
+}

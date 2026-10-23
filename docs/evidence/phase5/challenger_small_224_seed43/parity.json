@@ -1,0 +1,30 @@
+{
+  "best_pt_sha256": "0aa305a7f9d08b10d4e48c9cfd95eec42a7261937d95c2e99b0af5e3c382ef0c",
+  "cohort": "held-out development images (policy + calibration roles)",
+  "max_abs_probability_error": 2.9206275939941406e-06,
+  "mean_abs_probability_error": 9.219120787065547e-08,
+  "n_images": 120,
+  "onnx_input": {
+    "name": "images",
+    "shape": [
+      "batch",
+      "3",
+      "height",
+      "width"
+    ]
+  },
+  "onnx_sha256": "2cac82fafaf7eafc1e52e48953379be8090208f36f64e22116bf0e743c397744",
+  "precision": "fp32",
+  "runtimes": {
+    "native": "ultralytics/torch cpu",
+    "onnx": "onnxruntime 1.31.0 CPUExecutionProvider"
+  },
+  "status": "passed",
+  "tolerances": {
+    "max": 0.001,
+    "mean": 0.0001
+  },
+  "triage_agreement": 1.0,
+  "triage_boundary_band": 0.01,
+  "triage_mismatches": []
+}

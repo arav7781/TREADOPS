@@ -1,0 +1,24 @@
+{
+  "binary_threshold": 0.843939,
+  "final_clearance": "human",
+  "positive_label": "defective",
+  "quality": {
+    "max_brightness": 0.95,
+    "min_blur_variance": 15.0,
+    "min_brightness": 0.12
+  },
+  "selection": {
+    "n": 138,
+    "policy_ids_sha256": "e1c0dfe97bf917e7ffb55e643b90d2f5fcb86e2fe73610e27438f4fdae0fd4a2",
+    "recall": 0.96,
+    "recall_target": 0.95,
+    "rule": "max_specificity_at_recall_target",
+    "selected_on_role": "policy",
+    "specificity": 0.9523809523809523,
+    "status": "ok",
+    "threshold": 0.843939
+  },
+  "triage_high": 0.8,
+  "triage_low": 0.2,
+  "version": "v1"
+}

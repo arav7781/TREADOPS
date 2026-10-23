@@ -1,0 +1,964 @@
+{
+  "models": [
+    {
+      "registry_version": "3",
+      "model_family": "yolo26s-cls",
+      "stage": "rolled_back",
+      "gate_status": "passed",
+      "headline": {
+        "gate_recall": 0.9533333333333334,
+        "gate_specificity": 0.976,
+        "test_recall": 0.8866666666666667,
+        "test_specificity": 0.968503937007874,
+        "model_p95_ms": 9.981383802369237
+      },
+      "bundle_sha256": "9e5fbdc540f5166b59e4a676b028351409ec2e0190613c958514daa2433566b9"
+    },
+    {
+      "registry_version": "2",
+      "model_family": "yolo26s-cls",
+      "stage": "active",
+      "gate_status": "passed",
+      "headline": {
+        "gate_recall": 0.9666666666666667,
+        "gate_specificity": 0.92,
+        "test_recall": 0.9533333333333334,
+        "test_specificity": 0.937007874015748,
+        "model_p95_ms": 12.603291193954647
+      },
+      "bundle_sha256": "4bdf10e66e0e44dc87b042933908099b6538c42a22b6686e7bce53739bf26676"
+    },
+    {
+      "registry_version": "1",
+      "model_family": "yolo26n-cls",
+      "stage": "rejected",
+      "gate_status": "failed",
+      "headline": {
+        "gate_recall": 0.9666666666666667,
+        "gate_specificity": 0.896,
+        "test_recall": 0.94,
+        "test_specificity": 0.905511811023622,
+        "model_p95_ms": 14.978778907970987
+      },
+      "bundle_sha256": "b44299440c2f318246ed43919ad961e3bd6b67abc62b8e73bb0626ad1a55230d"
+    }
+  ],
+  "challenger_v3": {
+    "gate_report": {
+      "rule": "any failed -> failed; else any insufficient -> insufficient_evidence; else passed",
+      "status": "passed",
+      "triage": {
+        "n": 275,
+        "manual_review": {
+          "good": 4,
+          "count": 10,
+          "fraction": 0.03636363636363636,
+          "defective": 6
+        },
+        "defect_flagged": {
+          "good": 5,
+          "count": 148,
+          "fraction": 0.5381818181818182,
+          "defective": 143
+        },
+        "good_candidate": {
+          "good": 116,
+          "count": 117,
+          "fraction": 0.4254545454545455,
+          "defective": 1
+        },
+        "defective_support": 150,
+        "false_negatives_routed_to_good_candidate": 1
+      },
+      "threshold": 0.843939,
+      "hard_gates": [
+        {
+          "id": "no_critical_leakage",
+          "detail": {
+            "split_checks": {
+              "image_ids_unassigned": 0,
+              "groups_in_multiple_roles": 0,
+              "original_sha_in_multiple_roles": 0
+            },
+            "fit_or_selection_ids_in_protected_roles": 0
+          },
+          "status": "passed"
+        },
+        {
+          "id": "lineage_complete",
+          "detail": {
+            "git_sha": true,
+            "split_sha256": true,
+            "mlflow_run_id": true,
+            "recipe_sha256": true,
+            "best_pt_sha256": true,
+            "uv_lock_sha256": true,
+            "preprocess_sha256": true,
+            "pretrained_sha256": true
+          },
+          "status": "passed"
+        },
+        {
+          "id": "finite_probabilities",
+          "detail": "all gate-cohort outputs finite",
+          "status": "passed"
+        },
+        {
+          "id": "class_mapping",
+          "detail": {
+            "good": 1,
+            "defective": 0
+          },
+          "status": "passed"
+        },
+        {
+          "id": "onnx_parity",
+          "detail": {
+            "n_images": 120,
+            "triage_agreement": 1.0,
+            "max_abs_probability_error": 2.9206275939941406e-06,
+            "mean_abs_probability_error": 9.219120787065547e-08
+          },
+          "status": "passed"
+        }
+      ],
+      "comparative": {
+        "rule": "candidate recall - champion recall >= -max_drop (point estimate) with CI reported",
+        "status": "passed",
+        "recall_difference": {
+          "ci95": [
+            -0.04725346831646047,
+            0.016044937036398088
+          ],
+          "seed": 42,
+          "metric": "recall",
+          "status": "ok",
+          "parents": 127,
+          "support": 150,
+          "resamples": 1000,
+          "difference": -0.013333333333333308
+        },
+        "max_recall_drop_pp": 2.0,
+        "champion_bundle_sha256": "4bdf10e66e0e44dc87b042933908099b6538c42a22b6686e7bce53739bf26676",
+        "specificity_difference": {
+          "ci95": [
+            0.008757549611734281,
+            0.15667909734174784
+          ],
+          "seed": 42,
+          "metric": "specificity",
+          "status": "ok",
+          "parents": 127,
+          "support": 125,
+          "resamples": 1000,
+          "difference": 0.05599999999999994
+        }
+      },
+      "evidence_label": "development evidence (outer validation: calibration + policy roles)",
+      "schema_version": 1,
+      "quality_targets": [
+        {
+          "id": "defect_recall",
+          "ci95": [
+            0.9068135271280356,
+            0.9772134509633353
+          ],
+          "value": 0.9533333333333334,
+          "status": "passed",
+          "target": 0.95,
+          "support": 150,
+          "numerator": 143
+        },
+        {
+          "id": "specificity",
+          "ci95": [
+            0.9318110012180654,
+            0.991804743537176
+          ],
+          "value": 0.976,
+          "status": "passed",
+          "target": 0.9,
+          "support": 125,
+          "numerator": 122
+        }
+      ]
+    },
+    "comparative": {
+      "rule": "candidate recall - champion recall >= -max_drop (point estimate) with CI reported",
+      "status": "passed",
+      "recall_difference": {
+        "ci95": [
+          -0.04725346831646047,
+          0.016044937036398088
+        ],
+        "seed": 42,
+        "metric": "recall",
+        "status": "ok",
+        "parents": 127,
+        "support": 150,
+        "resamples": 1000,
+        "difference": -0.013333333333333308
+      },
+      "max_recall_drop_pp": 2.0,
+      "champion_bundle_sha256": "4bdf10e66e0e44dc87b042933908099b6538c42a22b6686e7bce53739bf26676",
+      "specificity_difference": {
+        "ci95": [
+          0.008757549611734281,
+          0.15667909734174784
+        ],
+        "seed": 42,
+        "metric": "specificity",
+        "status": "ok",
+        "parents": 127,
+        "support": 125,
+        "resamples": 1000,
+        "difference": 0.05599999999999994
+      }
+    },
+    "locked_test": {
+      "support": {
+        "good": 127,
+        "total": 277,
+        "defective": 150
+      },
+      "accuracy": {
+        "ci95": [
+          0.8868888724641274,
+          0.9498821688774862
+        ],
+        "value": 0.924187725631769,
+        "status": "ok",
+        "numerator": 256,
+        "denominator": 277
+      },
+      "confusion": {
+        "fn": 17,
+        "fp": 4,
+        "tn": 123,
+        "tp": 133
+      },
+      "precision": {
+        "ci95": [
+          0.9273350111412373,
+          0.9885884749164
+        ],
+        "value": 0.9708029197080292,
+        "status": "ok",
+        "numerator": 133,
+        "denominator": 137
+      },
+      "threshold": 0.843939,
+      "specificity": {
+        "ci95": [
+          0.9218126547872019,
+          0.987684999988728
+        ],
+        "value": 0.968503937007874,
+        "status": "ok",
+        "numerator": 123,
+        "denominator": 127
+      },
+      "defect_recall": {
+        "ci95": [
+          0.8259972496074807,
+          0.9280257611175121
+        ],
+        "value": 0.8866666666666667,
+        "status": "ok",
+        "numerator": 133,
+        "denominator": 150
+      }
+    },
+    "shadow": {
+      "job_id": "ee622799-2a25-47a0-b882-98d74e09f790",
+      "status": "succeeded",
+      "rows": 390,
+      "report": {
+        "cohort": "policy role (development evidence), paired parents per scenario",
+        "scenarios": {
+          "baseline": {
+            "n": 130,
+            "champion": {
+              "support": {
+                "good": 60,
+                "total": 130,
+                "defective": 70
+              },
+              "accuracy": {
+                "ci95": [
+                  0.8455752282887322,
+                  0.9464065753018235
+                ],
+                "value": 0.9076923076923077,
+                "status": "ok",
+                "numerator": 118,
+                "denominator": 130
+              },
+              "confusion": {
+                "fn": 4,
+                "fp": 8,
+                "tn": 52,
+                "tp": 66
+              },
+              "precision": {
+                "ci95": [
+                  0.8009115547747073,
+                  0.9441926716047963
+                ],
+                "value": 0.8918918918918919,
+                "status": "ok",
+                "numerator": 66,
+                "denominator": 74
+              },
+              "threshold": 0.222118,
+              "specificity": {
+                "ci95": [
+                  0.7583484022266194,
+                  0.9308589055482808
+                ],
+                "value": 0.8666666666666667,
+                "status": "ok",
+                "numerator": 52,
+                "denominator": 60
+              },
+              "defect_recall": {
+                "ci95": [
+                  0.8620804944065945,
+                  0.9775562210552198
+                ],
+                "value": 0.9428571428571428,
+                "status": "ok",
+                "numerator": 66,
+                "denominator": 70
+              }
+            },
+            "challenger": {
+              "support": {
+                "good": 60,
+                "total": 130,
+                "defective": 70
+              },
+              "accuracy": {
+                "ci95": [
+                  0.9029620739214435,
+                  0.9786780470567225
+                ],
+                "value": 0.9538461538461539,
+                "status": "ok",
+                "numerator": 124,
+                "denominator": 130
+              },
+              "confusion": {
+                "fn": 3,
+                "fp": 3,
+                "tn": 57,
+                "tp": 67
+              },
+              "precision": {
+                "ci95": [
+                  0.8814033116891541,
+                  0.9853184591101384
+                ],
+                "value": 0.9571428571428572,
+                "status": "ok",
+                "numerator": 67,
+                "denominator": 70
+              },
+              "threshold": 0.843939,
+              "specificity": {
+                "ci95": [
+                  0.8629948343000966,
+                  0.9828504979690988
+                ],
+                "value": 0.95,
+                "status": "ok",
+                "numerator": 57,
+                "denominator": 60
+              },
+              "defect_recall": {
+                "ci95": [
+                  0.8814033116891541,
+                  0.9853184591101384
+                ],
+                "value": 0.9571428571428572,
+                "status": "ok",
+                "numerator": 67,
+                "denominator": 70
+              }
+            },
+            "triage_changes": {
+              "defect_flagged->manual_review": 1,
+              "good_candidate->manual_review": 3,
+              "manual_review->defect_flagged": 6,
+              "manual_review->good_candidate": 6,
+              "good_candidate->defect_flagged": 4
+            },
+            "mean_abs_p_delta": 0.09170621415598473,
+            "triage_agreement": 0.8461538461538461,
+            "recall_difference": {
+              "ci95": [
+                -0.057992327365728936,
+                0.09335849056603776
+              ],
+              "seed": 42,
+              "metric": "recall",
+              "status": "ok",
+              "parents": 68,
+              "support": 70,
+              "resamples": 1000,
+              "difference": 0.014285714285714346
+            },
+            "specificity_difference": {
+              "ci95": [
+                0.0,
+                0.20756682389937112
+              ],
+              "seed": 42,
+              "metric": "specificity",
+              "status": "ok",
+              "parents": 68,
+              "support": 60,
+              "resamples": 1000,
+              "difference": 0.08333333333333326
+            }
+          },
+          "low_light": {
+            "n": 130,
+            "champion": {
+              "support": {
+                "good": 60,
+                "total": 130,
+                "defective": 70
+              },
+              "accuracy": {
+                "ci95": [
+                  0.7315106773356286,
+                  0.8662114385817721
+                ],
+                "value": 0.8076923076923077,
+                "status": "ok",
+                "numerator": 105,
+                "denominator": 130
+              },
+              "confusion": {
+                "fn": 15,
+                "fp": 10,
+                "tn": 50,
+                "tp": 55
+              },
+              "precision": {
+                "ci95": [
+                  0.7394468026298345,
+                  0.9142290597250574
+                ],
+                "value": 0.8461538461538461,
+                "status": "ok",
+                "numerator": 55,
+                "denominator": 65
+              },
+              "threshold": 0.222118,
+              "specificity": {
+                "ci95": [
+                  0.7196838673407889,
+                  0.906868230636393
+                ],
+                "value": 0.8333333333333334,
+                "status": "ok",
+                "numerator": 50,
+                "denominator": 60
+              },
+              "defect_recall": {
+                "ci95": [
+                  0.6760881364169021,
+                  0.8656129703326555
+                ],
+                "value": 0.7857142857142857,
+                "status": "ok",
+                "numerator": 55,
+                "denominator": 70
+              }
+            },
+            "challenger": {
+              "support": {
+                "good": 60,
+                "total": 130,
+                "defective": 70
+              },
+              "accuracy": {
+                "ci95": [
+                  0.7484929799934502,
+                  0.8791152417198204
+                ],
+                "value": 0.823076923076923,
+                "status": "ok",
+                "numerator": 107,
+                "denominator": 130
+              },
+              "confusion": {
+                "fn": 23,
+                "fp": 0,
+                "tn": 60,
+                "tp": 47
+              },
+              "precision": {
+                "ci95": [
+                  0.9244423947340892,
+                  1.0
+                ],
+                "value": 1.0,
+                "status": "ok",
+                "numerator": 47,
+                "denominator": 47
+              },
+              "threshold": 0.843939,
+              "specificity": {
+                "ci95": [
+                  0.9398281469657729,
+                  1.0
+                ],
+                "value": 1.0,
+                "status": "ok",
+                "numerator": 60,
+                "denominator": 60
+              },
+              "defect_recall": {
+                "ci95": [
+                  0.555009356445595,
+                  0.7700113076041396
+                ],
+                "value": 0.6714285714285714,
+                "status": "ok",
+                "numerator": 47,
+                "denominator": 70
+              }
+            },
+            "triage_changes": {
+              "defect_flagged->manual_review": 3,
+              "good_candidate->manual_review": 6,
+              "manual_review->defect_flagged": 6,
+              "manual_review->good_candidate": 7,
+              "good_candidate->defect_flagged": 3
+            },
+            "mean_abs_p_delta": 0.11269823634613657,
+            "triage_agreement": 0.8076923076923077,
+            "recall_difference": {
+              "ci95": [
+                -0.24562753036437246,
+                0.0
+              ],
+              "seed": 42,
+              "metric": "recall",
+              "status": "ok",
+              "parents": 68,
+              "support": 70,
+              "resamples": 1000,
+              "difference": -0.11428571428571432
+            },
+            "specificity_difference": {
+              "ci95": [
+                0.06382978723404253,
+                0.3043780193236715
+              ],
+              "seed": 42,
+              "metric": "specificity",
+              "status": "ok",
+              "parents": 68,
+              "support": 60,
+              "resamples": 1000,
+              "difference": 0.16666666666666663
+            }
+          },
+          "camera_blur": {
+            "n": 130,
+            "champion": {
+              "support": {
+                "good": 60,
+                "total": 130,
+                "defective": 70
+              },
+              "accuracy": {
+                "ci95": [
+                  0.8641853462762413,
+                  0.9576825631101845
+                ],
+                "value": 0.9230769230769231,
+                "status": "ok",
+                "numerator": 120,
+                "denominator": 130
+              },
+              "confusion": {
+                "fn": 5,
+                "fp": 5,
+                "tn": 55,
+                "tp": 65
+              },
+              "precision": {
+                "ci95": [
+                  0.8434458769666427,
+                  0.9691057831576938
+                ],
+                "value": 0.9285714285714286,
+                "status": "ok",
+                "numerator": 65,
+                "denominator": 70
+              },
+              "threshold": 0.222118,
+              "specificity": {
+                "ci95": [
+                  0.8193105788446039,
+                  0.9638795436268733
+                ],
+                "value": 0.9166666666666666,
+                "status": "ok",
+                "numerator": 55,
+                "denominator": 60
+              },
+              "defect_recall": {
+                "ci95": [
+                  0.8434458769666427,
+                  0.9691057831576938
+                ],
+                "value": 0.9285714285714286,
+                "status": "ok",
+                "numerator": 65,
+                "denominator": 70
+              }
+            },
+            "challenger": {
+              "support": {
+                "good": 60,
+                "total": 130,
+                "defective": 70
+              },
+              "accuracy": {
+                "ci95": [
+                  0.8273370371540686,
+                  0.9347586606406172
+                ],
+                "value": 0.8923076923076924,
+                "status": "ok",
+                "numerator": 116,
+                "denominator": 130
+              },
+              "confusion": {
+                "fn": 11,
+                "fp": 3,
+                "tn": 57,
+                "tp": 59
+              },
+              "precision": {
+                "ci95": [
+                  0.8671196198147727,
+                  0.9834083142785631
+                ],
+                "value": 0.9516129032258065,
+                "status": "ok",
+                "numerator": 59,
+                "denominator": 62
+              },
+              "threshold": 0.843939,
+              "specificity": {
+                "ci95": [
+                  0.8629948343000966,
+                  0.9828504979690988
+                ],
+                "value": 0.95,
+                "status": "ok",
+                "numerator": 57,
+                "denominator": 60
+              },
+              "defect_recall": {
+                "ci95": [
+                  0.7401175333019485,
+                  0.9099237947975207
+                ],
+                "value": 0.8428571428571429,
+                "status": "ok",
+                "numerator": 59,
+                "denominator": 70
+              }
+            },
+            "triage_changes": {
+              "defect_flagged->manual_review": 1,
+              "good_candidate->manual_review": 6,
+              "manual_review->defect_flagged": 7,
+              "manual_review->good_candidate": 3,
+              "good_candidate->defect_flagged": 1
+            },
+            "mean_abs_p_delta": 0.09684695329514723,
+            "triage_agreement": 0.8615384615384616,
+            "recall_difference": {
+              "ci95": [
+                -0.18965517241379304,
+                -0.009466019417475945
+              ],
+              "seed": 42,
+              "metric": "recall",
+              "status": "ok",
+              "parents": 68,
+              "support": 70,
+              "resamples": 1000,
+              "difference": -0.08571428571428574
+            },
+            "specificity_difference": {
+              "ci95": [
+                -0.027027027027027084,
+                0.12904719235364395
+              ],
+              "seed": 42,
+              "metric": "specificity",
+              "status": "ok",
+              "parents": 68,
+              "support": 60,
+              "resamples": 1000,
+              "difference": 0.033333333333333326
+            }
+          }
+        },
+        "champion_bundle": "4bdf10e66e0e44dc87b042933908099b6538c42a22b6686e7bce53739bf26676",
+        "challenger_bundle": "9e5fbdc540f5166b59e4a676b028351409ec2e0190613c958514daa2433566b9",
+        "user_visible_effect": "none (shadow)"
+      }
+    }
+  },
+  "deployments": {
+    "generation": 3,
+    "active_deployment_id": "82d053cb-9999-4212-9091-6c8b6a020749",
+    "items": [
+      {
+        "deployment_id": "82d053cb-9999-4212-9091-6c8b6a020749",
+        "generation": 3,
+        "action": "rollback",
+        "state": "active",
+        "model_version_id": "9c5e89f4-bdbc-4a27-b180-be58e2acc39c",
+        "registry_version": "2",
+        "bundle_sha256": "4bdf10e66e0e44dc87b042933908099b6538c42a22b6686e7bce53739bf26676",
+        "reason": "Rollback: shadow on paired policy-role images shows v3 recall -8.6 pp under blur (95% CI -19.0 to -0.9) and -11.4 pp under low light versus v2; keep v2 serving.",
+        "approved_by": "Ada Admin",
+        "readiness": {
+          "at": "2026-10-23T06:19:10.898598+00:00",
+          "status": "ready",
+          "worker": "M-CT4FW0FWG6:85648",
+          "load_ms": 0.0,
+          "tolerance": 0.0001,
+          "golden_images": 8,
+          "max_abs_error": 5.960464477539063e-08,
+          "warm_latency_ms": [
+            9.72,
+            5.56,
+            5.89,
+            5.5,
+            5.48,
+            5.64,
+            5.38,
+            5.62
+          ],
+          "triage_mismatches": []
+        },
+        "previous_deployment_id": "4325ac9c-d546-4011-98fb-e55967c71169",
+        "created_at": "2026-10-23T06:19:10.907942+00:00"
+      },
+      {
+        "deployment_id": "4325ac9c-d546-4011-98fb-e55967c71169",
+        "generation": 2,
+        "action": "promote",
+        "state": "superseded",
+        "model_version_id": "2c2c2b32-4eed-4c83-a58d-a1e02c496b3b",
+        "registry_version": "3",
+        "bundle_sha256": "9e5fbdc540f5166b59e4a676b028351409ec2e0190613c958514daa2433566b9",
+        "reason": "Release drill: v3 (seed 43) passes dev gates and the comparative bound; promoting to exercise promote/rollback. Shadow shows blur/low-light recall regression, so a rollback follows.",
+        "approved_by": "Ada Admin",
+        "readiness": {
+          "at": "2026-10-23T06:18:54.472215+00:00",
+          "status": "ready",
+          "worker": "M-CT4FW0FWG6:85648",
+          "load_ms": 0.0,
+          "tolerance": 0.0001,
+          "golden_images": 8,
+          "max_abs_error": 2.9802322387695312e-08,
+          "warm_latency_ms": [
+            15.45,
+            9.01,
+            6.37,
+            6.56,
+            6.14,
+            6.22,
+            6.27,
+            5.87
+          ],
+          "triage_mismatches": []
+        },
+        "previous_deployment_id": "ec8ccec4-0526-4fe0-b5bd-f154572b442a",
+        "created_at": "2026-10-23T06:18:54.484761+00:00"
+      },
+      {
+        "deployment_id": "ec8ccec4-0526-4fe0-b5bd-f154572b442a",
+        "generation": 1,
+        "action": "bootstrap",
+        "state": "superseded",
+        "model_version_id": "9c5e89f4-bdbc-4a27-b180-be58e2acc39c",
+        "registry_version": "2",
+        "bundle_sha256": "4bdf10e66e0e44dc87b042933908099b6538c42a22b6686e7bce53739bf26676",
+        "reason": "YOLO26s-cls v2 passes all hard gates and quality targets on the development gate cohort; nano v1 failed specificity. Retry after the host slept mid-release.",
+        "approved_by": "Ada Admin",
+        "readiness": {
+          "at": "2026-10-23T04:55:00.745190+00:00",
+          "status": "ready",
+          "worker": "M-CT4FW0FWG6:61098",
+          "load_ms": 0.8,
+          "tolerance": 0.0001,
+          "golden_images": 8,
+          "max_abs_error": 5.960464477539063e-08,
+          "warm_latency_ms": [
+            217.83,
+            13.37,
+            14.24,
+            15.92,
+            14.16,
+            15.72,
+            12.98,
+            13.88
+          ],
+          "triage_mismatches": []
+        },
+        "previous_deployment_id": null,
+        "created_at": "2026-10-23T04:55:00.763653+00:00"
+      }
+    ]
+  },
+  "release_audit": [
+    {
+      "id": 175,
+      "at": "2026-10-23T06:19:10.909000+00:00",
+      "actor": null,
+      "action": "release.rollback.activated",
+      "resource_type": "deployment",
+      "resource_id": "82d053cb-9999-4212-9091-6c8b6a020749",
+      "outcome": "success",
+      "correlation_id": "818c48b78a8840f3928c77f1747b284e",
+      "payload": {
+        "reason": "Rollback: shadow on paired policy-role images shows v3 recall -8.6 pp under blur (95% CI -19.0 to -0.9) and -11.4 pp under low light versus v2; keep v2 serving.",
+        "approved_by": "aa224d4f-066e-4af7-88e6-a7f3e595700b",
+        "bundle_sha256": "4bdf10e66e0e44dc87b042933908099b6538c42a22b6686e7bce53739bf26676",
+        "generation_after": 3,
+        "generation_before": 2,
+        "previous_deployment_id": "4325ac9c-d546-4011-98fb-e55967c71169"
+      }
+    },
+    {
+      "id": 174,
+      "at": "2026-10-23T06:19:10.309871+00:00",
+      "actor": "admin@treadops.local",
+      "action": "release.rollback.requested",
+      "resource_type": "model_version",
+      "resource_id": "9c5e89f4-bdbc-4a27-b180-be58e2acc39c",
+      "outcome": "success",
+      "correlation_id": "818c48b78a8840f3928c77f1747b284e",
+      "payload": {
+        "job_id": "cf8eaebc-28d0-4cf7-9650-8502f55028d8",
+        "reason": "Rollback: shadow on paired policy-role images shows v3 recall -8.6 pp under blur (95% CI -19.0 to -0.9) and -11.4 pp under low light versus v2; keep v2 serving.",
+        "bundle_sha256": "4bdf10e66e0e44dc87b042933908099b6538c42a22b6686e7bce53739bf26676",
+        "expected_generation": 2
+      }
+    },
+    {
+      "id": 173,
+      "at": "2026-10-23T06:18:54.485924+00:00",
+      "actor": null,
+      "action": "release.promote.activated",
+      "resource_type": "deployment",
+      "resource_id": "4325ac9c-d546-4011-98fb-e55967c71169",
+      "outcome": "success",
+      "correlation_id": "e66a110b7d3d42e48256166c602178dd",
+      "payload": {
+        "reason": "Release drill: v3 (seed 43) passes dev gates and the comparative bound; promoting to exercise promote/rollback. Shadow shows blur/low-light recall regression, so a rollback follows.",
+        "approved_by": "aa224d4f-066e-4af7-88e6-a7f3e595700b",
+        "bundle_sha256": "9e5fbdc540f5166b59e4a676b028351409ec2e0190613c958514daa2433566b9",
+        "generation_after": 2,
+        "generation_before": 1,
+        "previous_deployment_id": "ec8ccec4-0526-4fe0-b5bd-f154572b442a"
+      }
+    },
+    {
+      "id": 172,
+      "at": "2026-10-23T06:18:54.312337+00:00",
+      "actor": "admin@treadops.local",
+      "action": "release.promote.requested",
+      "resource_type": "model_version",
+      "resource_id": "2c2c2b32-4eed-4c83-a58d-a1e02c496b3b",
+      "outcome": "success",
+      "correlation_id": "e66a110b7d3d42e48256166c602178dd",
+      "payload": {
+        "job_id": "8894ee1d-08e1-461b-a20c-6d3f5cbeea6d",
+        "reason": "Release drill: v3 (seed 43) passes dev gates and the comparative bound; promoting to exercise promote/rollback. Shadow shows blur/low-light recall regression, so a rollback follows.",
+        "bundle_sha256": "9e5fbdc540f5166b59e4a676b028351409ec2e0190613c958514daa2433566b9",
+        "expected_generation": 1
+      }
+    },
+    {
+      "id": 21,
+      "at": "2026-10-23T04:55:00.767152+00:00",
+      "actor": null,
+      "action": "release.promote.activated",
+      "resource_type": "deployment",
+      "resource_id": "ec8ccec4-0526-4fe0-b5bd-f154572b442a",
+      "outcome": "success",
+      "correlation_id": "66c23cbe8cb94690853e52191827473d",
+      "payload": {
+        "reason": "YOLO26s-cls v2 passes all hard gates and quality targets on the development gate cohort; nano v1 failed specificity. Retry after the host slept mid-release.",
+        "approved_by": "aa224d4f-066e-4af7-88e6-a7f3e595700b",
+        "bundle_sha256": "4bdf10e66e0e44dc87b042933908099b6538c42a22b6686e7bce53739bf26676",
+        "generation_after": 1,
+        "generation_before": 0,
+        "previous_deployment_id": null
+      }
+    },
+    {
+      "id": 20,
+      "at": "2026-10-23T04:54:59.768689+00:00",
+      "actor": "admin@treadops.local",
+      "action": "release.promote.requested",
+      "resource_type": "model_version",
+      "resource_id": "9c5e89f4-bdbc-4a27-b180-be58e2acc39c",
+      "outcome": "success",
+      "correlation_id": "66c23cbe8cb94690853e52191827473d",
+      "payload": {
+        "job_id": "f438b7db-69e1-4926-b64d-7f0e703fecf3",
+        "reason": "YOLO26s-cls v2 passes all hard gates and quality targets on the development gate cohort; nano v1 failed specificity. Retry after the host slept mid-release.",
+        "bundle_sha256": "4bdf10e66e0e44dc87b042933908099b6538c42a22b6686e7bce53739bf26676",
+        "expected_generation": 0
+      }
+    },
+    {
+      "id": 17,
+      "at": "2026-10-22T19:48:57.837677+00:00",
+      "actor": "admin@treadops.local",
+      "action": "release.promote.requested",
+      "resource_type": "model_version",
+      "resource_id": "9c5e89f4-bdbc-4a27-b180-be58e2acc39c",
+      "outcome": "success",
+      "correlation_id": "fac85b55af2e4b53b6dbf20a714ec59c",
+      "payload": {
+        "job_id": "eb8991c6-f5a0-4fc9-8d66-762b01ed1159",
+        "reason": "YOLO26s-cls v2 passes all hard gates and quality targets on the development gate cohort; nano v1 failed specificity",
+        "bundle_sha256": "4bdf10e66e0e44dc87b042933908099b6538c42a22b6686e7bce53739bf26676",
+        "expected_generation": 0
+      }
+    },
+    {
+      "id": 8,
+      "at": "2026-10-22T19:17:48.438363+00:00",
+      "actor": "admin@treadops.local",
+      "action": "release.blocked",
+      "resource_type": "model_version",
+      "resource_id": "47566343-aed5-43f2-b9cd-d49a5bb6250b",
+      "outcome": "denied",
+      "correlation_id": "d512f4a4cda34309af1715ff28a2557b",
+      "payload": {
+        "reason": "attempt to promote nano baseline",
+        "gate_status": "failed"
+      }
+    }
+  ],
+  "note": "gen 2 was an explicitly labelled release drill; v2 serves after the rollback"
+}

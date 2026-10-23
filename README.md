@@ -50,6 +50,14 @@ The nano baseline missing its specificity target is shown as **failed** in the U
 (`validation_status=failed`); the API refuses to promote it. Low light remains the main weakness of both models,
 which is exactly what the monitoring and replay tooling is for.
 
+**Seed variability and shadow evaluation.** A second YOLO26s-cls run (seed 43, v3) also passed every development
+gate (recall 0.953, specificity 0.976) and the comparative bound against the champion (recall −1.3 pp, 95 % CI
+−4.7 to +1.6). Its locked-test recall, however, was 0.887 (133/150) against v2's 0.953: the 275-image development
+cohort cannot separate the two seeds. Shadow evaluation on paired development images showed why: v3 gains
+specificity but loses recall under blur (−8.6 pp, CI −19.0 to −0.9) and low light (−11.4 pp, CI −24.6 to 0.0).
+v3 was promoted only in an explicitly labelled **release drill** (generation 2) and rolled back to v2
+(generation 3) citing that evidence; inspections taken in between keep their v3 lineage.
+
 **Serving (real photo, end to end):** warm YOLO inference 7–13 ms; whole worker job incl. preprocessing,
 occlusion attribution and stage images ≈ 0.3–0.6 s.
 

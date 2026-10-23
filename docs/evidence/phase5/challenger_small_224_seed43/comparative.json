@@ -1,0 +1,32 @@
+{
+  "champion_bundle_sha256": "4bdf10e66e0e44dc87b042933908099b6538c42a22b6686e7bce53739bf26676",
+  "max_recall_drop_pp": 2.0,
+  "recall_difference": {
+    "ci95": [
+      -0.04725346831646047,
+      0.016044937036398088
+    ],
+    "difference": -0.013333333333333308,
+    "metric": "recall",
+    "parents": 127,
+    "resamples": 1000,
+    "seed": 42,
+    "status": "ok",
+    "support": 150
+  },
+  "rule": "candidate recall - champion recall >= -max_drop (point estimate) with CI reported",
+  "specificity_difference": {
+    "ci95": [
+      0.008757549611734281,
+      0.15667909734174784
+    ],
+    "difference": 0.05599999999999994,
+    "metric": "specificity",
+    "parents": 127,
+    "resamples": 1000,
+    "seed": 42,
+    "status": "ok",
+    "support": 125
+  },
+  "status": "passed"
+}
