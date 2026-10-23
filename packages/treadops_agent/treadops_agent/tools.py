@@ -84,6 +84,15 @@ SCHEMAS = [
             "retreading, photo capture, model/data, monitoring). Returns passages with [KB:id] citations.",
             {"query": {"type": "string"}}, ["query"]),
     _schema("get_review_queue", "How many completed inspections await a human label, and the oldest wait."),
+    _schema("list_cameras", "Line cameras connected to TreadOps: name, production line, live status, frame rate, "
+            "and last-hour damaged / not damaged / expert-check counts."),
+    _schema("camera_quality_summary", "Damaged / not damaged / expert-check counts and damage rate per line camera "
+            "over the last N hours (camera inspections only).",
+            {"hours": {"type": "integer", "minimum": 1, "maximum": 168},
+             "camera": {"type": "string", "description": "camera name or code; omit for all cameras"}}),
+    _schema("inspect_camera", "Inspect the tyre currently in front of a line camera: takes its live frame and runs the "
+            "deployed YOLO model on it as a normal pinned inspection. Use when the user asks what a camera sees now.",
+            {"camera": {"type": "string", "description": "camera name or code"}}, ["camera"]),
 ]
 
 
@@ -190,6 +199,78 @@ def classify_tyre_image(ctx: ToolContext) -> dict[str, Any]:
             return {"error": "timeout", "inspection_id": res["inspection_id"], "status": res["status"],
                     "message": "The inspection is still queued; results will appear on the inspection page."}
         time.sleep(0.5)
+
+
+def _find_camera(db, name: str | None):
+    from treadops_api.models import Camera
+
+    cams = db.execute(select(Camera).order_by(Camera.name)).scalars().all()
+    if not name:
+        return cams
+    want = name.strip().lower()
+    exact = [c for c in cams if want in (c.name.lower(), c.code)]
+    return exact or [c for c in cams if want in c.name.lower() or want in c.code]
+
+
+def list_cameras(ctx: ToolContext) -> dict[str, Any]:
+    from treadops_api import cameras as cam_svc
+
+    db = new_session()
+    try:
+        cams = _find_camera(db, None)
+        st = cam_svc.stats(db, [c.code for c in cams])
+        items = [{k: v for k, v in cam_svc.view(c, st.get(c.code)).items()
+                  if k in ("name", "code", "line_id", "state", "live", "fps", "resolution", "simulated", "enabled",
+                           "last_capture_at", "last_hour", "last_error")} for c in cams]
+    finally:
+        db.close()
+    return {"cameras": items, "count": len(items),
+            "note": "simulated cameras replay dataset photos; their results are labelled simulated"}
+
+
+def camera_quality_summary(ctx: ToolContext, hours: int = 1, camera: str | None = None) -> dict[str, Any]:
+    from treadops_api import cameras as cam_svc
+
+    hours = max(1, min(int(hours), 168))
+    db = new_session()
+    try:
+        cams = _find_camera(db, camera)
+        if camera and not cams:
+            return {"error": "camera_not_found", "message": f"No camera matches '{camera}'."}
+        st = cam_svc.stats(db, [c.code for c in cams], hours=hours)
+    finally:
+        db.close()
+    rows = []
+    for c in cams:
+        s = st.get(c.code, {})
+        n = s.get("inspected", 0)
+        rows.append({"camera": c.name, "line_id": c.line_id, "simulated": c.simulated, **s,
+                     "damage_rate": round(s.get("damaged", 0) / n, 4) if n else None})
+    return {"hours": hours, "cameras": rows}
+
+
+def inspect_camera(ctx: ToolContext, camera: str) -> dict[str, Any]:
+    from treadops_api.errors import ApiError
+    from treadops_api.routers.cameras import inspect_now
+
+    db = new_session()
+    try:
+        cams = _find_camera(db, camera)
+        if len(cams) != 1:
+            return {"error": "camera_not_found" if not cams else "ambiguous_camera",
+                    "message": f"Cameras matching '{camera}': {[c.name for c in cams]}"}
+        cam = cams[0]
+        info = {"camera": cam.name, "line_id": cam.line_id, "simulated": cam.simulated}  # read before commit expires it
+        body = inspect_now(db, cam, ctx.actor, f"{ctx.idempotency_key or uuid.uuid4()}:camera:{cam.code}")
+    except ApiError as exc:
+        return {"error": exc.code, "message": exc.message}
+    finally:
+        db.close()
+    ctx.inspection_id = uuid.UUID(body["inspection_id"])
+    ctx.emit("inspection", {"inspection_id": body["inspection_id"], "camera": info["camera"],
+                            "deployment_generation": body.get("deployment_generation")})
+    res = classify_tyre_image(ctx)  # waits for the worker exactly like an attached photo
+    return {**res, **info}
 
 
 def aggregate_frames(frames: list[dict[str, Any]]) -> dict[str, Any]:
@@ -389,6 +470,9 @@ IMPLS: dict[str, Callable[..., dict[str, Any]]] = {
     "estimate_circularity_impact": estimate_circularity_impact,
     "search_knowledge": search_knowledge,
     "get_review_queue": get_review_queue,
+    "list_cameras": list_cameras,
+    "camera_quality_summary": camera_quality_summary,
+    "inspect_camera": inspect_camera,
 }
 
 

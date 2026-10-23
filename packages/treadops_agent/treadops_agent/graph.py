@@ -93,6 +93,14 @@ def summarize(name: str, res: dict[str, Any]) -> str:
         return f"{res.get('awaiting_review')} inspection(s) awaiting review"
     if name == "get_preprocessing_trace":
         return f"{len(res.get('stages', []))} stages"
+    if name == "list_cameras":
+        return f"{res.get('count', 0)} camera(s): " + ", ".join(
+            f"{c['name']} ({'live' if c.get('live') else c.get('state')})" for c in res.get("cameras", []))
+    if name == "camera_quality_summary":
+        return "; ".join(f"{c['camera']}: {c.get('damaged', 0)}/{c.get('inspected', 0)} damaged"
+                         for c in res.get("cameras", [])) + f" (last {res.get('hours')} h)"
+    if name == "inspect_camera" and res.get("triage"):
+        return f"{res.get('camera')}: {verdict_label(res)} ({res['triage_label']}), p(defective) {res['p_defective']:.4f}"
     if name == "get_inspection":
         return f"inspection {str(res.get('inspection_id', ''))[:8]}: {res.get('triage_label', res.get('status'))}"
     return "done"

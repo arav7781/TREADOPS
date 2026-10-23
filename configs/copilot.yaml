@@ -30,6 +30,7 @@ guardrails:
     "road ?-?worthy": "fit for use"
     "safe to (drive|use|run)": "fit for use"
   domain_keywords: [tyre, tire, tread, casing, retread, defect, crack, sidewall, bead, crown, bulge, cut, puncture,
+                    damage, camera, rtsp, stream, video, frame, line, production, manufactur, factory, belt, shift,
                     inspection, inspect, triage, model, yolo, accuracy, recall, specificity, drift, monitor,
                     calibration, gate, deploy, release, rollback, dataset, label, review, queue, circular,
                     sustainab, co2, carbon, recycl, material, michelin, photo, image, upload, replay, shadow,
