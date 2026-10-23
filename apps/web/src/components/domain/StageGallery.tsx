@@ -144,7 +144,7 @@ export function PipelineConsole({ stages, timeline, status, error }: {
     return out;
   }, [stages, timeline, error]);
   useEffect(() => {
-    ref.current?.scrollTo({ top: ref.current.scrollHeight });
+    if (ref.current) ref.current.scrollTop = ref.current.scrollHeight;
   }, [lines.length]);
   const active = status === "queued" || status === "running";
   return (

@@ -140,7 +140,7 @@ export function ChatThread({ messages, onSuggest, showStages = true }: {
   const end = useRef<HTMLDivElement>(null);
   const last = messages[messages.length - 1];
   useEffect(() => {
-    end.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    end.current?.scrollIntoView?.({ behavior: "smooth", block: "end" });
   }, [messages.length, last?.content, last?.attachments?.events?.length]);
   return (
     <div className="space-y-4">
