@@ -1,0 +1,45 @@
+cff-version: 1.2.0
+message: "If you use TreadOps in your work, please cite it as below."
+type: software
+title: "TreadOps: casing circularity with YOLO26, governed MLOps and a guarded LangGraph copilot"
+abstract: >-
+  TreadOps turns a phone photo of a tyre into a casing-intake decision for a retreading operation (retread intake,
+  expert inspection or material recovery). An Ultralytics YOLO26 classifier triages the photo with every
+  preprocessing stage recorded, an inspector gives final clearance, and a ledger estimates the material and CO2e kept
+  in use from inspector-verified retreads only. It includes a DVC + MLflow release loop with gated promotion,
+  rollback, drift monitoring and replay, and a LangGraph copilot with guardrails and LLMOps tracing.
+authors:
+  - given-names: Arav
+    family-names: Saxena
+    affiliation: "SIT Pune"
+  - given-names: Mahi
+    family-names: Laddha
+    affiliation: "SIT Pune"
+repository-code: "https://github.com/arav7781/TREADOPS"
+license: AGPL-3.0-only
+version: "0.1.0"
+date-released: "2026-10-23"
+keywords:
+  - tyre inspection
+  - retreading
+  - circular economy
+  - YOLO
+  - MLOps
+  - LLMOps
+  - LangGraph
+references:
+  - type: dataset
+    title: "Digital images of defective and good condition tyres"
+    authors:
+      - name: "Pathmanaban P. et al."
+    publisher:
+      name: "Mendeley Data"
+    version: "1"
+    doi: "10.17632/bn7ch8tvyp.1"
+    license: CC-BY-4.0
+  - type: software
+    title: "Ultralytics YOLO"
+    authors:
+      - name: "Ultralytics"
+    url: "https://github.com/ultralytics/ultralytics"
+    license: AGPL-3.0-or-later

@@ -1,0 +1,65 @@
+name: Bug report
+description: Something in TreadOps does not work as documented.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Security problems go through private reporting instead: see SECURITY.md.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Web UI / BFF
+        - Bib copilot (chat, guardrails, tools)
+        - API (/v1)
+        - Worker / jobs
+        - ML pipeline (DVC, training, evaluation, bundles)
+        - Monitoring / replay
+        - Infrastructure / CI
+        - Documentation
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you saw, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. make dev
+        2. Open /inspect as inspector@treadops.local
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: sha
+    attributes:
+      label: Commit SHA
+      description: Output of `git rev-parse --short HEAD`.
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: OS, Python and Node versions, native (`make dev`) or containers (`make up`), LLM mode.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Relevant lines from `runs/dev/*.log`, the browser console or the job record. Remove secrets first.
+      render: shell
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues.
+          required: true
+        - label: The logs above contain no secrets, tokens or personal data.
+          required: true
