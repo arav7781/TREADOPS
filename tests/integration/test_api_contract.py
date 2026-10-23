@@ -154,14 +154,36 @@ def test_aggregate_endpoints_return_200_with_data(client):
 
 
 @requires_bundle
-def test_copilot_turn_with_photo_is_accepted(client):
-    """Regression: a new chat session was rolled back by the acceptance path (FK violation, 500)."""
+def test_copilot_photo_turn_and_agent_tool_creates_the_inspection(client, monkeypatch):
+    """The chat turn stores only a sanitized preview; the agent's YOLO tool creates the pinned inspection."""
+    from treadops_agent import service, tools
+
     import_and_activate(fixture_bundle(), admin_id())
+    started = []
+    monkeypatch.setattr(service._pool, "submit", lambda fn, *args: started.append(args))  # run the agent below
     h = login(client, "inspector")
     r = client.post("/v1/copilot/messages", headers=h, data={"message": "Can this casing be retreaded?"},
                     files={"file": ("t.jpg", jpeg(51), "image/jpeg")})
     assert r.status_code == 202, r.text
     body = r.json()
-    assert body["inspection_id"] and body["session_id"]
+    assert body["inspection_id"] is None and body["session_id"]
     s = client.get(f"/v1/copilot/sessions/{body['session_id']}", headers=h).json()
-    assert [m["role"] for m in s["messages"]] == ["user", "assistant"]
+    user, assistant = s["messages"]
+    assert user["attachments"]["photo"]["url"].startswith("/v1/media/") and "key" not in user["attachments"]["photo"]
+    assert assistant["attachments"]["status"] == "pending" and assistant["attachments"]["has_photo"]
+    viewer = login(client, "viewer")
+    denied = client.post("/v1/copilot/messages", headers=viewer, data={"message": "x"},
+                         files={"file": ("t.jpg", jpeg(52), "image/jpeg")})
+    assert denied.status_code == 403
+
+    (_msg_id, actor, _text, image) = started[0]
+    events = []
+    monkeypatch.setitem(tools.config(), "classify_wait_s", 0)
+    ctx = tools.ToolContext(actor=actor, image_bytes=image, idempotency_key=f"copilot:{_msg_id}",
+                            emit=lambda kind, data: events.append((kind, data)))
+    first = tools.classify_tyre_image(ctx)
+    again = tools.classify_tyre_image(ctx)  # the same turn never creates a second inspection
+    assert ctx.inspection_id and first["inspection_id"] == again["inspection_id"] == str(ctx.inspection_id)
+    assert any(k == "inspection" for k, _ in events)
+    detail = client.get(f"/v1/inspections/{ctx.inspection_id}", headers=h).json()
+    assert detail["source"] == "copilot" and detail["deployment"]["generation"] >= 1

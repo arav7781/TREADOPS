@@ -99,8 +99,10 @@ def run(api: str) -> dict:
                 t = c.get(f"/v1/llmops/traces/{msg['trace_id']}", headers=h).json()
                 cls_span = next((s for s in t["spans"] if s["name"] == "tool:classify_tyre_image"), None)
                 triage = None
-                if cls_span is not None and body.get("inspection_id"):
-                    d = c.get(f"/v1/inspections/{body['inspection_id']}", headers=h).json()
+                # The agent's YOLO tool creates the inspection during the turn and records it on the answer.
+                iid = (msg.get("attachments") or {}).get("inspection_id") or body.get("inspection_id")
+                if cls_span is not None and iid:
+                    d = c.get(f"/v1/inspections/{iid}", headers=h).json()
                     triage = (d.get("prediction") or {}).get("triage")
                 trace = {"status": t["status"], "latency_ms": t["latency_ms"],
                          "tokens": t["usage"]["prompt"] + t["usage"]["completion"],

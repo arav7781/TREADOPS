@@ -15,14 +15,18 @@ from treadops_agent import service
 from ..db import get_db, must_get
 from ..errors import ApiError
 from ..models import ChatFeedback, ChatMessage, ChatSession
-from ..security import Principal, require
+from ..security import Principal, require, sign_media
 from ..settings import get_settings
 
 router = APIRouter(prefix="/v1", tags=["copilot"])
 
 
 def message_view(m: ChatMessage) -> dict:
-    return {"id": str(m.id), "role": m.role, "content": m.content, "attachments": m.attachments,
+    att = dict(m.attachments or {})
+    photo = att.get("photo")
+    if isinstance(photo, dict) and photo.get("key"):  # signed short-lived link; storage keys never leave the API
+        att["photo"] = {k: v for k, v in photo.items() if k != "key"} | {"url": sign_media(photo["key"])}
+    return {"id": str(m.id), "role": m.role, "content": m.content, "attachments": att,
             "suggestions": m.suggestions, "trace_id": str(m.trace_id) if m.trace_id else None,
             "created_at": m.created_at.isoformat()}
 

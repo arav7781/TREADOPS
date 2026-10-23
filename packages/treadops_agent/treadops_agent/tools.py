@@ -37,7 +37,9 @@ TRIAGE_LABEL = {"good_candidate": "Retread candidate", "manual_review": "Expert 
 @dataclass
 class ToolContext:
     actor: Any
-    inspection_id: uuid.UUID | None = None          # attachment already submitted for this turn
+    inspection_id: uuid.UUID | None = None          # set once classify_tyre_image has submitted the photo
+    image_bytes: bytes | None = None                # the user's photo for this turn (in memory, never persisted raw)
+    idempotency_key: str | None = None              # one inspection per turn, even if the tool is called twice
     emit: Callable[[str, dict[str, Any]], None] = lambda *_: None
     results: list[dict[str, Any]] = field(default_factory=list)
 
@@ -108,26 +110,59 @@ def _load(db, inspection_id: uuid.UUID) -> dict[str, Any] | None:
     return _compact(insp, pred, stages)
 
 
+def _submit_photo(ctx: ToolContext) -> dict[str, Any] | None:
+    """Create the inspection for this turn's photo through the normal acceptance path (pinned deployment)."""
+    from treadops_api.errors import ApiError
+    from treadops_api.services.inspections import accept
+    from treadops_api.storage import get_storage
+
+    ctx.emit("tool_progress", {"tool": "classify_tyre_image",
+                               "message": "submitting the photo to the YOLO inspection pipeline"})
+    db = new_session()
+    try:
+        insp, _ = accept(db, get_storage(), actor=ctx.actor, actor_id=ctx.actor.id, raw=ctx.image_bytes or b"",
+                         idempotency_key=ctx.idempotency_key or f"copilot:{uuid.uuid4()}", source="copilot",
+                         metadata_origin="user_provided")
+        tup = dict(insp.model_tuple)
+    except ApiError as exc:
+        return {"error": exc.code, "message": exc.message}
+    finally:
+        db.close()
+    ctx.inspection_id = insp.id
+    ctx.emit("inspection", {"inspection_id": str(insp.id), "deployment_generation": tup.get("generation"),
+                            "model": f"{tup.get('model_family')} v{tup.get('registry_version')}",
+                            "bundle_sha256": str(tup.get("bundle_sha256", ""))[:12]})
+    return None
+
+
 def classify_tyre_image(ctx: ToolContext) -> dict[str, Any]:
     if ctx.inspection_id is None:
-        return {"error": "no_attachment", "message": "No photo is attached to this message. Ask the user to "
-                                                      "upload a tyre photo."}
+        if not ctx.image_bytes:
+            return {"error": "no_attachment", "message": "No photo is attached to this message. Ask the user to "
+                                                          "upload a tyre photo."}
+        failure = _submit_photo(ctx)
+        if failure is not None:
+            return failure
+    inspection_id = ctx.inspection_id
+    assert inspection_id is not None  # set by _submit_photo above
     wait = float(config()["classify_wait_s"])
     t0 = time.monotonic()
     seen_stages = 0
-    ctx.emit("tool_progress", {"tool": "classify_tyre_image", "message": "YOLO inspection job queued"})
+    ctx.emit("tool_progress", {"tool": "classify_tyre_image",
+                               "message": "YOLO inspection job queued; waiting for the worker"})
     while True:
         db = new_session()
         try:
-            res = _load(db, ctx.inspection_id)
+            res = _load(db, inspection_id)
         finally:
             db.close()
         if res is None:
             return {"error": "not_found", "inspection_id": str(ctx.inspection_id)}
         if len(res["stages"]) > seen_stages:
             for st in res["stages"][seen_stages:]:
-                ctx.emit("tool_progress", {"tool": "classify_tyre_image",
-                                           "message": f"stage {st['index']}: {st['title']} ({st['duration_ms']} ms)"})
+                ctx.emit("stage", {"tool": "classify_tyre_image", "stage": st["index"], "name": st["name"],
+                                   "title": st["title"], "duration_ms": st["duration_ms"],
+                                   "message": f"stage {st['index']}: {st['title']} ({st['duration_ms']} ms)"})
             seen_stages = len(res["stages"])
         if res["status"] in ("succeeded", "failed", "cancelled"):
             if res["status"] != "succeeded":

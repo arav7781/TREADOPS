@@ -71,6 +71,10 @@ def model_tuple(dep: Deployment) -> dict[str, Any]:
     }
 
 
+def upload_limits() -> Limits:
+    return _limits()
+
+
 def _limits() -> Limits:
     s = get_settings()
     return Limits(max_bytes=s.max_upload_bytes, max_decoded_pixels=s.max_decoded_pixels)
