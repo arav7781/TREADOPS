@@ -14,28 +14,31 @@ jobs:
     services:
       postgres:
         image: postgres:17.6-alpine
-        env: {POSTGRES_USER: treadops, POSTGRES_PASSWORD: ci-only, POSTGRES_DB: treadops_test}
+        # disposable CI database: trust auth on the job network, so no credential is written anywhere
+        env: {POSTGRES_USER: treadops, POSTGRES_HOST_AUTH_METHOD: trust, POSTGRES_DB: treadops_test}
         ports: ["5432:5432"]
         options: --health-cmd "pg_isready -U treadops" --health-interval 5s --health-retries 20
       redis:
         image: redis:7.4-alpine
         ports: ["6379:6379"]
     env:
-      DATABASE_URL: postgresql+psycopg://treadops:ci-only@127.0.0.1:5432/treadops_test
-      TEST_DATABASE_URL: postgresql+psycopg://treadops:ci-only@127.0.0.1:5432/treadops_test
+      DATABASE_URL: postgresql+psycopg://treadops@127.0.0.1:5432/treadops_test
+      TEST_DATABASE_URL: postgresql+psycopg://treadops@127.0.0.1:5432/treadops_test
       REDIS_URL: redis://127.0.0.1:6379/0
       S3_ENDPOINT_URL: http://127.0.0.1:8333
-      S3_ACCESS_KEY_ID: ci
-      S3_SECRET_ACCESS_KEY: ci-secret-only
-      JWT_SECRET: ci-only-not-a-real-secret
     steps:
       - uses: actions/checkout@v4
+      - name: per-run secrets (generated, never stored)
+        run: |
+          echo "S3_ACCESS_KEY_ID=ci$(openssl rand -hex 6)" >> "$GITHUB_ENV"
+          echo "S3_SECRET_ACCESS_KEY=$(openssl rand -hex 24)" >> "$GITHUB_ENV"
+          echo "JWT_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
       - uses: astral-sh/setup-uv@v6
         with: {version: "0.11.26"}
       - run: uv sync --locked
       - name: object store
         run: |
-          printf '{"identities":[{"name":"ci","credentials":[{"accessKey":"ci","secretKey":"ci-secret-only"}],"actions":["Admin","Read","List","Tagging","Write"]}]}' > /tmp/s3.json
+          printf '{"identities":[{"name":"ci","credentials":[{"accessKey":"%s","secretKey":"%s"}],"actions":["Admin","Read","List","Tagging","Write"]}]}' "$S3_ACCESS_KEY_ID" "$S3_SECRET_ACCESS_KEY" > /tmp/s3.json
           docker run -d --name s3 -p 8333:8333 -v /tmp/s3.json:/s3.json chrislusf/seaweedfs:4.01 server -s3 -s3.config=/s3.json
           for i in $(seq 1 30); do curl -s -o /dev/null http://127.0.0.1:8333 && break; sleep 2; done
       - name: lint + types

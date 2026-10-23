@@ -9,8 +9,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 # Schema generation needs no live services; placeholders satisfy settings validation.
-for k, v in {"DATABASE_URL": "postgresql+psycopg://x:x@127.0.0.1:1/x", "S3_ENDPOINT_URL": "http://127.0.0.1:1",
-             "S3_ACCESS_KEY_ID": "x", "S3_SECRET_ACCESS_KEY": "x", "JWT_SECRET": "x"}.items():
+for k, v in {"DATABASE_URL": "postgresql+psycopg://placeholder@127.0.0.1:1/placeholder", "S3_ENDPOINT_URL": "http://127.0.0.1:1",
+             "S3_ACCESS_KEY_ID": "unused", "S3_SECRET_ACCESS_KEY": "unused", "JWT_SECRET": "unused"}.items():
     os.environ.setdefault(k, v)
 
 from treadops_api.main import create_app  # noqa: E402
