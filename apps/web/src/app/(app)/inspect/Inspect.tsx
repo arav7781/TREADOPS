@@ -1,6 +1,5 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { Bot, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -12,11 +11,8 @@ import { PipelineConsole, StageGallery } from "@/components/domain/StageGallery"
 import { SourceBadge, StatusBadge } from "@/components/domain/badges";
 import { Card, EmptyState, ErrorState, PageHeader, SkeletonRows } from "@/components/ui";
 import { useMe } from "@/components/AppShell";
-import { api } from "@/lib/api";
-import { useInspection } from "@/lib/hooks";
-import { qk } from "@/lib/query";
+import { useInspection, useModels } from "@/lib/hooks";
 import { hasRole } from "@/lib/roles";
-import type { ModelsResponse } from "@/lib/types";
 import { useUrlState } from "@/lib/useUrlState";
 
 function CopilotSuggestions({ inspectionId }: { inspectionId: string }) {
@@ -35,16 +31,16 @@ function CopilotSuggestions({ inspectionId }: { inspectionId: string }) {
   useEffect(() => {
     if (started.current || sessionId) return;
     started.current = true;
-    send.mutate({ text: `Explain inspection ${inspectionId} and recommend next steps for the inspector.` });
+    send.mutate({ text: `Explain inspection ${inspectionId}: what does this result mean and what should the inspector do next?` });
   }, [inspectionId, send, sessionId]);
 
   return (
     <Card title={<span className="flex items-center gap-2"><Sparkles aria-hidden className="h-5 w-5 text-primary" /> Copilot suggestions</span>}
       subtitle="Guarded agent: grounded in the stored inspection and knowledge base; it never certifies a tyre."
       actions={<><CopilotModeBadge /><Link href={sessionId ? `/copilot?session=${sessionId}` : "/copilot"} className="text-sm font-semibold text-primary-ink hover:underline">Open in Copilot →</Link></>}>
-      {send.isError && !sessionId ? <ErrorState error={send.error} title="Copilot unavailable" onRetry={() => send.mutate({ text: `Explain inspection ${inspectionId} and recommend next steps for the inspector.` })} />
+      {send.isError && !sessionId ? <ErrorState error={send.error} title="Copilot unavailable" onRetry={() => send.mutate({ text: `Explain inspection ${inspectionId}: what does this result mean and what should the inspector do next?` })} />
         : !session.data ? <SkeletonRows rows={3} />
-          : <ChatThread messages={session.data.messages.filter((m) => m.role === "assistant" || m.content)} showStages={false}
+          : <ChatThread messages={session.data.messages.filter((m) => m.role === "assistant" || m.content)} showStages={false} autoScroll={false}
             onSuggest={(s) => send.mutate({ text: s, sessionId })} />}
       {sessionId && (
         <div className="mt-4">
@@ -59,7 +55,7 @@ function CopilotSuggestions({ inspectionId }: { inspectionId: string }) {
 export function Inspect() {
   const [{ id }, setUrl] = useUrlState(["id"] as const);
   const me = useMe();
-  const models = useQuery({ queryKey: qk.models, queryFn: () => api<ModelsResponse>("/v1/models") });
+  const models = useModels();
   const insp = useInspection(id || null);
   const canUpload = hasRole(me.data?.roles, "inspector");
   const untrained = models.data?.state === "untrained";
@@ -96,15 +92,18 @@ export function Inspect() {
                   <Link href={`/inspections/${d.inspection_id}`} className="text-sm font-semibold text-primary-ink hover:underline">Details →</Link></>}>
                 <PipelineConsole stages={d?.stages ?? []} timeline={d?.timeline} status={d?.status ?? "queued"}
                   error={d?.job?.error_message ?? null} />
-                <div className="mt-4">
-                  <StageGallery stages={d?.stages ?? []} running={running} />
-                </div>
                 {d?.status === "failed" && <div className="mt-4"><ErrorState error={new Error(d.job?.error_message ?? "The inspection job failed.")} title={`Inspection failed (${d.job?.error_code ?? "error"})`} /></div>}
               </Card>
             </>
           )}
         </div>
       </div>
+      {id && !insp.isError && (
+        <Card className="mt-6" title="3 · Stages the model actually saw"
+          subtitle="Each image is stored by the worker as it runs; timings are the recorded durations, revealed in order.">
+          <StageGallery stages={d?.stages ?? []} running={running} />
+        </Card>
+      )}
       {d?.status === "succeeded" && d.prediction && (
         <div className="mt-6 space-y-6">
           <ResultPanel d={d} />

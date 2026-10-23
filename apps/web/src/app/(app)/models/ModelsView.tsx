@@ -12,9 +12,10 @@ import { useMe } from "@/components/AppShell";
 import { Badge, Button, Card, EmptyState, ErrorState, inputClass, KeyValue, PageHeader, SkeletonRows } from "@/components/ui";
 import { api, ApiError } from "@/lib/api";
 import { dateTime, gateLabel, humanize, ms, num, pct, shortSha } from "@/lib/format";
+import { useModels } from "@/lib/hooks";
 import { qk } from "@/lib/query";
 import { hasRole } from "@/lib/roles";
-import type { DeploymentsResponse, Evidence, ModelsResponse, ModelView, PairedDiff, Ratio, ReleaseRequested } from "@/lib/types";
+import type { DeploymentsResponse, Evidence, ModelView, PairedDiff, Ratio, ReleaseRequested } from "@/lib/types";
 import { useUrlState } from "@/lib/useUrlState";
 
 function RatioCell({ r }: { r: Ratio | undefined }) {
@@ -256,7 +257,7 @@ function EvidencePanel({ model, generation, isAdmin, isMl }: { model: ModelView;
 export function ModelsView() {
   const me = useMe();
   const [{ model }, setUrl] = useUrlState(["model"] as const);
-  const q = useQuery({ queryKey: qk.models, queryFn: () => api<ModelsResponse>("/v1/models"), refetchInterval: 15_000 });
+  const q = useModels(15_000);
   const deps = useQuery({ queryKey: qk.deployments, queryFn: () => api<DeploymentsResponse>("/v1/deployments"), refetchInterval: 15_000 });
   if (q.isError) return <><PageHeader eyebrow="Model lifecycle" title="Models" /><ErrorState error={q.error} onRetry={() => q.refetch()} /></>;
   const d = q.data;

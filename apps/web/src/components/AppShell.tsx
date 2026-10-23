@@ -1,6 +1,5 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
 import {
   Activity,
@@ -24,11 +23,10 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Suspense, useEffect, useState, type ReactNode } from "react";
 
-import { api } from "@/lib/api";
 import { shortSha } from "@/lib/format";
-import { qk } from "@/lib/query";
+import { useMe, useModels } from "@/lib/hooks";
 import { hasRole, primaryRole } from "@/lib/roles";
-import type { Me, ModelsResponse, Role } from "@/lib/types";
+import type { Role } from "@/lib/types";
 
 interface NavItem {
   href: string;
@@ -122,8 +120,8 @@ function NavList({ roles, pathname, onNavigate }: { roles: string[] | undefined;
 export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const me = useQuery({ queryKey: qk.me, queryFn: () => api<Me>("/v1/me"), staleTime: 60_000 });
-  const models = useQuery({ queryKey: qk.models, queryFn: () => api<ModelsResponse>("/v1/models"), staleTime: 15_000 });
+  const me = useMe();
+  const models = useModels();
 
   const signOut = async () => {
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
@@ -188,7 +186,4 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 }
 
-/** Shared hook for components that need the signed-in identity. */
-export function useMe() {
-  return useQuery({ queryKey: qk.me, queryFn: () => api<Me>("/v1/me"), staleTime: 60_000 });
-}
+export { useMe };
