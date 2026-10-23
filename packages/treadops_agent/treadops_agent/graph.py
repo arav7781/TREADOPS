@@ -23,6 +23,9 @@ from langgraph.graph import END, START, StateGraph
 from . import guardrails, tools
 from .observability import Tracer
 
+# Named in homage to Bibendum ("Bib"), the Michelin Man. TreadOps is an independent prototype, not a Michelin product.
+ASSISTANT_NAME = "Bib"
+
 STEP_LABEL = {"good_candidate": ["Route the casing to retread intake for the retreader's full casing inspection.",
                                  "Record your verified disposition so the impact ledger can count it.",
                                  "Capture the opposite sidewall and bead if they were not photographed."],
@@ -152,6 +155,33 @@ def plan_fallback(text: str, has_attachment: bool) -> list[tuple[str, dict[str, 
     return calls
 
 
+def summarize(name: str, res: dict[str, Any]) -> str:
+    """One line per tool result for the chat timeline (the full result stays in the trace)."""
+    if res.get("error"):
+        return f"{name}: {res['error']}" + (f" - {res['message']}" if res.get("message") else "")
+    if name == "classify_tyre_image" and res.get("triage"):
+        return (f"{res['triage_label']} - calibrated p(defective) {res['p_defective']:.4f}, image quality "
+                f"{res['quality_status']}, {res['model']['family']} v{res['model'].get('registry_version')}")
+    if name == "get_model_status":
+        return (f"{res.get('model_family')} v{res.get('registry_version')} serving, gates {res.get('gate_status')}"
+                if res.get("state") == "ready" else "no trained model available")
+    if name == "get_drift_status":
+        w = res.get("latest_window") or {}
+        return f"latest window {w.get('status', 'none')}, {len(res.get('open_alerts', []))} open alert(s)"
+    if name == "estimate_circularity_impact":
+        return (f"{res['verified_retreads']} verified retread(s): {res['raw_material_saved_kg']} kg raw material, "
+                f"{res['co2e_avoided_kg']} kg CO2e (estimate)")
+    if name == "search_knowledge":
+        return "passages: " + ", ".join(p["id"] for p in res.get("passages", [])) if res.get("passages") else "no passages"
+    if name == "get_review_queue":
+        return f"{res.get('awaiting_review')} inspection(s) awaiting review"
+    if name == "get_preprocessing_trace":
+        return f"{len(res.get('stages', []))} stages"
+    if name == "get_inspection":
+        return f"inspection {str(res.get('inspection_id', ''))[:8]}: {res.get('triage_label', res.get('status'))}"
+    return "done"
+
+
 def suggestions_for(results: list[dict[str, Any]], has_attachment: bool) -> list[str]:
     cls = next((r["result"] for r in results if r["tool"] == "classify_tyre_image" and not r["result"].get("error")),
                None)
@@ -171,6 +201,11 @@ def build(*, llm, model: str | None, ctx: tools.ToolContext, tracer: Tracer, sys
         with tracer.span("guard_input", "guard"):
             v = guardrails.check_input(state["user_text"], state["has_attachment"])
             tracer.guard_events += v.events
+        flagged = [e.rule for e in v.events if e.action != "pass"]
+        ctx.emit("guard_input", {"status": "blocked" if v.blocked else "passed", "rules": flagged,
+                                 "message": "input guardrails: " + ("blocked (" + ", ".join(flagged) + ")"
+                                                                    if v.blocked else
+                                                                    "passed" + (f" ({', '.join(flagged)})" if flagged else ""))})
         if v.blocked:
             return {"blocked": True, "final_text": v.reply or "Request blocked."}
         user_content = v.text or "Please classify the attached tyre photo."
@@ -185,6 +220,9 @@ def build(*, llm, model: str | None, ctx: tools.ToolContext, tracer: Tracer, sys
 
     def plan(state: AgentState) -> AgentState:
         it = state.get("iterations", 0)
+        ctx.emit("plan", {"mode": "llm", "model": model, "iteration": it + 1,
+                          "message": f"{model} is deciding the next step" + (" (photo attached: YOLO tool first)"
+                                                                          if state["has_attachment"] and it == 0 else "")})
         with tracer.span("llm_plan", "llm", iteration=it, model=model) as attrs:
             try:
                 force_tool = state["has_attachment"] and it == 0
@@ -197,6 +235,8 @@ def build(*, llm, model: str | None, ctx: tools.ToolContext, tracer: Tracer, sys
                 attrs["usage"] = llm.last_usage
             except Exception as exc:
                 attrs["error"] = f"{exc.__class__.__name__}: {str(exc)[:200]}"
+                ctx.emit("plan", {"mode": "llm", "error": attrs["error"],
+                                  "message": "LLM call failed; switching to the deterministic tool-grounded planner"})
                 return {"mode": "deterministic_fallback", "llm_error": attrs["error"]}
         calls = msg.get("tool_calls") or []
         clean: dict[str, Any] = {"role": "assistant", "content": msg.get("content") or ""}
@@ -213,24 +253,29 @@ def build(*, llm, model: str | None, ctx: tools.ToolContext, tracer: Tracer, sys
         for call in state.get("pending_calls", []):
             name = call["function"]["name"]
             with tracer.span(f"tool:{name}", "tool", arguments=call["function"]["arguments"]) as attrs:
-                ctx.emit("tool_call", {"tool": name})
+                ctx.emit("tool_call", {"tool": name, "args": call["function"]["arguments"]})
                 res = tools.execute(ctx, name, call["function"]["arguments"])
                 tracer.tools_used.append(name)
                 attrs["result_keys"] = sorted(res)[:20]
                 attrs["error"] = res.get("error")
+                ctx.emit("tool_result", {"tool": name, "ok": not res.get("error"), "summary": summarize(name, res)})
             msgs.append({"role": "tool", "tool_call_id": call["id"], "content": json.dumps(res)[:12000]})
         return {"messages": msgs, "pending_calls": []}
 
     def fallback(state: AgentState) -> AgentState:
-        with tracer.span("deterministic_planner", "node", reason=state.get("llm_error") or "no LLM configured"):
+        reason = state.get("llm_error") or "no LLM configured"
+        with tracer.span("deterministic_planner", "node", reason=reason):
             done = {r["tool"] for r in ctx.results}
-            for name, args in plan_fallback(state["user_text"], state["has_attachment"]):
-                if name in done:
-                    continue
+            planned = [(n, a) for n, a in plan_fallback(state["user_text"], state["has_attachment"]) if n not in done]
+            ctx.emit("plan", {"mode": "deterministic_fallback", "tools": [n for n, _ in planned],
+                              "message": f"tool-grounded planner ({reason}) chose: " + ", ".join(n for n, _ in planned)})
+            for name, args in planned:
                 with tracer.span(f"tool:{name}", "tool", arguments=args):
-                    ctx.emit("tool_call", {"tool": name})
-                    tools.execute(ctx, name, args)
+                    ctx.emit("tool_call", {"tool": name, "args": json.dumps(args)})
+                    res = tools.execute(ctx, name, args)
                     tracer.tools_used.append(name)
+                    ctx.emit("tool_result", {"tool": name, "ok": not res.get("error"), "summary": summarize(name, res)})
+            ctx.emit("compose", {"message": "composing the answer from tool results"})
             text = compose_answer(ctx.results)
         return {"final_text": text, "mode": "deterministic_fallback"}
 
@@ -242,6 +287,12 @@ def build(*, llm, model: str | None, ctx: tools.ToolContext, tracer: Tracer, sys
                                         system_prompt=system_prompt, classification=cls,
                                         fallback_summary=compose_answer(ctx.results) if ctx.results else None)
             tracer.guard_events += v.events
+        flagged = [e.rule for e in v.events if e.action != "pass"]
+        g = v.grounding
+        ctx.emit("guard_output", {"rules": flagged, "grounding": g,
+                                  "message": f"output guardrails: {g.get('checked', 0) - len(g.get('ungrounded', []))}/"
+                                             f"{g.get('checked', 0)} figures grounded in tool outputs"
+                                             + (f"; {', '.join(flagged)}" if flagged else "")})
         return {"final_text": v.text, "grounding": v.grounding}
 
     def suggest(state: AgentState) -> AgentState:
