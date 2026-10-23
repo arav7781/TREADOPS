@@ -105,7 +105,7 @@ export function DatasetsView() {
           {src && (
             <KeyValue items={[
               ["Dataset", src.name],
-              ["DOI", <a key="doi" href={`https://doi.org/${src.doi}`} className="inline-flex items-center gap-1 text-primary-ink hover:underline" target="_blank" rel="noreferrer">{src.doi} <ExternalLink aria-hidden className="h-3.5 w-3.5" /></a>],
+              ["DOI", <a key="doi" href={`https://doi.org/${src.doi}`} className="break-all text-primary-ink hover:underline" target="_blank" rel="noreferrer">{src.doi} <ExternalLink aria-hidden className="inline h-3.5 w-3.5" /></a>],
               ["Licence", <Badge key="l" tone="accent">{src.license}</Badge>],
               ["Attribution", src.attribution],
               ["Retrieved", dateTime(src.retrieved_at)],

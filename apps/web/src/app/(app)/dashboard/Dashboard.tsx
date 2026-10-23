@@ -7,7 +7,7 @@ import Link from "next/link";
 import { TriageBars, TriageTimeline } from "@/components/domain/charts";
 import { GateStatus, StatusBadge } from "@/components/domain/badges";
 import { InspectionTable } from "@/components/domain/InspectionTable";
-import { Badge, Card, EmptyState, ErrorState, inputClass, KeyValue, PageHeader, SkeletonRows, Stat } from "@/components/ui";
+import { Badge, Card, EmptyState, ErrorState, inputClass, KeyValue, PageHeader, SkeletonRows, Stat, StatementBand } from "@/components/ui";
 import { api } from "@/lib/api";
 import { ago, duration, humanize, ms, num, shortSha } from "@/lib/format";
 import { qk } from "@/lib/query";
@@ -42,6 +42,11 @@ export function Dashboard() {
     <>
       <PageHeader eyebrow="Operations" title="Overview"
         subtitle="Live aggregates computed from stored inspections and jobs. Every figure carries its cohort size and observation time." />
+      <StatementBand items={[
+        { title: "Inspector-verified impact", text: "CO₂e and material counted only after a human disposition" },
+        { title: "Gated model releases", text: "Promotion needs passed gates, warm-up and the expected generation" },
+        { title: "Guarded, traced copilot", text: "Bib never certifies a tyre; every turn is an LLMOps trace" },
+      ]} />
       <form className="card mb-6 grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-5" aria-label="Dashboard filters" onSubmit={(e) => e.preventDefault()}>
         <FilterSelect id="f-window" label="Time window" value={f.window} onChange={(v) => setF({ window: v })}
           options={Object.entries(WINDOWS).map(([k, v]) => [k, v.label])} />

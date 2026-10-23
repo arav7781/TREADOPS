@@ -1,27 +1,43 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
+import { BrandMark, Wordmark } from "@/components/BrandMark";
+import { TreadArc } from "@/components/ui";
+
 import { LoginForm } from "./LoginForm";
 
 export const metadata: Metadata = { title: "Sign in" };
 
 export default function LoginPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary-soft via-canvas to-accent-soft px-4 py-10">
-      <div className="w-full max-w-md">
-        <div className="mb-6 text-center">
-          <span aria-hidden className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-accent text-2xl font-black text-white shadow-lg">T</span>
-          <h1 className="text-3xl font-black tracking-tight text-ink">TREADOPS</h1>
-          <p className="mt-1 text-ink-soft">Casing triage · MLOps release loop · circularity copilot</p>
+    <main className="relative flex min-h-screen flex-col overflow-hidden bg-black text-white">
+      <TreadArc className="-right-40 top-24 h-[42rem] w-[42rem] text-white/[0.05]" />
+      <header className="relative flex h-16 items-center gap-2.5 px-4 lg:px-10">
+        <BrandMark />
+        <Wordmark />
+      </header>
+      <div className="relative mx-auto grid w-full max-w-6xl flex-1 items-center gap-10 px-4 py-10 lg:grid-cols-[1.1fr_1fr] lg:px-8">
+        <div>
+          <p className="text-sm font-bold uppercase tracking-[0.16em] text-brand-yellow">Casing intake for retreading</p>
+          <h1 className="headline mt-3 text-4xl sm:text-6xl">Every casing,<br /><span className="headline-light">decided with evidence</span></h1>
+          <p className="mt-4 max-w-lg text-white/75">
+            YOLO triage of a phone photo, a governed MLOps release loop and Bib, a guarded copilot, so more casings
+            get a second life and every claim is traceable.
+          </p>
         </div>
-        <Suspense fallback={<div className="card h-80 animate-pulse" />}>
-          <LoginForm />
-        </Suspense>
-        <p className="mt-6 text-center text-sm text-muted">
-          Local prototype with seeded fixture accounts. Public photographs (Mendeley D1, CC BY 4.0); replay metadata is
-          simulated. Not Michelin production data.
-        </p>
+        <div className="rounded-3xl bg-navy p-3 shadow-2xl sm:p-5">
+          <p className="mb-3 inline-flex border-b-2 border-white px-1 pb-2 font-semibold">Sign in</p>
+          <div className="text-ink">
+            <Suspense fallback={<div className="card h-80 animate-pulse" />}>
+              <LoginForm />
+            </Suspense>
+          </div>
+        </div>
       </div>
+      <p className="relative px-4 pb-6 text-center text-sm text-white/55">
+        Local prototype with seeded fixture accounts. Public photographs (Mendeley D1, CC BY 4.0); replay metadata is
+        simulated. Not Michelin production data; not affiliated with or endorsed by Michelin.
+      </p>
     </main>
   );
 }
