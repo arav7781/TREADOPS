@@ -6,7 +6,8 @@ import { authFile } from "./helpers";
 test("unauthenticated pages redirect to login with a return path", async ({ page }) => {
   await page.goto("/models");
   await expect(page).toHaveURL(/\/login\?next=%2Fmodels/);
-  await expect(page.getByRole("heading", { name: "TREADOPS" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Every casing/ })).toBeVisible();
+  await expect(page.getByRole("form", { name: "Sign in" })).toBeVisible();
 });
 
 test("wrong password shows a generic error", async ({ page }) => {
@@ -34,11 +35,15 @@ test.describe("navigation follows roles", () => {
   test("viewer sees read-only navigation", async ({ page }) => {
     await page.goto("/dashboard");
     const nav = page.getByRole("navigation", { name: "Primary" }).first();
-    await expect(nav.getByRole("link", { name: "Overview", exact: true })).toBeVisible();
     await expect(nav.getByRole("link", { name: "Bib · Inspect & ask", exact: true })).toBeVisible(); // chat yes, photos no
-    for (const hidden of ["Training", "Replay", "LLMOps", "Audit"]) {
+    await nav.getByRole("button", { name: "Operate" }).click();
+    await expect(nav.getByRole("link", { name: "Overview", exact: true })).toBeVisible();
+    await nav.getByRole("button", { name: "MLOps" }).click();
+    await expect(nav.getByRole("link", { name: "Models", exact: true })).toBeVisible();
+    for (const hidden of ["Training", "Replay"]) {
       await expect(nav.getByRole("link", { name: hidden, exact: true })).toHaveCount(0);
     }
+    await expect(nav.getByRole("button", { name: "Governance" })).toHaveCount(0); // no LLMOps or Audit for viewers
   });
 });
 
@@ -47,6 +52,7 @@ test.describe("admin navigation", () => {
   test("admin sees audit and LLMOps", async ({ page }) => {
     await page.goto("/dashboard");
     const nav = page.getByRole("navigation", { name: "Primary" }).first();
+    await nav.getByRole("button", { name: "Governance" }).click();
     await expect(nav.getByRole("link", { name: "Audit", exact: true })).toBeVisible();
     await expect(nav.getByRole("link", { name: "LLMOps", exact: true })).toBeVisible();
   });

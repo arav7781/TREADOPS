@@ -4,9 +4,9 @@ import clsx from "clsx";
 import {
   Activity,
   BookCheck,
-  Bot,
   Boxes,
   Brain,
+  ChevronDown,
   ClipboardList,
   Database,
   FlaskConical,
@@ -14,14 +14,16 @@ import {
   LogOut,
   Menu,
   Recycle,
+  ScanLine,
   ScrollText,
   Sparkles,
   X,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Suspense, useEffect, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 
+import { BrandMark, Wordmark } from "@/components/BrandMark";
 import { shortSha } from "@/lib/format";
 import { useMe, useModels } from "@/lib/hooks";
 import { hasRole, primaryRole } from "@/lib/roles";
@@ -32,43 +34,143 @@ interface NavItem {
   label: string;
   icon: typeof Gauge;
   role: Role;
+  hint?: string;
 }
 
-const NAV: { section: string; items: NavItem[] }[] = [
+/** Top navigation in the michelin.in pattern: a few dropdown groups, a plain link and one yellow call to action. */
+const GROUPS: { label: string; items: NavItem[] }[] = [
   {
-    section: "Operate",
+    label: "Operate",
     items: [
-      { href: "/dashboard", label: "Overview", icon: Gauge, role: "viewer" },
-      { href: "/inspect", label: "Bib · Inspect & ask", icon: Bot, role: "viewer" },
-      { href: "/inspections", label: "Inspections", icon: ClipboardList, role: "viewer" },
-      { href: "/reviews", label: "Review queue", icon: BookCheck, role: "viewer" },
-      { href: "/circularity", label: "Circularity", icon: Recycle, role: "viewer" },
+      { href: "/dashboard", label: "Overview", icon: Gauge, role: "viewer", hint: "Throughput, queue and drift at a glance" },
+      { href: "/inspections", label: "Inspections", icon: ClipboardList, role: "viewer", hint: "Every inspection, pinned to its model" },
+      { href: "/reviews", label: "Review queue", icon: BookCheck, role: "viewer", hint: "Inspector labels and dispositions" },
     ],
   },
   {
-    section: "MLOps",
+    label: "MLOps",
     items: [
-      { href: "/datasets", label: "Datasets", icon: Database, role: "viewer" },
-      { href: "/training", label: "Training", icon: Brain, role: "ml_engineer" },
-      { href: "/models", label: "Models", icon: Boxes, role: "viewer" },
-      { href: "/monitoring", label: "Monitoring", icon: Activity, role: "viewer" },
-      { href: "/replay", label: "Replay", icon: FlaskConical, role: "ml_engineer" },
-      { href: "/llmops", label: "LLMOps", icon: Sparkles, role: "ml_engineer" },
-      { href: "/audit", label: "Audit", icon: ScrollText, role: "admin" },
+      { href: "/datasets", label: "Datasets", icon: Database, role: "viewer", hint: "Snapshots, splits and leakage checks" },
+      { href: "/training", label: "Training", icon: Brain, role: "ml_engineer", hint: "Allowlisted recipes on one training slot" },
+      { href: "/models", label: "Models", icon: Boxes, role: "viewer", hint: "Gates, evidence, promotion and rollback" },
+      { href: "/monitoring", label: "Monitoring", icon: Activity, role: "viewer", hint: "Drift windows and alerts" },
+      { href: "/replay", label: "Replay", icon: FlaskConical, role: "ml_engineer", hint: "Deterministic stress scenarios" },
+    ],
+  },
+  {
+    label: "Governance",
+    items: [
+      { href: "/llmops", label: "LLMOps", icon: Sparkles, role: "ml_engineer", hint: "Copilot traces, guardrails, evals" },
+      { href: "/audit", label: "Audit", icon: ScrollText, role: "admin", hint: "Who changed what, and why" },
     ],
   },
 ];
+const LINKS: NavItem[] = [{ href: "/circularity", label: "Circularity", icon: Recycle, role: "viewer" }];
+const CTA: NavItem = { href: "/inspect", label: "Bib · Inspect & ask", icon: ScanLine, role: "viewer" };
 
-function Nav({ roles, onNavigate }: { roles: string[] | undefined; onNavigate?: () => void }) {
+const isActive = (pathname: string, href: string) => pathname === href || pathname.startsWith(`${href}/`);
+const visible = (roles: string[] | undefined, items: NavItem[]) => items.filter((i) => roles === undefined || hasRole(roles, i.role));
+
+function DesktopNav({ roles, pathname }: { roles: string[] | undefined; pathname: string }) {
+  const [open, setOpen] = useState<string | null>(null);
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(null); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(null); };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onKey); };
+  }, [open]);
   return (
-    <Suspense fallback={<NavList roles={roles} pathname="" />}>
-      <NavWithPath roles={roles} onNavigate={onNavigate} />
-    </Suspense>
+    <nav ref={ref} aria-label="Primary" className="hidden h-full min-w-0 flex-1 items-center gap-7 lg:flex">
+      {GROUPS.map((g) => {
+        const items = visible(roles, g.items);
+        if (!items.length) return null;
+        const active = items.some((i) => isActive(pathname, i.href));
+        const isOpen = open === g.label;
+        return (
+          <div key={g.label} className="relative h-full">
+            <button type="button" aria-expanded={isOpen} aria-haspopup="true" onClick={() => setOpen(isOpen ? null : g.label)}
+              className={clsx("flex h-full items-center gap-1.5 border-b-[3px] pt-[3px] text-[15px] font-medium transition",
+                active ? "border-brand-yellow text-white" : "border-transparent text-white/85 hover:text-white")}>
+              {g.label}<ChevronDown aria-hidden className={clsx("h-4 w-4 transition", isOpen && "rotate-180")} />
+            </button>
+            {isOpen && (
+              <div className="stage-in absolute left-0 top-full z-50 w-80 rounded-b-2xl rounded-tr-2xl bg-white p-2 text-ink shadow-2xl">
+                <ul>
+                  {items.map((i) => {
+                    const Icon = i.icon;
+                    const on = isActive(pathname, i.href);
+                    return (
+                      <li key={i.href}>
+                        <Link href={i.href} onClick={() => setOpen(null)} aria-current={on ? "page" : undefined}
+                          aria-label={i.label} aria-describedby={i.hint ? `hint-${i.href.slice(1)}` : undefined}
+                          className={clsx("flex items-start gap-3 rounded-xl px-3 py-2.5 transition",
+                            on ? "bg-accent-soft shadow-[inset_3px_0_0_var(--brand-yellow)]" : "hover:bg-surface-muted")}>
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary"><Icon aria-hidden className="h-5 w-5" /></span>
+                          <span className="min-w-0">
+                            <span className="block font-semibold">{i.label}</span>
+                            {i.hint && <span id={`hint-${i.href.slice(1)}`} className="block text-sm text-muted">{i.hint}</span>}
+                          </span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+          </div>
+        );
+      })}
+      {visible(roles, LINKS).map((l) => (
+        <Link key={l.href} href={l.href} aria-current={isActive(pathname, l.href) ? "page" : undefined}
+          className={clsx("flex h-full items-center border-b-[3px] pt-[3px] text-[15px] font-medium transition",
+            isActive(pathname, l.href) ? "border-brand-yellow text-white" : "border-transparent text-white/85 hover:text-white")}>
+          {l.label}
+        </Link>
+      ))}
+      <Link href={CTA.href} aria-label={CTA.label} aria-current={isActive(pathname, CTA.href) ? "page" : undefined}
+        className="ml-auto flex h-11 items-center gap-2 rounded-lg bg-brand-yellow px-4 font-semibold text-black transition hover:bg-brand-yellow-strong">
+        <ScanLine aria-hidden className="h-5 w-5" /><span>Bib<span className="hidden xl:inline"> · Inspect &amp; ask</span></span>
+      </Link>
+    </nav>
   );
 }
 
-function NavWithPath({ roles, onNavigate }: { roles: string[] | undefined; onNavigate?: () => void }) {
-  return <NavList roles={roles} pathname={usePathname()} onNavigate={onNavigate} />;
+function DesktopNavWithPath({ roles }: { roles: string[] | undefined }) {
+  return <DesktopNav roles={roles} pathname={usePathname()} />;
+}
+
+function MobileNav({ roles, onNavigate }: { roles: string[] | undefined; onNavigate: () => void }) {
+  return (
+    <nav aria-label="Primary" className="space-y-5 border-t border-white/10 bg-black px-4 pb-6 pt-4 text-white lg:hidden">
+      <Link href={CTA.href} onClick={onNavigate} className="flex h-12 items-center justify-center gap-2 rounded-lg bg-brand-yellow font-semibold text-black">
+        <ScanLine aria-hidden className="h-5 w-5" />{CTA.label}
+      </Link>
+      {[...GROUPS, { label: "More", items: LINKS }].map((g) => {
+        const items = visible(roles, g.items);
+        if (!items.length) return null;
+        return (
+          <div key={g.label}>
+            <p className="mb-1 text-xs font-bold uppercase tracking-[0.16em] text-brand-yellow">{g.label}</p>
+            <ul className="grid grid-cols-2 gap-1">
+              {items.map((i) => {
+                const Icon = i.icon;
+                return (
+                  <li key={i.href}>
+                    <Link href={i.href} onClick={onNavigate} className="flex items-center gap-2 rounded-lg px-2 py-2 text-white/90 hover:bg-white/10">
+                      <Icon aria-hidden className="h-4 w-4 text-white/60" />{i.label}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        );
+      })}
+    </nav>
+  );
 }
 
 /** Watches for 401s from any API call and sends the user to /login with a return path. */
@@ -81,38 +183,6 @@ function AuthWatcher() {
     return () => window.removeEventListener("treadops:unauthorized", onUnauthorized);
   }, [router, pathname]);
   return null;
-}
-
-function NavList({ roles, pathname, onNavigate }: { roles: string[] | undefined; pathname: string; onNavigate?: () => void }) {
-  return (
-    <nav aria-label="Primary" className="flex flex-col gap-5">
-      {NAV.map((group) => {
-        const items = group.items.filter((i) => roles === undefined || hasRole(roles, i.role));
-        if (!items.length) return null;
-        return (
-          <div key={group.section}>
-            <p className="mb-1.5 px-3 text-xs font-bold uppercase tracking-[0.14em] text-white/45">{group.section}</p>
-            <ul className="flex flex-col gap-0.5">
-              {items.map((item) => {
-                const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-                const Icon = item.icon;
-                return (
-                  <li key={item.href}>
-                    <Link href={item.href} onClick={onNavigate} aria-current={active ? "page" : undefined}
-                      className={clsx("flex items-center gap-3 rounded-lg px-3 py-2 font-semibold transition",
-                        active ? "bg-white/12 text-white shadow-[inset_3px_0_0_var(--brand-yellow)]" : "text-white/75 hover:bg-white/8 hover:text-white")}>
-                      <Icon aria-hidden className={clsx("h-5 w-5", active ? "text-brand-yellow" : "text-white/55")} />
-                      {item.label}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        );
-      })}
-    </nav>
-  );
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -129,70 +199,57 @@ export function AppShell({ children }: { children: ReactNode }) {
   const active = models.data?.active;
   const roles = me.data?.roles;
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-[256px_1fr]">
+    <div className="flex min-h-screen flex-col">
       <Suspense fallback={null}><AuthWatcher /></Suspense>
-      <a href="#main" className="sr-only-focusable absolute left-2 top-2 z-50 rounded-lg bg-primary px-3 py-2 text-white">
+      <a href="#main" className="sr-only-focusable absolute left-2 top-2 z-50 rounded-lg bg-brand-yellow px-3 py-2 text-black">
         Skip to content
       </a>
-      <aside className="hidden bg-navy px-4 py-5 lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:overflow-y-auto">
-        <Link href="/dashboard" className="mb-7 flex items-center gap-2.5 px-2">
-          <BrandMark />
-          <span className="font-display text-2xl font-extrabold italic tracking-tight text-white">TREADOPS</span>
-        </Link>
-        <Nav roles={roles} />
-        <p className="mt-auto px-3 pt-8 text-xs leading-relaxed text-white/50">
-          Triage aid only. Final clearance requires a qualified inspector. Public photos; operational metadata in
-          replays is simulated.
-        </p>
-      </aside>
-
-      <div className="flex min-w-0 flex-col has-[[data-fullbleed]]:h-dvh">
-        <header className="sticky top-0 z-30 flex flex-wrap items-center gap-3 border-b border-line bg-surface/90 px-4 py-3 backdrop-blur lg:px-8">
-          <button type="button" className="rounded-lg p-2 text-ink-soft hover:bg-surface-muted lg:hidden"
-            aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-            {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
-          <span className="font-display font-extrabold italic tracking-tight text-navy lg:hidden">TREADOPS</span>
-          <span className="rounded-full bg-sim-soft px-2.5 py-0.5 text-sm font-bold text-sim">LOCAL · DEMO DATA</span>
-          <span className="hidden items-center gap-1.5 text-sm text-ink-soft sm:flex" aria-live="polite">
-            <span aria-hidden className={clsx("h-2.5 w-2.5 rounded-full", active ? "bg-good" : "bg-warn")} />
+      <header className="sticky top-0 z-40 bg-black text-white">
+        <div className="hidden h-9 items-center justify-end gap-6 border-b border-white/10 px-6 text-sm text-white/75 lg:flex xl:px-10">
+          <span className="font-bold tracking-wide text-brand-yellow">LOCAL · DEMO DATA</span>
+          <span className="flex items-center gap-1.5" aria-live="polite">
+            <span aria-hidden className={clsx("h-2 w-2 rounded-full", active ? "bg-good" : "bg-warn")} />
             {models.isLoading ? "Loading model…" : models.isError ? "Model status unavailable" : active
-              ? <>Model <strong className="text-ink">{active.model_family} v{active.registry_version ?? "?"}</strong>
-                <span className="mono hidden text-muted md:inline">({shortSha(active.bundle_sha256, 8)} · gen {models.data?.generation})</span></>
+              ? <>Model <strong className="text-white">{active.model_family} v{active.registry_version ?? "?"}</strong>
+                <span className="mono text-white/50">{shortSha(active.bundle_sha256, 8)} · gen {models.data?.generation}</span></>
               : "No trained model available"}
           </span>
-          <div className="ml-auto flex items-center gap-3">
-            {me.data && (
-              <span className="hidden text-right text-sm leading-tight sm:block">
-                <span className="block font-semibold text-ink">{me.data.display_name}</span>
-                <span className="block capitalize text-muted">{primaryRole(me.data.roles)}</span>
-              </span>
-            )}
-            <button type="button" onClick={signOut} className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold text-ink-soft hover:bg-surface-muted">
-              <LogOut aria-hidden className="h-4 w-4" /> <span className="hidden sm:inline">Sign out</span><span className="sr-only sm:hidden">Sign out</span>
+          {me.data && <span><span className="text-white">{me.data.display_name}</span> · <span className="capitalize">{primaryRole(me.data.roles)}</span></span>}
+        </div>
+        <div className="flex h-16 items-center gap-8 px-4 lg:px-6 xl:px-10">
+          <Link href="/dashboard" className="flex shrink-0 items-center gap-2.5" aria-label="TreadOps home">
+            <BrandMark />
+            <Wordmark />
+          </Link>
+          <Suspense fallback={<DesktopNav roles={roles} pathname="" />}>
+            <DesktopNavWithPath roles={roles} />
+          </Suspense>
+          <div className="ml-auto flex items-center gap-2 lg:ml-0">
+            <button type="button" onClick={signOut}
+              className="flex h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-white ring-1 ring-inset ring-white/80 transition hover:bg-white/10 sm:px-4">
+              <LogOut aria-hidden className="h-4 w-4" /><span className="hidden sm:inline">Sign out</span><span className="sr-only sm:hidden">Sign out</span>
+            </button>
+            <button type="button" className="rounded-lg p-2.5 text-white hover:bg-white/10 lg:hidden"
+              aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+              {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>
-        </header>
-        {open && (
-          <div className="border-b border-line bg-navy px-4 py-4 lg:hidden">
-            <Nav roles={roles} onNavigate={() => setOpen(false)} />
-          </div>
-        )}
-        {/* A page that marks itself data-fullbleed (the Bib chat) gets the whole viewport below the header. */}
-        <main id="main" className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 lg:px-8 lg:py-8 has-[[data-fullbleed]]:flex has-[[data-fullbleed]]:min-h-0 has-[[data-fullbleed]]:max-w-none has-[[data-fullbleed]]:p-0 lg:has-[[data-fullbleed]]:p-0">{children}</main>
-      </div>
-    </div>
-  );
-}
+        </div>
+        {open && <MobileNav roles={roles} onNavigate={() => setOpen(false)} />}
+      </header>
 
-/** TreadOps' own mark: a casing in profile with tread blocks (not a Michelin logo). */
-function BrandMark() {
-  return (
-    <svg aria-hidden viewBox="0 0 36 36" className="h-9 w-9 shrink-0">
-      <circle cx="18" cy="18" r="17" fill="var(--brand-yellow)" />
-      <circle cx="18" cy="18" r="11" fill="none" stroke="var(--navy)" strokeWidth="4" strokeDasharray="4.2 2.6" />
-      <circle cx="18" cy="18" r="4.5" fill="var(--navy)" />
-    </svg>
+      <main id="main" className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 lg:px-8 lg:py-8">{children}</main>
+
+      <footer className="site-footer bg-navy text-white">
+        <div className="mx-auto flex max-w-[1400px] flex-col gap-3 px-4 py-8 lg:flex-row lg:items-center lg:gap-10 lg:px-8">
+          <span className="flex items-center gap-2.5"><BrandMark className="h-8 w-8" /><Wordmark className="text-xl" /></span>
+          <p className="text-sm text-white/70">
+            Triage aid only: final clearance requires a qualified inspector. Public photographs; operational metadata in
+            replays is simulated. Independent prototype, not affiliated with or endorsed by Michelin.
+          </p>
+        </div>
+      </footer>
+    </div>
   );
 }
 
