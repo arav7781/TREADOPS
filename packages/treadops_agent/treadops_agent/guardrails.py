@@ -1,7 +1,8 @@
 """Copilot guardrails. Pure functions: every decision is returned as a list of typed events.
 
 Input:  length, prompt injection (block), PII redaction (email/phone/vehicle reg/card), scope (block off-topic)
-Output: certification claims (rewrite), ungrounded numbers (flag + note), triage contradicting the YOLO tool
+Output: certification claims (rewrite), ungrounded numbers (flag + note), a verdict on a rejected non-tyre image
+        (replace), triage contradicting the YOLO tool
         (replace with the grounded summary), system-prompt leakage (block), PII (redact), mandatory disclaimer
 """
 
@@ -32,6 +33,8 @@ TRIAGE_WORDS = {
 # Damage verdict wording. "not damaged" is matched first so it never also counts as "damaged".
 VERDICT_NOT = re.compile(r"\b(not damaged|undamaged|no (?:visible )?damage|isn't damaged)\b")
 VERDICT_YES = re.compile(r"\bdamaged\b")
+# Talking about the verdict itself ("no damage verdict was produced") is not claiming one.
+ABOUT_THE_VERDICT = re.compile(r"\b(?:no |any |a )?damage (?:verdict|assessment|check|classification|judge?ment|result)s?\b")
 UNCERTAIN_WORDS = re.compile(r"\b(uncertain|expert (?:check|review)|manual review|disagree\w*)\b")
 
 
@@ -206,9 +209,18 @@ def check_output(text: str, *, tool_results: list[dict[str, Any]], system_prompt
             return OutputVerdict("I can't share my configuration, but I'm happy to help with the inspection.",
                                  events, {"checked": 0, "ungrounded": []}, replaced=True)
 
-    # 2) triage contradiction with the YOLO tool
+    # 2) triage contradiction with the YOLO tool; no verdict at all for an image the subject gate rejected
     replaced = False
-    if classification and classification.get("triage"):
+    if classification and classification.get("verdict") == "not_a_tyre":
+        plain = ABOUT_THE_VERDICT.sub(" ", low)
+        claimed = {t for t, words in TRIAGE_WORDS.items() if any(w in plain for w in words)}
+        said = claimed_verdict(plain)
+        if claimed or said:
+            events.append(GuardEvent("output", "verdict_on_non_tyre", "rewrite",
+                                     {"claimed": sorted(claimed), "claimed_verdict": said}))
+            if fallback_summary:
+                text, low, replaced = fallback_summary, fallback_summary.lower(), True
+    elif classification and classification.get("triage"):
         actual = classification["triage"]
         claimed = {t for t, words in TRIAGE_WORDS.items() if any(w in low for w in words)}
         verdict, said = classification.get("verdict"), claimed_verdict(low)

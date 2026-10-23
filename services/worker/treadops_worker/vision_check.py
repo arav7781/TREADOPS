@@ -1,10 +1,12 @@
-"""Vision second opinion: a multimodal LLM re-checks every tyre the YOLO policy would auto-clear.
+"""Vision second opinion: a multimodal LLM re-checks every tyre the YOLO policy would auto-clear (and every image
+the subject gate finds unusual), answering two questions: is a tyre the subject at all, and is damage visible.
 
 The YOLO classifier learned mostly "weathered vs new rubber" from its training data, so a fresh tyre with a single
 cut can score low p(defective). Before such a tyre is shown as "not damaged", a vision model looks at the same
 canonical image. If it sees damage (medium or high confidence) or gives no usable answer, the tyre goes to an expert
-check instead; it never downgrades a YOLO "damaged". Measured on the locked test split (277 images): defective
-tyres auto-cleared fell from 3/150 to 1/150 while 26/127 good tyres went to an expert (docs/evidence/vision_check).
+check instead; it never downgrades a YOLO "damaged". Measured on the locked test split (277 images, prompt v2):
+defective tyres auto-cleared fell from 3/150 to 1/150 while 28 of 116 auto-cleared good tyres went to an expert
+(docs/evidence/vision_check). Its "no tyre" answer rejects an image only together with the subject gate.
 
 Enabled by VISION_CHECK_MODEL (an OpenAI-compatible vision model on LLM_BASE_URL); images leave the network.
 """
@@ -49,10 +51,18 @@ def parse(text: str) -> dict[str, Any]:
         data = None
     if not isinstance(data, dict) or not isinstance(data.get("damage_visible"), bool):
         return {"error": "unparseable_answer", "raw": (text or "")[:200]}
-    return {"damage_visible": data["damage_visible"],
+    tyre = data.get("tyre_visible")
+    return {"tyre_visible": tyre if isinstance(tyre, bool) else None,
+            "subject": str(data.get("subject") or "")[:80] or None,
+            "damage_visible": data["damage_visible"],
             "confidence": str(data.get("confidence", "")).lower() or None,
             "findings": [str(f)[:80] for f in (data.get("findings") or [])][:3],
             "location": data.get("location")}
+
+
+def sees_no_tyre(opinion: dict[str, Any] | None) -> bool:
+    """True only for an explicit "no tyre in this photo"; a missing or failed answer never rejects an image."""
+    return bool(opinion) and opinion.get("tyre_visible") is False  # type: ignore[union-attr]
 
 
 def decide(policy_triage: str, opinion: dict[str, Any] | None) -> tuple[str, str, str | None]:

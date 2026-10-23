@@ -16,7 +16,7 @@ export function verdictOf(damaged: boolean, triage?: Triage | null, quality?: st
 }
 
 export const TERMINAL_JOB: ReadonlySet<string> = new Set(["succeeded", "failed", "cancelled"]);
-export const TERMINAL_INSPECTION: ReadonlySet<string> = new Set(["succeeded", "failed", "cancelled"]);
+export const TERMINAL_INSPECTION: ReadonlySet<string> = new Set(["succeeded", "failed", "cancelled", "rejected"]);
 
 export function isActiveJob(status: JobStatus | string | null | undefined): boolean {
   return Boolean(status) && !TERMINAL_JOB.has(String(status));

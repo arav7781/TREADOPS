@@ -1,3 +1,5 @@
+import path from "node:path";
+
 import { expect, test } from "@playwright/test";
 
 import { authFile } from "./helpers";
@@ -53,4 +55,24 @@ test("the old copilot URL lands on the merged chat", async ({ page }) => {
   await page.goto("/copilot");
   await expect(page).toHaveURL(/\/inspect$/);
   await expect(page.getByRole("heading", { name: /Bib · casing copilot/ })).toBeVisible();
+});
+
+test("a logo is never graded as a tyre", async ({ page }) => {
+  const { modelState } = await import("./helpers");
+  await page.goto("/inspect");
+  test.skip((await modelState(page.request)).state !== "ready", "No trained model is active yet");
+  const input = page.locator("#chat-photo");
+  await expect(input).toBeEnabled();
+  await input.setInputFiles(path.resolve(__dirname, "../public/brand/treadops-logo.png"));
+  await page.getByLabel("Message", { exact: true }).fill("Is this tyre damaged?");
+  await page.getByRole("button", { name: "Send" }).click();
+  const answer = page.locator('[data-role="assistant"]').last();
+  // Rejected when the vision model is configured (unusual image AND no tyre seen); otherwise an expert check.
+  await expect(answer.getByTestId("rejected").or(answer.getByTestId("chat-result"))).toBeVisible({ timeout: 180_000 });
+  if (await answer.getByTestId("rejected").count()) {
+    await expect(answer.getByTestId("chat-result")).toHaveCount(0);
+  } else {
+    await expect(answer.getByTestId("chat-result").getByText(/^Uncertain$/)).toBeVisible();
+  }
+  await expect(answer.getByTestId("chat-result").getByText(/^Not damaged$/)).toHaveCount(0);
 });

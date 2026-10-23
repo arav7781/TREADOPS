@@ -40,6 +40,12 @@ First complete version of the blueprint: data to model to release to monitoring,
   auto-clear and sends it to an expert when it sees damage (or gives no usable answer). Stored per prediction with
   model, prompt version and hash; `scripts/eval_vision_check.py` measures it. Verdicts are now three-way: damaged,
   not damaged (clean auto-clear only) and uncertain (expert check).
+- **Subject gate** (images that are not tyres): every image gets an unusual-image score (distance of the fixed
+  encoder's embedding from the bundle's tyre reference subspace; threshold = p99 of training tyres). Unusual images
+  are never auto-cleared and are shown to the vision model, which now also answers "is a tyre the subject?" (prompt
+  v2). An image is rejected only when both agree: the inspection ends `rejected` with no prediction (the job
+  succeeds), the chat and inspection page say "Not a tyre photo · no verdict", and an output guardrail
+  (`verdict_on_non_tyre`) stops Bib from grading it. `scripts/eval_subject_gate.py` measures it.
 - **Docs**: ADRs 0001–0008, runbooks, knowledge base, evidence index, licence notices and generated third-party
   inventories, contributing guide, security policy, code of conduct and citation file.
 
@@ -72,5 +78,8 @@ First complete version of the blueprint: data to model to release to monitoring,
 - PII redaction turned the digits of inspection UUIDs into `[PHONE]`; IDs and hashes are now exempt, and card
   numbers are redacted whole instead of as a partial phone number.
 - Grounding flagged negative tool values (e.g. min delta -0.504) quoted with their sign.
+- A company logo uploaded to Bib was graded "Not damaged · Retread candidate" (p 0.024); it is now rejected as not a
+  tyre.
+- LLMOps sat inside a "Governance" dropdown; LLMOps and Audit are top-level links again.
 - Pages kept a broken layout after leaving the chat (Next keeps the previous route alive in a hidden `<Activity>`).
 - Horizontal overflow at phone widths; hydration mismatches in shell-shared queries.

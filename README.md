@@ -80,18 +80,37 @@ rubber, so YOLO learned "new-looking rubber = good": a new tyre with a fresh sid
 out-of-distribution gate would not catch it either. With `VISION_CHECK_MODEL` set, a vision LLM re-checks every tyre
 YOLO would auto-clear; when it sees damage with medium or high confidence (or gives no usable answer) the tyre goes
 to an expert instead, and the result shows **Uncertain · expert check** with its findings. Measured with
-`scripts/eval_vision_check.py` (YOLO26s-cls v2, `gpt-4o-mini`, prompt v1; `docs/evidence/vision_check/`):
+`scripts/eval_vision_check.py` (YOLO26s-cls v2, `gpt-4o-mini`, prompt v2; `docs/evidence/vision_check/`):
 
 | | Validation (calibration + policy) | Locked test |
 |---|---|---|
 | Defective tyres auto-cleared, YOLO alone | 4 / 150 | 3 / 150 |
 | Defective tyres auto-cleared, with second opinion | **3 / 150** | **1 / 150** |
-| Good tyres sent to an expert by the second opinion | 22 / 114 auto-cleared (19 disagreements, 3 unusable answers) | 27 / 116 (24 + 3) |
-| Added latency per auto-clear (p50) | 2.5 s | 2.4 s |
+| Good tyres sent to an expert by the second opinion | 24 / 114 auto-cleared (21 disagreements, 3 unusable answers) | 28 / 116 (24 + 4) |
+| Added latency per auto-clear (p50) | 3.2 s | 2.8 s |
 
 The cost is roughly one in five clean tyres going to an inspector. The real fix is training data with localized
 damage on new tyres (cuts, punctures, bulges): label such inspections "defective" in the review queue so they can
 enter a future dataset snapshot, or add a licensed dataset.
+
+**Subject gate (images that are not tyres).** A company logo uploaded to Bib was graded "Not damaged · Retread
+candidate": a classifier trained on two kinds of tyre photo has to call everything one or the other. Every image now
+gets an unusual-image score: the distance of the fixed encoder's embedding from the bundle's tyre reference subspace
+(threshold 0.74 = p99 of training tyres). An unusual image is never auto-cleared and is shown to the vision model,
+which also answers "is a tyre the subject?". An image is **rejected** (no prediction, "Not a tyre photo · no
+verdict") only when both agree; one signal alone sends it to an expert. The score is not a tyre detector on its
+own: a product shot of a whole motorcycle tyre on white scored 0.866, above the logo's 0.842, and goes to an
+expert instead. Measured with `scripts/eval_subject_gate.py` (`docs/evidence/subject_gate/`):
+
+| | Validation tyres (275) | Locked-test tyres (277) | Non-tyre probes (34) |
+|---|---|---|---|
+| Unusual (score > 0.74) | 0 | 4 | 34 |
+| Vision model: no tyre | 0 | 2 (typical score: sent to an expert) | 32 |
+| **Rejected** | **0** | **0** | **32** (2 unanswered: expert check) |
+
+The probes are generated logos, documents, charts, flat colours and noise plus the sample photos shipped with
+scikit-learn and matplotlib; real-world non-tyre uploads will vary more. Without `VISION_CHECK_MODEL` nothing is
+rejected: unusual images go to an expert.
 
 **Serving (real photo, end to end):** warm YOLO inference 7–13 ms; whole worker job incl. preprocessing,
 occlusion attribution and stage images ≈ 0.3–0.6 s.
@@ -111,9 +130,9 @@ resolvable ✅.
 2.07 across consecutive windows; alerts opened only after two windows above 0.20 and duplicates merged. Mean
 p(defective) fell 0.53 → 0.44 as images darkened, matching the stress-test recall drop.
 
-**Tests:** 95 unit, 9 data/ML (on the real data and artifacts) and 35 integration tests against real
-PostgreSQL/Redis/object storage (API-01..04, JOB-01..04, REL-01..04, DB-01, cameras, vision second opinion, chat context and regressions), 46 web
-component tests and 22 Playwright journeys against the live stack and the configured LLM (including video upload and
+**Tests:** 98 unit, 9 data/ML (on the real data and artifacts) and 37 integration tests against real
+PostgreSQL/Redis/object storage (API-01..04, JOB-01..04, REL-01..04, DB-01, cameras, vision second opinion, subject gate, chat context and regressions), 46 web
+component tests and 23 Playwright journeys against the live stack and the configured LLM (including video upload and
 live-camera recording through Chromium's fake camera) — all passing; GitHub CI (lint, mypy, contract diff,
 migrations, tests, web build, Docker images) is green.
 
@@ -229,6 +248,8 @@ docs/                     adr/, runbooks/, kb/, evidence/, assets/ (README banne
 - Low-light robustness is weak (recall ~0.75 at 45 % brightness).
 - D1 has almost no localized damage on otherwise new tyres (fresh cuts, punctures, bulges), so YOLO can auto-clear
   them; the optional vision second opinion catches most of these at the cost of extra expert reviews.
+- D1 is close-up photography, so product shots, tyre stacks and wide shots score as unusual and always go to an
+  expert. Rejecting non-tyres relies on the vision model; without it they are only kept from auto-clearance.
 - Training ran on Apple Silicon (MPS) and CPU, not the RTX 4050 profile in the blueprint (ADR 0002).
 
 ## Documentation

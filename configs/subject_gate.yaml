@@ -1,0 +1,5 @@
+# Subject gate: how unlike the training tyre photos an image is (services/worker/treadops_worker/subject_gate.py).
+# Measured by scripts/eval_subject_gate.py on bundle 4bdf10e6 (YOLO26s-cls v2); evidence in docs/evidence/subject_gate/.
+version: v1
+method: pca_residual          # distance of the fixed-encoder embedding from the bundle's tyre reference subspace
+unusual_above: 0.74           # p99 of dev_train scores (0.7318), rounded up; re-measure when the reference changes

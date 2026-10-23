@@ -68,6 +68,7 @@ These are the controls as implemented; see `services/api/treadops_api/security.p
   restrict that role accordingly and run the connector on a network segment that can only see the cameras.
 - LLM provider credentials (`LLM_API_KEY`) live in `.env`; prompts sent to an external provider leave your network.
   PII is redacted first, but review your provider's data policy.
-- With `VISION_CHECK_MODEL` set, the inference worker sends the canonical tyre image (metadata stripped, JPEG, long
-  side ≤ 768 px) of every tyre YOLO would auto-clear to that provider. Leave it empty to keep images on-premises;
-  auto-clears then rely on YOLO alone.
+- With `VISION_CHECK_MODEL` set, the inference worker sends the canonical image (metadata stripped, JPEG, long
+  side ≤ 768 px) of every tyre YOLO would auto-clear, and of every image the subject gate finds unusual, to that
+  provider. Leave it empty to keep images on-premises: auto-clears then rely on YOLO alone, and unusual images
+  (including non-tyres) go to an expert instead of being rejected.

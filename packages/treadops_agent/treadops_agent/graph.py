@@ -62,8 +62,14 @@ def verdict_label(c: dict[str, Any]) -> str:
         str(c.get("verdict")), "Unknown")
 
 
+NOT_A_TYRE_REPLY = ("This image does not show a tyre, so no damage verdict was produced. Please upload a photo of "
+                    "the tyre: its tread, its sidewall or the whole tyre.")
+
+
 def guardrail_summary(c: dict[str, Any]) -> str:
     """What the output guardrail shows when it withholds a draft that contradicts the YOLO result."""
+    if c.get("verdict") == "not_a_tyre":
+        return NOT_A_TYRE_REPLY
     return (f"The YOLO result for this tyre is **{verdict_label(c)}** ({c.get('triage_label')}, calibrated "
             f"p(defective) {c.get('p_defective', 0):.4f}). The drafted answer contradicted it, so the output "
             "guardrail withheld it. Ask again for an explanation.")
@@ -220,6 +226,9 @@ def build(*, llm, model: str | None, ctx: tools.ToolContext, tracer: Tracer, sys
     def guard_output(state: AgentState) -> AgentState:
         cls = next((r["result"] for r in ctx.results if r["tool"] in ("classify_tyre_image", "classify_tyre_video")
                     and not r["result"].get("error")), None)
+        if cls is None and any(r["result"].get("error") == "not_a_tyre" for r in ctx.results
+                               if r["tool"] in ("classify_tyre_image", "classify_tyre_video")):
+            cls = {"verdict": "not_a_tyre"}
         body, followups = split_followups(state.get("final_text") or "")
         if not body.strip():
             ctx.emit("guard_output", {"rules": [], "message": "the language model returned no answer"})

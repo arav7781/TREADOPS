@@ -187,6 +187,15 @@ export interface TimelineEvent {
   reason: string | null;
 }
 
+/** Why the subject gate refused an image (inspection status "rejected"); such an inspection has no prediction. */
+export interface Rejection {
+  reason: string;
+  message: string;
+  subject?: { score?: number; unusual_above?: number; unusual?: boolean; version?: string; method?: string;
+    vision_tyre_visible?: boolean | null; vision_subject?: string | null };
+  vision?: { model?: string | null; prompt_version?: string | null; subject?: string | null; latency_ms?: number | null };
+}
+
 export interface InspectionDetail {
   inspection_id: string;
   status: string;
@@ -200,6 +209,7 @@ export interface InspectionDetail {
   metadata_origin: MetadataOrigin;
   tyre_category: string | null;
   notes: string | null;
+  rejection?: Rejection | null;
   image: {
     image_id: string;
     url: string;
@@ -245,6 +255,7 @@ export interface InspectionSummary {
   p_defective: number | null;
   binary_defective?: boolean | null;
   quality_status: string | null;
+  rejected_reason?: string | null;
   human_label: string | null;
   disposition: string | null;
   model_version: string | null;

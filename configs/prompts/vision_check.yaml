@@ -1,8 +1,12 @@
 # Versioned prompt for the vision second opinion. Every prediction records `version` and the SHA-256 of `template`.
 id: vision_check
-version: v1
+version: v2
 template: |
-  Inspect this tyre photo for damage that would make a tyre unsafe or unfit for retreading: cuts, gashes,
-  punctures, bulges or blisters, cracks (sidewall or tread), exposed cords or belts, tread separation, or
-  severe wear. Reply with JSON only: {"damage_visible": true or false, "confidence": "low" | "medium" | "high",
-  "findings": [up to 3 short phrases], "location": "sidewall" | "tread" | "shoulder" | "bead" | "none" | "unclear"}
+  First decide whether a vehicle tyre is the main subject of this photo: a whole tyre, or a close-up of tyre
+  rubber, tread, sidewall or bead. Logos, documents, screenshots, people, animals and other objects are not tyres.
+  Then inspect the tyre for damage that would make it unsafe or unfit for retreading: cuts, gashes, punctures,
+  bulges or blisters, cracks (sidewall or tread), exposed cords or belts, tread separation, or severe wear.
+  Reply with JSON only: {"tyre_visible": true or false, "subject": "short description of what the photo shows",
+  "damage_visible": true or false, "confidence": "low" | "medium" | "high", "findings": [up to 3 short phrases],
+  "location": "sidewall" | "tread" | "shoulder" | "bead" | "none" | "unclear"}. If tyre_visible is false, set
+  damage_visible to false and findings to [].

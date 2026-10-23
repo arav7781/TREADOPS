@@ -221,8 +221,8 @@ export function StageTheatre({ stages, running, stepMs = 1600, onRevealed, thres
                     style={p.name === "letterbox" || p.name === "inference" ? { imageRendering: "pixelated" } : undefined} />
                 )}
                 {s && p.name === "quality" && (
-                  <span className={clsx("absolute bottom-1 right-1 rounded-full px-1.5 text-[10px] font-bold text-white", params.status === "accepted" ? "bg-good" : "bg-warn")}>
-                    {params.status === "accepted" ? "OK" : "LOW"}
+                  <span className={clsx("absolute bottom-1 right-1 rounded-full px-1.5 text-[10px] font-bold text-white", params.status === "accepted" ? "bg-good" : params.status === "rejected" ? "bg-bad" : "bg-warn")}>
+                    {params.status === "accepted" ? "OK" : params.status === "rejected" ? "NO TYRE" : "LOW"}
                   </span>
                 )}
                 {s && p.name === "inference" && typeof params.p_defective === "number" && (

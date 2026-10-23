@@ -147,7 +147,7 @@ export function LLMOpsView() {
             <label htmlFor="t-rule" className="sr-only">Guardrail rule</label>
             <select id="t-rule" className={inputClass} value={f.rule} onChange={(e) => setF({ rule: e.target.value })}>
               <option value="">Any guardrail</option>
-              {["prompt_injection", "off_topic", "pii_redaction", "certification_request", "certification_claim", "ungrounded_number", "triage_contradiction", "system_prompt_leak"].map((r) => <option key={r} value={r}>{humanize(r)}</option>)}
+              {["prompt_injection", "off_topic", "pii_redaction", "certification_request", "certification_claim", "certification_vocabulary", "ungrounded_number", "triage_contradiction", "verdict_on_non_tyre", "system_prompt_leak"].map((r) => <option key={r} value={r}>{humanize(r)}</option>)}
             </select>
           </>}>
           {traces.isError ? <ErrorState error={traces.error} onRetry={() => traces.refetch()} /> : !traces.data ? <SkeletonRows rows={5} />

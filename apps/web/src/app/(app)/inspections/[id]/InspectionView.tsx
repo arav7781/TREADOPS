@@ -7,6 +7,7 @@ import { use, useState } from "react";
 
 import { JobTimeline } from "@/components/domain/JobTimeline";
 import { ResultPanel } from "@/components/domain/ResultPanel";
+import { RejectionPanel } from "@/components/domain/Rejection";
 import { ReviewForm } from "@/components/domain/ReviewForm";
 import { PipelineConsole, StageGallery } from "@/components/domain/StageGallery";
 import { SourceBadge, StatusBadge, TriageBadge, VerdictBadge } from "@/components/domain/badges";
@@ -40,11 +41,12 @@ export function InspectionView({ idPromise }: { idPromise: Promise<string> }) {
   return (
     <>
       <PageHeader eyebrow={`Inspection ${d.inspection_id.slice(0, 8)}`}
-        title={d.prediction ? VERDICT_LABEL[verdictOf(d.prediction.binary_defective, d.prediction.triage, d.prediction.quality_status)] : humanize(d.status)}
+        title={d.prediction ? VERDICT_LABEL[verdictOf(d.prediction.binary_defective, d.prediction.triage, d.prediction.quality_status)] : d.status === "rejected" ? "Not a tyre" : humanize(d.status)}
         subtitle={<>Created {dateTime(d.created_at)} · source {d.source}{d.scenario_id ? ` · scenario ${d.scenario_id}` : ""}{d.line_id ? ` · ${d.line_id}/${d.camera_id}` : ""}</>}
-        actions={<><StatusBadge status={d.status} /><VerdictBadge damaged={d.prediction?.binary_defective} triage={d.prediction?.triage} quality={d.prediction?.quality_status} /><TriageBadge triage={d.prediction?.triage} /><SourceBadge origin={d.metadata_origin} />
+        actions={<><StatusBadge status={d.status} /><VerdictBadge damaged={d.prediction?.binary_defective} triage={d.prediction?.triage} quality={d.prediction?.quality_status} rejected={d.status === "rejected"} /><TriageBadge triage={d.prediction?.triage} /><SourceBadge origin={d.metadata_origin} />
           <Link href={`/circularity/passport/${d.inspection_id}`} className="font-semibold text-primary-ink hover:underline">Casing passport →</Link></>} />
 
+      {d.rejection && <RejectionPanel r={d.rejection} className="mb-6" />}
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
         <Card title="Photo" actions={
           <>

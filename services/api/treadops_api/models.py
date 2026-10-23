@@ -245,6 +245,8 @@ class Inspection(Base):
     created_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(TS, default=utcnow)
     completed_at: Mapped[datetime | None] = mapped_column(TS)
+    # Set when the subject gate refused the image (status "rejected"): reason, scores, vision model; no prediction.
+    rejection: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
 
     image: Mapped[ImageAsset] = relationship(lazy="joined")
 

@@ -70,7 +70,8 @@ SCHEMAS = [
             "Run the deployed YOLO tyre quality classifier on the photo attached to the user's current message. "
             "Returns the damage verdict (damaged / not damaged), whether an expert check is needed, triage, "
             "calibrated p(defective), image quality, the preprocessing stages and the recommended pathway. Only "
-            "valid when the user attached a photo."),
+            "valid when the user attached a photo. Returns error not_a_tyre when the image does not show a tyre: "
+            "then give no damage verdict and ask for a tyre photo."),
     _schema("classify_tyre_video",
             "Inspect one tyre from the video frames attached to the user's current message (sampled around its "
             "circumference). Classifies every frame with the deployed YOLO model and returns a tyre-level verdict: "
@@ -116,6 +117,11 @@ def _compact(insp: Inspection, pred: Prediction | None, stages: list[InspectionS
                                      "bundle_sha256": insp.model_tuple.get("bundle_sha256", "")[:12],
                                      "deployment_generation": insp.deployment_generation},
                            "metadata_origin": insp.metadata_origin}
+    if insp.rejection:
+        rj = insp.rejection
+        out["rejection"] = {"reason": rj.get("reason"), "message": rj.get("message"),
+                            "subject_score": (rj.get("subject") or {}).get("score"),
+                            "vision_subject": (rj.get("subject") or {}).get("vision_subject")}
     if pred is not None:
         circ = pred.circularity or {}
         verdict = verdict_of(pred.binary_defective, pred.triage, pred.quality_status)
@@ -129,6 +135,8 @@ def _compact(insp: Inspection, pred: Prediction | None, stages: list[InspectionS
             "p_defective": round(pred.p_defective, 4),
             "raw_probs": {k: round(v, 4) for k, v in pred.raw_probs.items()},
             "quality_status": pred.quality_status, "quality_reasons": pred.quality.get("reasons", []),
+            "image_check": {k: (pred.quality.get("subject") or {}).get(k)
+                            for k in ("score", "unusual", "unusual_above", "vision_tyre_visible", "vision_subject")},
             "descriptors": {k: round(v, 3) for k, v in pred.quality.get("descriptors", {}).items()
                             if k in ("brightness", "contrast", "blur_variance")},
             "recommended_pathway": {"label": circ.get("label"), "action": circ.get("action"),
@@ -209,6 +217,10 @@ def classify_tyre_image(ctx: ToolContext) -> dict[str, Any]:
                                    "title": st["title"], "duration_ms": st["duration_ms"],
                                    "message": f"stage {st['index']}: {st['title']} ({st['duration_ms']} ms)"})
             seen_stages = len(res["stages"])
+        if res["status"] == "rejected":
+            return {"error": "not_a_tyre", "inspection_id": res["inspection_id"], "rejection": res.get("rejection"),
+                    "message": "The image was rejected: it does not show a tyre. No damage verdict exists; do not "
+                               "give one. Ask the user for a photo of the tyre (tread, sidewall or the whole tyre)."}
         if res["status"] in ("succeeded", "failed", "cancelled"):
             if res["status"] != "succeeded":
                 return {"error": "inspection_failed", "inspection_id": res["inspection_id"],
@@ -296,7 +308,12 @@ def aggregate_frames(frames: list[dict[str, Any]]) -> dict[str, Any]:
     """One decision per tyre from its frames. Conservative: any damaged frame makes the tyre damaged, and the
     worst frame (triage first, then p(defective)) decides the triage and is shown as the evidence."""
     done = [f for f in frames if f.get("triage")]
+    rejected = sum(1 for f in frames if f.get("status") == "rejected")
     if not done:
+        if rejected:
+            return {"error": "not_a_tyre", "frames_rejected": rejected, "frames": frames,
+                    "message": "The video frames do not show a tyre. No damage verdict exists; ask for a video of "
+                               "the tyre turning."}
         return {"error": "no_frame_classified", "frames": frames}
     decisive = max(done, key=lambda f: (TRIAGE_ORDER[f["triage"]], f["p_defective"]))
     verdicts = {f["verdict"] for f in done}
@@ -313,6 +330,7 @@ def aggregate_frames(frames: list[dict[str, Any]]) -> dict[str, Any]:
         "decisive_frame": decisive["frame"], "decisive_time_s": decisive.get("time_s"),
         "decisive_inspection_id": decisive["inspection_id"],
         "frames_submitted": len(frames), "frames_classified": len(done), "frames_low_quality": low_q,
+        "frames_rejected_not_a_tyre": rejected,
         "frames": frames,
     }
 
@@ -371,7 +389,7 @@ def classify_tyre_video(ctx: ToolContext) -> dict[str, Any]:
                                               "message": f"frame {i + 1}: {res['verdict_label']} "
                                                          f"(p(defective) {res['p_defective']:.3f})"})
             frames.append(f)
-        if all(f["status"] in ("succeeded", "failed", "cancelled", "missing") for f in frames):
+        if all(f["status"] in ("succeeded", "failed", "cancelled", "missing", "rejected") for f in frames):
             out = aggregate_frames(frames)
             if not out.get("error"):
                 decisive = loaded[out["decisive_frame"]] or {}

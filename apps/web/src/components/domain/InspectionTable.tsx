@@ -46,7 +46,7 @@ export function InspectionTable({ items, compact, selectedId, onSelect }: {
                   </Link>
                   <span className="block pl-[60px] text-sm text-muted">{ago(i.created_at)}</span>
                 </td>
-                <td className="py-2 pr-3"><VerdictBadge damaged={i.binary_defective} triage={i.triage} quality={i.quality_status} /></td>
+                <td className="py-2 pr-3"><VerdictBadge damaged={i.binary_defective} triage={i.triage} quality={i.quality_status} rejected={i.status === "rejected"} /></td>
                 <td className="py-2 pr-3"><TriageBadge triage={i.triage} /></td>
                 <td className="mono py-2 pr-3">{i.p_defective === null ? "n/a" : pct(i.p_defective, 1)}</td>
                 <td className="py-2 pr-3">{i.human_label ? `${humanize(i.human_label)}${i.disposition ? ` · ${humanize(i.disposition)}` : ""}` : <span className="text-muted">awaiting</span>}</td>

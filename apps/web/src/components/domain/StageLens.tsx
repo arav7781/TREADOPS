@@ -49,8 +49,11 @@ export function stageChanges(stage: Stage, byIndex: Map<number, Stage>): string[
       break;
     case "quality": {
       const d = (p.descriptors ?? {}) as Params;
+      const sj = (p.subject ?? null) as Params | null;
       out.push(`${humanize(String(p.status ?? ""))}`, fixed(d.brightness) && `brightness ${fixed(d.brightness)}`,
         fixed(d.contrast) && `contrast ${fixed(d.contrast)}`, fixed(d.blur_variance, 1) && `blur variance ${fixed(d.blur_variance, 1)}`,
+        sj && fixed(sj.score) && `unusual-image score ${fixed(sj.score)} (${sj.unusual ? "unusual" : "typical"})`,
+        sj?.vision_tyre_visible === false ? "vision model: no tyre" : sj?.vision_tyre_visible === true ? "vision model: tyre" : null,
         ...((p.reasons as string[] | undefined) ?? []).map(humanize));
       break;
     }
@@ -227,6 +230,7 @@ function QualityLens({ stage, byIndex }: { stage: Stage; byIndex: Map<number, St
   const canonical = mediaUrl(byIndex.get(2)?.image_url);
   const analysis = useImageAnalysis(canonical);
   const ok = p.status === "accepted";
+  const rejected = p.status === "rejected";
   const bright = num(d.brightness);
   const [minB, maxB] = [num(t.min_brightness), num(t.max_brightness)];
   const blur = num(d.blur_variance);
@@ -238,9 +242,9 @@ function QualityLens({ stage, byIndex }: { stage: Stage; byIndex: Map<number, St
       <Shot src={analysis?.edges ?? canonical} pixelated={false}
         label={analysis ? "edge map (Laplacian): what the blur check measures" : "computing edge map…"} />
       <div className="space-y-4 text-white">
-        <p className={clsx("inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-bold", ok ? "bg-good text-white" : "bg-warn text-white")}>
+        <p className={clsx("inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-bold", ok ? "bg-good text-white" : rejected ? "bg-bad text-white" : "bg-warn text-white")}>
           {ok ? <CheckCircle2 aria-hidden className="h-4 w-4" /> : <AlertTriangle aria-hidden className="h-4 w-4" />}
-          {ok ? "Quality accepted" : "Low quality: escalated to a human"}
+          {ok ? "Quality accepted" : rejected ? "Not a tyre: rejected, no verdict" : "Low quality: escalated to a human"}
         </p>
         <div>
           <div className="mb-1 flex justify-between text-xs text-white/80"><span>Brightness histogram</span>

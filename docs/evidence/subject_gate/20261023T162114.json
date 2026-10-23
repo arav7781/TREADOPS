@@ -1,0 +1,350 @@
+{
+  "at": "2026-10-23T16:21:14.742733+00:00",
+  "bundle_sha256": "4bdf10e66e0e44dc87b042933908099b6538c42a22b6686e7bce53739bf26676",
+  "model_version": "2",
+  "method": "pca_residual",
+  "unusual_above": 0.74,
+  "threshold_rule": "p99 of dev_train scores, rounded up to 0.01",
+  "vision_model": "gpt-4o-mini",
+  "vision_prompt_version": "v2",
+  "vision_prompt_sha256": "1f8584b5788c5ffdfc087545d871929d1077752fcb892a9490b60a33ee6533cc",
+  "sets": {
+    "dev_train": {
+      "images": 1084,
+      "score_p50": 0.5513,
+      "score_p99": 0.7318,
+      "score_min": 0.3572,
+      "score_max": 0.7986,
+      "unusual": 9
+    },
+    "validation": {
+      "images": 275,
+      "score_p50": 0.4525,
+      "score_p99": 0.6551,
+      "score_min": 0.2857,
+      "score_max": 0.6934,
+      "unusual": 0,
+      "vision_asked": 118,
+      "vision_no_tyre": 0,
+      "vision_no_answer": 0,
+      "rejected": 0,
+      "no_tyre_but_typical_to_expert": 0
+    },
+    "test": {
+      "images": 277,
+      "score_p50": 0.5512,
+      "score_p99": 0.7593,
+      "score_min": 0.3902,
+      "score_max": 0.8108,
+      "unusual": 4,
+      "vision_asked": 121,
+      "vision_no_tyre": 2,
+      "vision_no_answer": 3,
+      "rejected": 0,
+      "no_tyre_but_typical_to_expert": 2
+    },
+    "non_tyre": {
+      "images": 34,
+      "score_p50": 0.8968,
+      "score_p99": 0.9568,
+      "score_min": 0.7645,
+      "score_max": 0.9634,
+      "unusual": 34,
+      "vision_asked": 34,
+      "vision_no_tyre": 32,
+      "vision_no_answer": 2,
+      "rejected": 32,
+      "no_tyre_but_typical_to_expert": 0
+    }
+  },
+  "non_tyre_probes": [
+    {
+      "id": "logo_0_0",
+      "score": 0.9169,
+      "unusual": true,
+      "policy_triage": "good_candidate",
+      "tyre_visible": false,
+      "subject": null
+    },
+    {
+      "id": "logo_0_1",
+      "score": 0.925,
+      "unusual": true,
+      "policy_triage": "good_candidate",
+      "tyre_visible": false,
+      "subject": "unknown"
+    },
+    {
+      "id": "logo_1_0",
+      "score": 0.9248,
+      "unusual": true,
+      "policy_triage": "good_candidate",
+      "tyre_visible": false,
+      "subject": null
+    },
+    {
+      "id": "logo_1_1",
+      "score": 0.9323,
+      "unusual": true,
+      "policy_triage": "good_candidate",
+      "tyre_visible": false,
+      "subject": null
+    },
+    {
+      "id": "logo_2_0",
+      "score": 0.9187,
+      "unusual": true,
+      "policy_triage": "manual_review",
+      "tyre_visible": false,
+      "subject": "none"
+    },
+    {
+      "id": "logo_2_1",
+      "score": 0.9076,
+      "unusual": true,
+      "policy_triage": "manual_review",
+      "tyre_visible": false,
+      "subject": "none"
+    },
+    {
+      "id": "logo_3_0",
+      "score": 0.9283,
+      "unusual": true,
+      "policy_triage": "good_candidate",
+      "tyre_visible": false,
+      "subject": "none"
+    },
+    {
+      "id": "logo_3_1",
+      "score": 0.9433,
+      "unusual": true,
+      "policy_triage": "good_candidate",
+      "tyre_visible": false,
+      "subject": "none"
+    },
+    {
+      "id": "logo_4_0",
+      "score": 0.9118,
+      "unusual": true,
+      "policy_triage": "good_candidate",
+      "tyre_visible": false,
+      "subject": null
+    },
+    {
+      "id": "logo_4_1",
+      "score": 0.9139,
+      "unusual": true,
+      "policy_triage": "manual_review",
+      "tyre_visible": false,
+      "subject": null
+    },
+    {
+      "id": "logo_5_0",
+      "score": 0.9056,
+      "unusual": true,
+      "policy_triage": "good_candidate",
+      "tyre_visible": false,
+      "subject": "logo on a black background"
+    },
+    {
+      "id": "logo_5_1",
+      "score": 0.8998,
+      "unusual": true,
+      "policy_triage": "good_candidate",
+      "tyre_visible": false,
+      "subject": null
+    },
+    {
+      "id": "document_0",
+      "score": 0.8415,
+      "unusual": true,
+      "policy_triage": "good_candidate",
+      "tyre_visible": false,
+      "subject": null
+    },
+    {
+      "id": "document_1",
+      "score": 0.8455,
+      "unusual": true,
+      "policy_triage": "good_candidate",
+      "tyre_visible": false,
+      "subject": null
+    },
+    {
+      "id": "document_2",
+      "score": 0.837,
+      "unusual": true,
+      "policy_triage": "good_candidate",
+      "tyre_visible": null,
+      "subject": null
+    },
+    {
+      "id": "document_3",
+      "score": 0.839,
+      "unusual": true,
+      "policy_triage": "good_candidate",
+      "tyre_visible": false,
+      "subject": null
+    },
+    {
+      "id": "document_4",
+      "score": 0.8387,
+      "unusual": true,
+      "policy_triage": "good_candidate",
+      "tyre_visible": false,
+      "subject": null
+    },
+    {
+      "id": "document_5",
+      "score": 0.8381,
+      "unusual": true,
+      "policy_triage": "good_candidate",
+      "tyre_visible": false,
+      "subject": null
+    },
+    {
+      "id": "chart_0",
+      "score": 0.7867,
+      "unusual": true,
+      "policy_triage": "manual_review",
+      "tyre_visible": false,
+      "subject": null
+    },
+    {
+      "id": "chart_1",
+      "score": 0.8111,
+      "unusual": true,
+      "policy_triage": "manual_review",
+      "tyre_visible": false,
+      "subject": null
+    },
+    {
+      "id": "chart_2",
+      "score": 0.7929,
+      "unusual": true,
+      "policy_triage": "manual_review",
+      "tyre_visible": false,
+      "subject": null
+    },
+    {
+      "id": "chart_3",
+      "score": 0.7996,
+      "unusual": true,
+      "policy_triage": "manual_review",
+      "tyre_visible": false,
+      "subject": "none"
+    },
+    {
+      "id": "chart_4",
+      "score": 0.8189,
+      "unusual": true,
+      "policy_triage": "manual_review",
+      "tyre_visible": false,
+      "subject": null
+    },
+    {
+      "id": "chart_5",
+      "score": 0.7645,
+      "unusual": true,
+      "policy_triage": "manual_review",
+      "tyre_visible": false,
+      "subject": "none"
+    },
+    {
+      "id": "flat_0",
+      "score": 0.9634,
+      "unusual": true,
+      "policy_triage": "manual_review",
+      "tyre_visible": false,
+      "subject": null
+    },
+    {
+      "id": "flat_1",
+      "score": 0.9412,
+      "unusual": true,
+      "policy_triage": "manual_review",
+      "tyre_visible": false,
+      "subject": null
+    },
+    {
+      "id": "flat_2",
+      "score": 0.9151,
+      "unusual": true,
+      "policy_triage": "manual_review",
+      "tyre_visible": false,
+      "subject": "none"
+    },
+    {
+      "id": "flat_3",
+      "score": 0.9403,
+      "unusual": true,
+      "policy_triage": "manual_review",
+      "tyre_visible": false,
+      "subject": "none"
+    },
+    {
+      "id": "noise",
+      "score": 0.7853,
+      "unusual": true,
+      "policy_triage": "defect_flagged",
+      "tyre_visible": false,
+      "subject": "none"
+    },
+    {
+      "id": "photo_china",
+      "score": 0.8361,
+      "unusual": true,
+      "policy_triage": "good_candidate",
+      "tyre_visible": false,
+      "subject": "a pagoda near a body of water"
+    },
+    {
+      "id": "photo_flower",
+      "score": 0.9243,
+      "unusual": true,
+      "policy_triage": "defect_flagged",
+      "tyre_visible": false,
+      "subject": "a flower"
+    },
+    {
+      "id": "photo_grace_hopper",
+      "score": 0.8436,
+      "unusual": true,
+      "policy_triage": "defect_flagged",
+      "tyre_visible": false,
+      "subject": "portrait of a woman in military uniform"
+    },
+    {
+      "id": "photo_Minduka_Present_Blue_Pack",
+      "score": 0.8937,
+      "unusual": true,
+      "policy_triage": "good_candidate",
+      "tyre_visible": null,
+      "subject": null
+    },
+    {
+      "id": "photo_logo2",
+      "score": 0.8663,
+      "unusual": true,
+      "policy_triage": "manual_review",
+      "tyre_visible": false,
+      "subject": null
+    }
+  ],
+  "tyres_vision_said_no_tyre": [
+    {
+      "id": "6db5f192-0a04-5b0a-a2ff-973a0f11e067",
+      "set": "test",
+      "score": 0.645,
+      "unusual": false,
+      "subject": null
+    },
+    {
+      "id": "c7e8ba69-1274-5c14-978a-e5b0c2d02028",
+      "set": "test",
+      "score": 0.6,
+      "unusual": false,
+      "subject": "logo or branding on a tyre"
+    }
+  ]
+}

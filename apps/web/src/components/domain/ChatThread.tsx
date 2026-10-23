@@ -36,6 +36,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Markdown } from "@/components/domain/Markdown";
+import { RejectionPanel } from "@/components/domain/Rejection";
 import { SecondOpinionPanel } from "@/components/domain/SecondOpinion";
 import { ProbabilityPanel } from "@/components/domain/ProbabilityPanel";
 import { ReviewForm } from "@/components/domain/ReviewForm";
@@ -440,6 +441,7 @@ function InspectionInChat({ id, canReview, animate, revealed, onRevealed, focus 
         thresholds={policy ? { low: policy.triage_low, high: policy.triage_high, binary: policy.binary_threshold } : null} />
       {logOpen && <PipelineConsole stages={d?.stages ?? []} timeline={d?.timeline} status={d?.status ?? "queued"} error={d?.job?.error_message ?? null} />}
       {d?.status === "failed" && <ErrorState error={new Error(d.job?.error_message ?? "The inspection job failed.")} title={`Inspection failed (${d.job?.error_code ?? "error"})`} />}
+      {d?.status === "rejected" && d.rejection && <RejectionPanel r={d.rejection} />}
       {d?.status === "succeeded" && revealed && <ChatResult d={d} canReview={canReview} />}
     </section>
   );
@@ -463,6 +465,7 @@ function FrameTile({ id, frame, time, decisive }: { id: string; frame: number; t
       </div>
       <div className="flex flex-col items-start gap-1 p-1.5">
         {p ? <VerdictBadge damaged={p.binary_defective} triage={p.triage} quality={p.quality_status} />
+          : d?.status === "rejected" ? <VerdictBadge rejected />
           : <span className="text-xs text-muted">{humanize(d?.status ?? "queued")}</span>}
         {p && <span className="mono text-[11px] text-muted">p {p.p_defective.toFixed(3)}</span>}
       </div>

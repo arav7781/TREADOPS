@@ -37,13 +37,16 @@ const VERDICT_TONE: Record<Verdict, Tone> = { damaged: "bad", not_damaged: "good
  * The quality-check verdict: damaged, not damaged (only for a clean auto-clear) or uncertain, plus "expert check"
  * whenever an inspector has to look (uncertain, or damaged on a borderline score or a low-quality photo).
  */
-export function VerdictBadge({ damaged, verdict, triage, quality, large }: {
+export function VerdictBadge({ damaged, verdict, triage, quality, large, rejected }: {
   damaged?: boolean | null;
+  /** The subject gate refused the image: there is no verdict. */
+  rejected?: boolean;
   verdict?: Verdict | null;
   triage?: Triage | null;
   quality?: string | null;
   large?: boolean;
 }) {
+  if (rejected) return <Badge tone="warn" className={large ? "px-3.5 py-1 text-base font-bold" : "font-bold"}>Not a tyre</Badge>;
   if (!verdict && (damaged === null || damaged === undefined)) return <Badge>Pending</Badge>;
   const v = verdict ?? verdictOf(Boolean(damaged), triage, quality);
   const expert = v === "uncertain" || (v === "damaged" && (triage === "manual_review" || quality === "low_quality"));
@@ -73,7 +76,7 @@ export function GateStatus({ status, label }: { status: GateState | string | nul
 
 const JOB_TONE: Record<string, Tone> = {
   queued: "info", running: "primary", succeeded: "good", failed: "bad", retry_wait: "warn",
-  cancellation_requested: "warn", cancelled: "neutral",
+  cancellation_requested: "warn", cancelled: "neutral", rejected: "warn",
 };
 
 export function StatusBadge({ status }: { status: string | null | undefined }) {

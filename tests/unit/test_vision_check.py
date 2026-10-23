@@ -10,8 +10,10 @@ from treadops_worker.vision_check import decide, parse
 def test_answers_are_parsed_or_marked_unusable():
     ok = parse('Sure: {"damage_visible": true, "confidence": "High", "findings": ["gash", "exposed cords"], '
                '"location": "sidewall"}')
-    assert ok == {"damage_visible": True, "confidence": "high", "findings": ["gash", "exposed cords"],
-                  "location": "sidewall"}
+    assert ok == {"tyre_visible": None, "subject": None, "damage_visible": True, "confidence": "high",
+                  "findings": ["gash", "exposed cords"], "location": "sidewall"}
+    logo = parse('{"tyre_visible": false, "subject": "a company logo", "damage_visible": false, "findings": []}')
+    assert logo["tyre_visible"] is False and logo["subject"] == "a company logo"
     assert parse("I cannot tell from this photo.")["error"] == "unparseable_answer"
     assert parse('{"damage_visible": "maybe"}')["error"] == "unparseable_answer"
 
@@ -58,3 +60,21 @@ def test_an_uncertain_result_may_be_called_possibly_damaged_but_never_not_damage
                             "and it goes to Expert review.", tool_results=[cls], system_prompt="x" * 200,
                             classification=cls, fallback_summary="withheld")
     assert not quoted.replaced
+
+
+def test_a_rejected_non_tyre_gets_no_verdict_from_the_answer():
+    cls = {"verdict": "not_a_tyre"}
+    ok = g.check_output("This image shows a logo, not a tyre, so no damage verdict was produced. Please upload a "
+                        "photo of the tyre.", tool_results=[], system_prompt="x" * 200, classification=cls,
+                        fallback_summary="withheld")
+    assert not ok.replaced
+    for draft in ("The tyre is not damaged.", "Verdict: Damaged.", "It is a retread candidate."):
+        bad = g.check_output(draft, tool_results=[], system_prompt="x" * 200, classification=cls,
+                             fallback_summary="withheld")
+        assert bad.replaced and any(e.rule == "verdict_on_non_tyre" for e in bad.events)
+
+
+def test_a_video_whose_frames_are_all_rejected_is_not_a_tyre():
+    frames = [{"frame": i, "time_s": float(i), "inspection_id": str(i), "status": "rejected"} for i in range(3)]
+    out = aggregate_frames(frames)
+    assert out["error"] == "not_a_tyre" and out["frames_rejected"] == 3

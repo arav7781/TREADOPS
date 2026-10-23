@@ -24,7 +24,12 @@ def _inspect(client, key: str, seed: int) -> dict:
 
 
 @pytest.fixture()
-def clear_all(tmp_path):
+def clear_all(tmp_path, monkeypatch):
+    from treadops_worker import subject_gate
+
+    # These tests are about the damage opinion; the synthetic images would (rightly) look unusual to the subject gate.
+    monkeypatch.setattr(subject_gate, "assess", lambda emb, bundle_dir: {
+        "method": "pca_residual", "version": "v1", "score": 0.5, "unusual_above": 0.74, "unusual": False})
     import_and_activate(variant_bundle(tmp_path, low=0.999999, high=0.9999995, version="clear-all"), admin_id())
 
 
