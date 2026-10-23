@@ -25,6 +25,24 @@ TRIAGE_TEXT = {
 }
 
 
+def _margin(bundle, x: np.ndarray) -> np.ndarray:
+    """Logit margin (defective - good). Unlike a softmax probability it does not saturate near 0 or 1, so
+    occlusion still shows which regions drive a very confident decision. Falls back to log-odds of the
+    calibrated probability when only probabilities are available (ONNX runtime)."""
+    model = getattr(bundle, "_model", None)
+    if model is not None:
+        import torch
+
+        net = model.model
+        with torch.inference_mode():
+            out = net(torch.from_numpy(np.ascontiguousarray(x)))
+        logits = (out[1] if isinstance(out, tuple | list) else out).float().cpu().numpy()
+        d, g = bundle.class_mapping["defective"], bundle.class_mapping["good"]
+        return (logits[:, d] - logits[:, g]).astype(np.float64)
+    p = np.clip(bundle.p_defective(bundle.raw_probs(x)), 1e-6, 1 - 1e-6)
+    return np.log(p / (1 - p))
+
+
 def occlusion_map(bundle, x: np.ndarray, grid: int = 8) -> dict[str, Any]:
     s = x.shape[-1]
     cell = s // grid
@@ -33,9 +51,10 @@ def occlusion_map(bundle, x: np.ndarray, grid: int = 8) -> dict[str, Any]:
     for i in range(grid):
         for j in range(grid):
             batch[i * grid + j, :, i * cell : (i + 1) * cell, j * cell : (j + 1) * cell] = fill
-    base = float(bundle.p_defective(bundle.raw_probs(x))[0])
-    occluded = bundle.p_defective(bundle.raw_probs(batch)).reshape(grid, grid)
-    return {"base_p_defective": base, "delta": (base - occluded).astype(np.float32), "grid": grid, "cell": cell}
+    base = float(_margin(bundle, x)[0])
+    occluded = _margin(bundle, batch).reshape(grid, grid)
+    return {"base_margin": base, "delta": (base - occluded).astype(np.float32), "grid": grid, "cell": cell,
+            "signal": "logit margin (defective - good)"}
 
 
 def render_heatmap(canonical_rgb: np.ndarray, delta: np.ndarray, lmeta: dict, alpha: float = 0.45) -> Image.Image:

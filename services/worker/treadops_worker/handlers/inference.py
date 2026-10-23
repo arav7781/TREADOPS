@@ -109,12 +109,14 @@ def run(ctx: JobContext) -> dict[str, Any]:
         heat = render_heatmap(staged["canonical_rgb"], occ["delta"], staged["letterbox_meta"])
         attribution_ms = (time.perf_counter() - t1) * 1000
         top = np.unravel_index(np.argmax(occ["delta"]), occ["delta"].shape)
-        attribution = {"method": "occlusion_sensitivity", "grid": occ["grid"], "max_delta": float(occ["delta"].max()),
+        attribution = {"method": "occlusion_sensitivity", "signal": occ["signal"], "grid": occ["grid"],
+                       "max_delta": float(occ["delta"].max()),
                        "min_delta": float(occ["delta"].min()), "strongest_cell": [int(top[0]), int(top[1])],
                        "note": "attribution heatmap, not a defect segmentation"}
         _put_stage(storage, insp.id, Stage(
             7, "attribution", "Occlusion attribution (8x8)", thumb(heat, 720), attribution, attribution_ms,
-            [f"64 occluded copies in one batch; max drop in p(defective) {occ['delta'].max():+.3f}",
+            [f"64 occluded copies in one batch; largest drop in the defective-vs-good logit margin "
+             f"{occ['delta'].max():+.2f} (base margin {occ['base_margin']:+.2f})",
              "red = regions supporting 'defective', blue = regions supporting 'good'",
              "explanation aid only - not a defect localisation"]), db)
 

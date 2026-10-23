@@ -113,7 +113,14 @@ def prewarm_active() -> str | None:
             return None
         sha, uri = dep.bundle_sha256, dep.model_version.bundle_uri
     if sha not in bundles().loaded():
-        bundles().get(sha, uri)
+        b = bundles().get(sha, uri)
+        # Ultralytics builds its predictor on the first predict(); run one golden image so the first real
+        # request is not paying the setup cost.
+        golden = sorted((b.root / "golden").glob("*.jpg"))
+        if golden:
+            from treadops_ml.preprocess import tensor_from_canonical
+
+            b.raw_probs(tensor_from_canonical(golden[0].read_bytes(), b.preprocess))
     return sha
 
 
