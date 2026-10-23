@@ -65,11 +65,11 @@ export function LLMOpsView() {
   const fallback = d && d.turns ? (d.by_mode.deterministic_fallback ?? 0) / d.turns : null;
   return (
     <>
-      <PageHeader eyebrow="LLMOps" title="Copilot observability"
-        subtitle="Every copilot turn is a trace: graph nodes, LLM calls and tool calls as spans, token usage, cost, guardrail events, grounding checks and user feedback — versioned by prompt."
+      <PageHeader eyebrow="LLMOps" title="Bib observability"
+        subtitle="Every turn of Bib, the casing copilot, is a trace: graph nodes, LLM calls and tool calls as spans, token usage, cost, guardrail events, grounding checks and user feedback — versioned by prompt."
         actions={<CopilotModeBadge />} />
       {o.isError ? <ErrorState error={o.error} onRetry={() => o.refetch()} /> : !d ? <SkeletonRows rows={4} /> : d.turns === 0 ? (
-        <EmptyState title="No copilot turns yet">Ask the copilot something to generate the first trace.</EmptyState>
+        <EmptyState title="No copilot turns yet">Ask Bib something on Inspect &amp; ask to generate the first trace.</EmptyState>
       ) : (
         <>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

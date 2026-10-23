@@ -46,7 +46,7 @@ export function Dashboard() {
         <FilterSelect id="f-window" label="Time window" value={f.window} onChange={(v) => setF({ window: v })}
           options={Object.entries(WINDOWS).map(([k, v]) => [k, v.label])} />
         <FilterSelect id="f-source" label="Source" value={f.source} onChange={(v) => setF({ source: v })}
-          options={[["", "All sources"], ["upload", "Upload"], ["replay", "Replay"], ["copilot", "Copilot"], ["api", "API"]]} />
+          options={[["", "All sources"], ["upload", "Upload"], ["replay", "Replay"], ["copilot", "Bib chat"], ["api", "API"]]} />
         <FilterSelect id="f-origin" label="Metadata origin" value={f.metadata_origin} onChange={(v) => setF({ metadata_origin: v })}
           options={[["", "All"], ["user_provided", "User provided"], ["simulated", "Simulated"], ["observed", "Observed"]]} />
         <FilterText id="f-line" label="Line" value={f.line_id} placeholder="e.g. SIM-L02" onChange={(v) => setF({ line_id: v })} />

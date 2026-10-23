@@ -708,11 +708,41 @@ export interface CopilotStatus {
   prompt_sha256: string;
 }
 
+/** One step of the agent's live timeline, appended by the LangGraph nodes and tools while a turn runs. */
 export interface ChatEvent {
   at: string;
-  kind: string;
-  tool?: string;
+  kind: "start" | "guard_input" | "plan" | "tool_call" | "tool_progress" | "inspection" | "stage" | "tool_result"
+    | "compose" | "guard_output" | (string & {});
   message?: string;
+  tool?: string;
+  args?: string;
+  ok?: boolean;
+  summary?: string;
+  status?: string;
+  rules?: string[];
+  mode?: string;
+  model?: string | null;
+  iteration?: number;
+  error?: string;
+  prompt_version?: string;
+  inspection_id?: string;
+  deployment_generation?: number;
+  bundle_sha256?: string;
+  stage?: number;
+  name?: string;
+  title?: string;
+  duration_ms?: number;
+  grounding?: { checked: number; ungrounded: number[]; pass: boolean };
+}
+
+export interface ChatPhoto {
+  url: string;
+  width: number;
+  height: number;
+  bytes: number;
+  sha256: string;
+  metadata_removed: boolean;
+  gps_removed: boolean;
 }
 
 export interface ChatMessage {
@@ -720,6 +750,8 @@ export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   attachments: {
+    photo?: ChatPhoto;
+    has_photo?: boolean;
     status?: "pending" | "complete" | "error";
     events?: ChatEvent[];
     inspection_id?: string | null;

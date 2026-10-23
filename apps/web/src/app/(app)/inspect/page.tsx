@@ -3,14 +3,14 @@ import { Suspense } from "react";
 
 import { SkeletonRows } from "@/components/ui";
 
-import { Inspect } from "./Inspect";
+import { BibView } from "./BibView";
 
-export const metadata: Metadata = { title: "Inspect" };
+export const metadata: Metadata = { title: "Bib · Inspect & ask" };
 
-export default function InspectPage() {
+export default function BibPage() {
   return (
-    <Suspense fallback={<SkeletonRows rows={6} />}>
-      <Inspect />
+    <Suspense fallback={<SkeletonRows rows={8} />}>
+      <BibView />
     </Suspense>
   );
 }
