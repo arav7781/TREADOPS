@@ -89,7 +89,7 @@ resolvable ✅.
 2.07 across consecutive windows; alerts opened only after two windows above 0.20 and duplicates merged. Mean
 p(defective) fell 0.53 → 0.44 as images darkened, matching the stress-test recall drop.
 
-**Tests:** 58 unit, 9 data/ML (on the real data and artifacts) and 25 integration tests against real
+**Tests:** 58 unit, 9 data/ML (on the real data and artifacts) and 26 integration tests against real
 PostgreSQL/Redis/object storage (API-01..04, JOB-01..04, REL-01..04, DB-01 and regressions), 36 web component
 tests and 20 Playwright journeys against the live stack — all passing; GitHub CI (lint, mypy, contract diff,
 migrations, tests, web build, Docker images) is green.

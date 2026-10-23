@@ -12,7 +12,7 @@ import { Badge, Card, EmptyState, ErrorState, inputClass, KeyValue, PageHeader, 
 import { api } from "@/lib/api";
 import { ago, humanize, ms, num, pct, shortSha } from "@/lib/format";
 import { qk } from "@/lib/query";
-import type { LLMOpsOverview, TraceDetail, TraceRow } from "@/lib/types";
+import type { CopilotStatus, LLMOpsOverview, TraceDetail, TraceRow } from "@/lib/types";
 import { toQuery, useUrlState } from "@/lib/useUrlState";
 
 function TracePanel({ id }: { id: string }) {
@@ -28,7 +28,7 @@ function TracePanel({ id }: { id: string }) {
         ["Prompt", <span key="p" className="mono">{t.prompt_version} · {shortSha(t.prompt_sha256)}</span>],
         ["Latency", ms(t.latency_ms)],
         ["Tokens", `${t.usage.prompt} prompt (${t.usage.cached} cached) · ${t.usage.completion} completion`],
-        ["Cost", t.cost_usd === null ? "n/a (model not priced)" : `$${t.cost_usd.toFixed(6)}`],
+        ["Cost", t.cost_usd !== null ? `$${t.cost_usd.toFixed(6)}` : t.usage.prompt + t.usage.completion === 0 ? "$0.00 (no LLM call in this turn)" : "unpriced model (add it to configs/copilot.yaml)"],
         ["Grounding", t.grounding ? `${t.grounding.pass ? "pass" : "fail"} · ${t.grounding.checked} figures checked${t.grounding.ungrounded.length ? ` · ungrounded ${t.grounding.ungrounded.join(", ")}` : ""}` : "n/a"],
         ...(t.error ? [["Error", t.error] as [string, string]] : []),
       ]} />
@@ -61,8 +61,19 @@ export function LLMOpsView() {
   const o = useQuery({ queryKey: qk.llmopsOverview, queryFn: () => api<LLMOpsOverview>("/v1/llmops/overview"), refetchInterval: 20_000 });
   const traces = useQuery({ queryKey: qk.traces({ status: f.status, rule: f.rule }), queryFn: () => api<{ items: TraceRow[] }>(`/v1/llmops/traces${toQuery({ status: f.status, rule: f.rule, limit: 50 })}`), refetchInterval: 20_000 });
   const evals = useQuery({ queryKey: qk.evals, queryFn: () => api<{ items: Record<string, unknown>[] }>("/v1/llmops/evals") });
+  const status = useQuery({ queryKey: qk.copilotStatus, queryFn: () => api<CopilotStatus>("/v1/copilot/status"), staleTime: 60_000 });
   const d = o.data;
   const fallback = d && d.turns ? (d.by_mode.deterministic_fallback ?? 0) / d.turns : null;
+  const llmOn = status.data?.configured ?? null;
+  const calls = d?.tokens.llm_calls ?? 0;
+  // Every empty value says why, rather than a bare 0 or n/a. No LLM calls means nothing was billed: $0.00 is exact.
+  const tokenHint = calls > 0
+    ? `${num(calls)} LLM calls · cache hit ${d?.tokens.cache_hit_rate === null ? "none reported" : pct(d?.tokens.cache_hit_rate ?? null)}`
+    : llmOn === false ? "LLM not configured: answers are deterministic, no tokens used" : "no LLM calls in the last 7 days";
+  const costValue = calls === 0 ? "$0.00" : d?.cost_usd === null ? "Unpriced" : `$${(d?.cost_usd ?? 0).toFixed(4)}`;
+  const costHint = calls === 0 ? "no LLM calls, nothing billed"
+    : d?.cost_usd === null ? `add ${status.data?.model ?? "the model"} to pricing_per_million_tokens in configs/copilot.yaml`
+      : "from configured per-model pricing";
   return (
     <>
       <PageHeader eyebrow="LLMOps" title="Bib observability"
@@ -72,15 +83,32 @@ export function LLMOpsView() {
         <EmptyState title="No copilot turns yet">Ask Bib something on Inspect &amp; ask to generate the first trace.</EmptyState>
       ) : (
         <>
+          {llmOn === false && (
+            <div className="mb-6 flex flex-wrap items-start gap-3 rounded-2xl border border-accent bg-accent-soft p-4 text-ink" role="status">
+              <Zap aria-hidden className="mt-0.5 h-5 w-5 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="font-bold">Bib is running without an LLM</p>
+                <p className="text-sm text-ink-soft">
+                  Every answer comes from the deterministic, tool-grounded planner, so tokens, cost and cache hits are
+                  zero by definition. Set <code className="mono">LLM_BASE_URL</code>, <code className="mono">LLM_API_KEY</code> and{" "}
+                  <code className="mono">LLM_MODEL</code> in <code className="mono">.env</code> (any OpenAI-compatible endpoint, or a local
+                  Ollama model) and restart the API; LLM metrics appear from the next turn.
+                </p>
+              </div>
+            </div>
+          )}
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <Stat label="Turns (7 days)" icon={<MessagesSquare className="h-5 w-5" />} value={num(d.turns)} hint={Object.entries(d.by_status).map(([k, v]) => `${k} ${v}`).join(" · ")} />
             <Stat label="Latency p50 / p95" icon={<Gauge className="h-5 w-5" />} value={`${ms(d.latency_ms.p50)} / ${ms(d.latency_ms.p95)}`} hint="whole turn incl. YOLO tool" />
-            <Stat label="Tokens" icon={<Zap className="h-5 w-5" />} value={num(d.tokens.prompt + d.tokens.completion)}
-              hint={`${num(d.tokens.llm_calls)} LLM calls · cache hit ${d.tokens.cache_hit_rate === null ? "n/a" : pct(d.tokens.cache_hit_rate)}`} />
-            <Stat label="Cost" icon={<Coins className="h-5 w-5" />} value={d.cost_usd === null ? "n/a" : `$${d.cost_usd.toFixed(4)}`} hint="from configured per-model pricing" />
-            <Stat label="Fallback rate" icon={<Zap className="h-5 w-5" />} tone="warn" value={pct(fallback)} hint="deterministic tool-grounded answers" />
+            <Stat label="Tokens" icon={<Zap className="h-5 w-5" />} value={calls > 0 ? num(d.tokens.prompt + d.tokens.completion) : "No LLM calls"}
+              hint={tokenHint} />
+            <Stat label="Cost" icon={<Coins className="h-5 w-5" />} value={costValue} hint={costHint} />
+            <Stat label="Fallback rate" icon={<Zap className="h-5 w-5" />} tone="warn" value={pct(fallback)}
+              hint={llmOn === false ? "LLM not configured: every answer is deterministic and tool-grounded" : "turns answered by the deterministic planner"} />
             <Stat label="Grounding pass" icon={<ShieldCheck className="h-5 w-5" />} tone="good" value={pct(d.grounding.pass_rate)} hint={`${d.grounding.passed}/${d.grounding.checked} turns`} />
-            <Stat label="Feedback" icon={<ThumbsUp className="h-5 w-5" />} value={`${d.feedback.up} 👍 · ${d.feedback.down} 👎`} hint="per assistant message" />
+            <Stat label="Feedback" icon={<ThumbsUp className="h-5 w-5" />}
+              value={d.feedback.up + d.feedback.down === 0 ? "No ratings yet" : `${d.feedback.up} 👍 · ${d.feedback.down} 👎`}
+              hint={d.feedback.up + d.feedback.down === 0 ? "rate answers with 👍 / 👎 in Bib" : "per assistant message"} />
             <Stat label="Guardrail triggers" icon={<ShieldCheck className="h-5 w-5" />} tone="bad" value={num(d.guardrails.reduce((a, g) => a + g.count, 0))} hint={`${d.guardrails.length} distinct rules`} />
           </div>
           <div className="mt-6 grid gap-6 xl:grid-cols-2">
