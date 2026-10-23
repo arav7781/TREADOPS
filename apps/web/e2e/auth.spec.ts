@@ -43,7 +43,9 @@ test.describe("navigation follows roles", () => {
     for (const hidden of ["Training", "Replay"]) {
       await expect(nav.getByRole("link", { name: hidden, exact: true })).toHaveCount(0);
     }
-    await expect(nav.getByRole("button", { name: "Governance" })).toHaveCount(0); // no LLMOps or Audit for viewers
+    for (const hidden of ["LLMOps", "Audit"]) { // ML engineer / admin pages
+      await expect(nav.getByRole("link", { name: hidden, exact: true })).toHaveCount(0);
+    }
   });
 });
 
@@ -52,8 +54,9 @@ test.describe("admin navigation", () => {
   test("admin sees audit and LLMOps", async ({ page }) => {
     await page.goto("/dashboard");
     const nav = page.getByRole("navigation", { name: "Primary" }).first();
-    await nav.getByRole("button", { name: "Governance" }).click();
+    await expect(nav.getByRole("link", { name: "LLMOps", exact: true })).toBeVisible(); // top level, no dropdown
     await expect(nav.getByRole("link", { name: "Audit", exact: true })).toBeVisible();
-    await expect(nav.getByRole("link", { name: "LLMOps", exact: true })).toBeVisible();
+    await nav.getByRole("link", { name: "LLMOps", exact: true }).click();
+    await expect(page).toHaveURL(/\/llmops$/);
   });
 });

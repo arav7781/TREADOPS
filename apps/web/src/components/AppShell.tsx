@@ -58,15 +58,12 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
       { href: "/replay", label: "Replay", icon: FlaskConical, role: "ml_engineer", hint: "Deterministic stress scenarios" },
     ],
   },
-  {
-    label: "Governance",
-    items: [
-      { href: "/llmops", label: "LLMOps", icon: Sparkles, role: "ml_engineer", hint: "Copilot traces, guardrails, evals" },
-      { href: "/audit", label: "Audit", icon: ScrollText, role: "admin", hint: "Who changed what, and why" },
-    ],
-  },
 ];
-const LINKS: NavItem[] = [{ href: "/circularity", label: "Circularity", icon: Recycle, role: "viewer" }];
+const LINKS: NavItem[] = [
+  { href: "/llmops", label: "LLMOps", icon: Sparkles, role: "ml_engineer" },
+  { href: "/circularity", label: "Circularity", icon: Recycle, role: "viewer" },
+  { href: "/audit", label: "Audit", icon: ScrollText, role: "admin" },
+];
 const CTA: NavItem = { href: "/inspect", label: "Bib · Inspect & ask", icon: ScanLine, role: "viewer" };
 
 const isActive = (pathname: string, href: string) => pathname === href || pathname.startsWith(`${href}/`);
