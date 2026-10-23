@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { BibAvatar, ChatThread, Composer, CopilotModeBadge, useCopilotSession, usePhotoPicker, useSendTurn } from "@/components/domain/ChatThread";
 import { useMe } from "@/components/AppShell";
-import { Button, ErrorState, SkeletonRows } from "@/components/ui";
+import { ArrowDot, Button, ErrorState, SkeletonRows, TreadArc } from "@/components/ui";
 import { api } from "@/lib/api";
 import { ASSISTANT_DISCLAIMER, ASSISTANT_NAME } from "@/lib/brand";
 import { ago } from "@/lib/format";
@@ -103,7 +103,7 @@ function HistorySidebar({ rows, error, onRetry, active, onPick, onNew }: {
           <span className="sr-only">Search conversations</span>
           <Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
           <input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Search conversations"
-            className="h-10 w-full rounded-full border border-line bg-surface-muted pl-9 pr-3 text-sm text-ink outline-none placeholder:text-muted focus:border-primary" />
+            className="h-11 w-full rounded-lg border border-line-strong bg-surface pl-9 pr-3 text-sm text-ink outline-none placeholder:text-muted focus:border-primary" />
         </label>
       </div>
       <nav aria-label="Conversation history" className="min-h-0 flex-1 overflow-y-auto px-2 pb-3">
@@ -120,7 +120,7 @@ function HistorySidebar({ rows, error, onRetry, active, onPick, onNew }: {
                       <li key={s.id}>
                         <button type="button" onClick={() => onPick(s.id)} aria-current={on ? "true" : undefined}
                           className={clsx("flex w-full items-start gap-2.5 rounded-lg px-3 py-2 text-left transition",
-                            on ? "bg-primary-soft text-primary-ink shadow-[inset_3px_0_0_var(--primary)]" : "text-ink-soft hover:bg-surface-muted")}>
+                            on ? "bg-accent-soft text-ink shadow-[inset_3px_0_0_var(--brand-yellow)]" : "text-ink-soft hover:bg-surface-muted")}>
                           <Icon aria-hidden className={clsx("mt-0.5 h-4 w-4 shrink-0", s.inspection_id ? "text-primary" : "text-muted")} />
                           <span className="min-w-0 flex-1">
                             <span className="block truncate text-sm font-semibold">{s.title}</span>
@@ -155,40 +155,60 @@ function HistorySidebar({ rows, error, onRetry, active, onPick, onNew }: {
 
 function Welcome({ canAttach, blockedReason, onAsk }: { canAttach: boolean; blockedReason: string | null; onAsk: (s: string) => void }) {
   return (
-    <div className="mx-auto flex max-w-3xl flex-col items-center gap-6 py-6 text-center">
-      <div className="pop-in"><BibAvatar size="lg" /></div>
-      <div>
-        <h2 className="text-3xl font-extrabold text-ink">Hi, I&apos;m {ASSISTANT_NAME}, your casing copilot.</h2>
-        <p className="mx-auto mt-1 max-w-xl text-ink-soft">
-          Send me a tyre photo and I will inspect it step by step, explain the result and suggest what to do with the
-          casing. You can also ask about the model, drift or circularity.
-        </p>
+    <div className="mx-auto max-w-4xl">
+      <div className="relative overflow-hidden rounded-3xl bg-black px-6 pb-16 pt-9 text-white sm:px-10">
+        <TreadArc className="-right-10 -top-16 h-80 w-80 text-white/[0.09]" />
+        <div className="relative flex items-start gap-4">
+          <div className="pop-in hidden sm:block"><BibAvatar size="lg" /></div>
+          <div className="min-w-0">
+            <p className="text-sm font-bold uppercase tracking-[0.16em] text-brand-yellow">{ASSISTANT_NAME} · casing copilot</p>
+            <h2 className="headline mt-2 text-3xl sm:text-5xl">Hey, I&apos;m {ASSISTANT_NAME}.<br /><span className="headline-light">Here to help you inspect</span></h2>
+            <p className="mt-3 max-w-xl text-white/80">
+              Send me a tyre photo: I run the YOLO inspection step by step, explain the result and suggest what to do
+              with the casing. Or ask about the model, drift and circularity.
+            </p>
+          </div>
+        </div>
       </div>
-      <ol className="grid w-full gap-3 text-left sm:grid-cols-3">
-        {HOW_TO.map(({ icon: Icon, title, text }, i) => (
-          <li key={title} className="stage-in rounded-xl border border-line bg-surface p-4" style={{ animationDelay: `${i * 90}ms` }}>
-            <span className="mb-2 flex items-center gap-2">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-navy text-sm font-bold text-brand-yellow">{i + 1}</span>
-              <Icon aria-hidden className="h-5 w-5 text-primary" />
-            </span>
-            <span className="block font-display text-lg font-bold text-ink">{title}</span>
-            <span className="block text-sm text-ink-soft">{text}</span>
+      <div className="relative mx-3 -mt-10 rounded-3xl bg-navy p-3 shadow-xl sm:mx-6 sm:p-5">
+        <p className="mb-3 inline-flex items-center gap-2 border-b-2 border-white px-1 pb-2 font-semibold text-white">
+          <ScanLine aria-hidden className="h-5 w-5" /> Start here
+        </p>
+        <div className="grid overflow-hidden rounded-2xl bg-white sm:grid-cols-2 sm:divide-x sm:divide-line">
+          {canAttach ? (
+            <label htmlFor="chat-photo" className="group flex cursor-pointer items-center gap-4 px-5 py-4 hover:bg-surface-muted">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-primary text-primary"><Camera aria-hidden className="h-5 w-5" /></span>
+              <span className="min-w-0 flex-1"><span className="block text-sm text-ink-soft">Inspect</span><span className="block text-lg font-bold text-ink">A tyre photo</span></span>
+              <ArrowDot />
+            </label>
+          ) : (
+            <div className="flex items-center gap-4 px-5 py-4 opacity-70">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-line-strong text-muted"><Camera aria-hidden className="h-5 w-5" /></span>
+              <span className="min-w-0 flex-1"><span className="block text-sm text-ink-soft">Inspect a tyre photo</span><span className="block text-sm font-semibold text-warn">{blockedReason ?? "Loading…"}</span></span>
+            </div>
+          )}
+          <button type="button" onClick={() => document.getElementById("chat-text")?.focus()}
+            className="group flex items-center gap-4 border-t border-line px-5 py-4 text-left hover:bg-surface-muted sm:border-t-0">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-primary text-primary"><MessageSquare aria-hidden className="h-5 w-5" /></span>
+            <span className="min-w-0 flex-1"><span className="block text-sm text-ink-soft">Ask about</span><span className="block text-lg font-bold text-ink">The model &amp; circularity</span></span>
+            <ArrowDot />
+          </button>
+        </div>
+      </div>
+      <ol className="mt-6 grid overflow-hidden rounded-2xl bg-primary text-white sm:grid-cols-3 sm:divide-x sm:divide-white/30">
+        {HOW_TO.map(({ title, text }, i) => (
+          <li key={title} className="stage-in px-5 py-5" style={{ animationDelay: `${i * 90}ms` }}>
+            <span className="headline block text-lg">{i + 1}. {title}</span>
+            <span className="mt-1 block text-sm text-white/80">{text}</span>
           </li>
         ))}
       </ol>
-      {canAttach ? (
-        <label htmlFor="chat-photo" className="flex w-full max-w-lg cursor-pointer flex-col items-center gap-1.5 rounded-2xl border-2 border-dashed border-primary/40 bg-primary-soft/50 px-6 py-6 transition hover:border-primary hover:bg-primary-soft">
-          <ImagePlus aria-hidden className="h-8 w-8 text-primary" />
-          <span className="font-display text-lg font-bold text-ink">Attach or drop a tyre photo</span>
-          <span className="text-sm text-muted">JPEG, PNG or WebP · full frame analysed, no centre crop · metadata stripped</span>
-        </label>
-      ) : blockedReason ? <p className="rounded-full bg-warn-soft px-4 py-1.5 text-sm font-semibold text-warn">{blockedReason}</p> : null}
-      <div className="w-full">
-        <p className="mb-2 text-sm font-semibold text-muted">Or ask</p>
-        <div className="flex flex-wrap justify-center gap-2">
+      <div className="mt-6 pb-2">
+        <p className="mb-2 text-sm font-bold uppercase tracking-[0.12em] text-muted">Popular questions</p>
+        <div className="flex flex-wrap gap-2">
           {STARTERS.map((s) => (
             <button key={s} type="button" onClick={() => onAsk(s)}
-              className="rounded-full border border-line-strong bg-surface px-3.5 py-1.5 text-sm font-semibold text-primary-ink transition hover:border-primary hover:bg-primary-soft">{s}</button>
+              className="rounded-lg border border-ink/70 bg-surface px-3.5 py-2 text-sm font-semibold text-ink transition hover:bg-brand-yellow">{s}</button>
           ))}
         </div>
       </div>
@@ -220,17 +240,23 @@ export function BibView() {
   const pick = (id: string) => { setUrl({ session: id }); setDrawer(false); };
   const startNew = () => { setUrl({ session: "" }); setDrawer(false); };
   const title = sessions.data?.items.find((s) => s.id === session)?.title;
+  // The chat owns the viewport while it is shown. An effect (not CSS :has) so a copy kept alive in a hidden
+  // <Activity> after navigating away never changes other pages.
+  useEffect(() => {
+    document.documentElement.classList.add("chat-mode");
+    return () => document.documentElement.classList.remove("chat-mode");
+  }, []);
   const sidebar = (
     <HistorySidebar rows={sessions.data?.items} error={sessions.isError ? sessions.error : null} onRetry={() => sessions.refetch()}
       active={session} onPick={pick} onNew={startNew} />
   );
 
   return (
-    <div data-fullbleed className="flex min-h-0 w-full flex-1">
+    <div className="fixed inset-x-0 bottom-0 top-[var(--header-h)] z-20 flex bg-canvas">
       <aside aria-label="Conversations" className="hidden w-72 shrink-0 border-r border-line bg-surface md:block">{sidebar}</aside>
       {drawer && (
-        <div className="fixed inset-0 z-40 md:hidden" role="dialog" aria-modal="true" aria-label="Conversations">
-          <button type="button" aria-label="Close conversations" className="absolute inset-0 bg-navy/50" onClick={() => setDrawer(false)} />
+        <div className="fixed inset-x-0 bottom-0 top-[var(--header-h)] z-40 md:hidden" role="dialog" aria-modal="true" aria-label="Conversations">
+          <button type="button" aria-label="Close conversations" className="absolute inset-0 bg-black/50" onClick={() => setDrawer(false)} />
           <div className="stage-in absolute inset-y-0 left-0 w-[86%] max-w-80 bg-surface shadow-xl">
             <button type="button" aria-label="Close" onClick={() => setDrawer(false)} className="absolute right-2 top-2 rounded-full p-2 text-muted hover:bg-surface-muted"><X className="h-5 w-5" /></button>
             <div className="h-full pt-8">{sidebar}</div>
@@ -249,7 +275,7 @@ export function BibView() {
           </button>
           <BibAvatar />
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-xl font-extrabold leading-tight text-ink">{ASSISTANT_NAME} · casing copilot</h1>
+            <h1 className="headline truncate text-xl text-ink">{ASSISTANT_NAME} · casing copilot</h1>
             <p className="truncate text-sm text-muted">{title ?? "LangGraph agent · YOLO inspection tool · guarded and traced"}</p>
           </div>
           <span className="hidden lg:inline-flex"><CopilotModeBadge /></span>
@@ -266,7 +292,7 @@ export function BibView() {
         </div>
 
         {!atBottom && (
-          <button type="button" onClick={jump} className="pop-in absolute bottom-36 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-navy px-4 py-2 text-sm font-semibold text-white shadow-lg">
+          <button type="button" onClick={jump} className="pop-in absolute bottom-36 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-black px-4 py-2 text-sm font-semibold text-white shadow-lg">
             <ArrowDown aria-hidden className="h-4 w-4" /> Latest
           </button>
         )}

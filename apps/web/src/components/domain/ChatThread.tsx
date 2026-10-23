@@ -273,11 +273,10 @@ function InspectionInChat({ id, canReview, animate, revealed, onRevealed }: {
 }) {
   const q = useInspection(id);
   useEffect(() => { if (q.isError) onRevealed(); }, [q.isError, onRevealed]);
-  const [showLog, setShowLog] = useState<boolean | null>(null); // null: open while running, closed after
+  const [logOpen, setShowLog] = useState(false); // the theatre already shows each stage's log lines
   if (q.isError) return <div className="mt-3"><ErrorState error={q.error} onRetry={() => q.refetch()} /></div>;
   const d = q.data;
   const running = !d || d.status === "queued" || d.status === "running";
-  const logOpen = showLog ?? running;
   return (
     <section className="mt-3 space-y-3" aria-label="YOLO inspection pipeline">
       <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -330,7 +329,7 @@ function AssistantMessage({ m, onSuggest, canReview, latest }: { m: ChatMessage;
     <div className="flex gap-3" data-role="assistant">
       <BibAvatar />
       <div className="min-w-0 flex-1 space-y-3 rounded-2xl rounded-tl-sm border border-line bg-surface px-4 py-3">
-        <p className="text-sm font-bold text-ink">{ASSISTANT_NAME}</p>
+        <p className="headline text-base text-ink">{ASSISTANT_NAME}</p>
         <AgentTimeline events={a.events ?? []} pending={pending} defaultOpen={latest} />
         {a.inspection_id && <InspectionInChat id={a.inspection_id} canReview={canReview} animate={live} revealed={revealed} onRevealed={markRevealed} />}
         {!pending && !showAnswer && (
@@ -354,7 +353,7 @@ function AssistantMessage({ m, onSuggest, canReview, latest }: { m: ChatMessage;
           <div className="flex flex-wrap gap-2" role="group" aria-label="Suggested follow-ups">
             {m.suggestions.map((s) => (
               <button key={s} type="button" onClick={() => onSuggest(s)}
-                className="rounded-full border border-primary/30 bg-primary-soft px-3 py-1 text-sm font-semibold text-primary-ink hover:bg-primary/15">
+                className="rounded-lg border border-ink/70 bg-surface px-3 py-1.5 text-left text-sm font-semibold text-ink transition hover:bg-brand-yellow">
                 {s}
               </button>
             ))}
@@ -384,7 +383,7 @@ function UserMessage({ m }: { m: ChatMessage }) {
           </figure>
         )}
         {(m.content || !photo) && (
-          <div className="ml-auto w-fit rounded-2xl rounded-tr-sm bg-primary px-4 py-2.5 text-white">
+          <div className="ml-auto w-fit rounded-2xl rounded-tr-sm bg-navy px-4 py-2.5 text-white">
             {m.content || <span className="italic opacity-80">Photo attached</span>}
           </div>
         )}
@@ -446,7 +445,7 @@ export function Composer({ onSend, busy, photo, progress, placeholder, error }: 
   };
   const blocked = photo.blockedReason;
   return (
-    <form className="rounded-2xl border border-line-strong bg-surface p-2 shadow-[0_8px_30px_rgb(0_32_91/0.08)] focus-within:border-primary" onSubmit={(e) => { e.preventDefault(); submit(); }} aria-label={`Chat composer for ${ASSISTANT_NAME}`}
+    <form className="rounded-2xl border border-line-strong bg-surface p-2 shadow-[0_8px_30px_rgb(0_0_0/0.08)] focus-within:border-ink" onSubmit={(e) => { e.preventDefault(); submit(); }} aria-label={`Chat composer for ${ASSISTANT_NAME}`}
       onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); photo.pick(e.dataTransfer.files?.[0]); }}>
       {preview && (
         <div className="mb-2 flex items-center gap-3 rounded-xl bg-surface-muted p-2">
@@ -472,9 +471,9 @@ export function Composer({ onSend, busy, photo, progress, placeholder, error }: 
         <textarea ref={textRef} id="chat-text" rows={1} value={text} onChange={(e) => setText(e.target.value)} maxLength={4000}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); } }}
           onPaste={(e) => { const f = e.clipboardData.files?.[0]; if (f) { e.preventDefault(); photo.pick(f); } }}
-          placeholder={placeholder ?? (file ? `Ask ${ASSISTANT_NAME} about this tyre (optional)…` : `Ask ${ASSISTANT_NAME}, or attach a tyre photo…`)}
+          placeholder={placeholder ?? (file ? "Add a question (optional)…" : `Message ${ASSISTANT_NAME}…`)}
           className="max-h-40 min-h-11 w-full resize-none bg-transparent px-2 py-2.5 text-base text-ink outline-none placeholder:text-muted focus-visible:outline-none" />
-        <Button type="submit" busy={busy} aria-label="Send" className="h-11 w-11 shrink-0 px-0!">{busy ? null : <Send aria-hidden className="h-5 w-5" />}</Button>
+        <Button type="submit" busy={busy} aria-label="Send" className="h-11 w-11 shrink-0 rounded-full! px-0!">{busy ? null : <Send aria-hidden className="h-5 w-5" />}</Button>
       </div>
       {progress != null && file === null && busy && (
         <div className="mt-2" aria-live="polite"><ProgressBar value={progress} label="Photo upload progress" /></div>
