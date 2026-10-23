@@ -135,9 +135,12 @@ the golden set and logs results to MLflow.
 
 ### Name and visual design
 
-The copilot is called **Bib**, a nod to Bibendum, the Michelin Man. The UI palette (blue `#27509b`, navy `#00205b`,
-yellow `#fce500`) is inspired by Michelin's public website, and the type is Barlow (open source). TreadOps uses no
-Michelin logo, mascot artwork or proprietary typeface, and is not affiliated with or endorsed by Michelin.
+The copilot is called **Bib**, a nod to Bibendum, the Michelin Man. The UI follows the visual language of
+michelin.in: black header with dropdown navigation and a yellow call to action, navy rounded panels with yellow
+round arrows, a blue statement band, heavy italic upper-case headlines, and the palette blue `#27509b`, navy
+`#00205b`, yellow `#fce500`. Body text is Noto Sans (as on michelin.in) and headlines use Exo 2, an open-source
+stand-in for Michelin's proprietary display face. TreadOps uses no Michelin logo, mascot artwork or proprietary
+typeface, and is not affiliated with or endorsed by Michelin.
 
 ## Sustainability ledger
 
