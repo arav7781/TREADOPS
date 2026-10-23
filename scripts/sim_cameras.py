@@ -6,7 +6,9 @@ MediaMTX RTSP server in Docker and publishes each video with ffmpeg:
     rtsp://127.0.0.1:8554/line1-intake      rtsp://127.0.0.1:8554/line2-buffing
 
 Register them in Cameras with "Simulated stream" ticked so their inspections are labelled simulated.
-Usage: python scripts/sim_cameras.py up|down   (needs Docker and ffmpeg)
+`clip` writes runs/sim-cameras/turning-tyre.mp4 (upload it in the Bib chat) and turning-tyre.mjpeg (Chromium's fake
+camera for the live-camera journey): one tyre photo swept like a tyre turning in front of a camera.
+Usage: python scripts/sim_cameras.py up|down|clip   (up needs Docker; up and clip need ffmpeg)
 """
 
 from __future__ import annotations
@@ -35,14 +37,15 @@ def tyre_images(n: int = 12) -> list[Path]:
     return [p for pair in zip(defective, good, strict=False) for p in pair]
 
 
-def letterbox(img: np.ndarray) -> np.ndarray:
+def fill(img: np.ndarray) -> np.ndarray:
+    """Scale to cover the 16:9 frame and centre-crop, like a camera framed on the tyre (no artificial bars,
+    which the model never saw in training)."""
     w, h = SIZE
-    scale = min(w / img.shape[1], h / img.shape[0])
-    resized = cv2.resize(img, (int(img.shape[1] * scale), int(img.shape[0] * scale)), interpolation=cv2.INTER_AREA)
-    canvas = np.full((h, w, 3), 40, np.uint8)
-    y, x = (h - resized.shape[0]) // 2, (w - resized.shape[1]) // 2
-    canvas[y : y + resized.shape[0], x : x + resized.shape[1]] = resized
-    return canvas
+    scale = max(w / img.shape[1], h / img.shape[0])
+    resized = cv2.resize(img, (int(np.ceil(img.shape[1] * scale)), int(np.ceil(img.shape[0] * scale))),
+                         interpolation=cv2.INTER_AREA)
+    y, x = (resized.shape[0] - h) // 2, (resized.shape[1] - w) // 2
+    return resized[y : y + h, x : x + w]
 
 
 def build(name: str, images: list[Path]) -> Path:
@@ -53,7 +56,7 @@ def build(name: str, images: list[Path]) -> Path:
         frame = cv2.imread(str(p))
         if frame is None:
             continue
-        frame = letterbox(frame)
+        frame = fill(frame)
         for _ in range(SECONDS_PER_TYRE * FPS):
             writer.write(frame)
     writer.release()
@@ -61,6 +64,29 @@ def build(name: str, images: list[Path]) -> Path:
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(raw), "-c:v", "libx264", "-preset", "veryfast",
                     "-pix_fmt", "yuv420p", "-g", str(FPS * 2), str(mp4)], check=True)
     raw.unlink()
+    return mp4
+
+
+def clip() -> Path:
+    """One tyre 'turning': the tread of a validation photo scrolls past the camera through one full cycle in 8 s
+    (wrap-around), so every sector is seen once and consecutive frames really differ."""
+    OUT.mkdir(parents=True, exist_ok=True)
+    img = fill(cv2.imread(str(tyre_images()[0])))
+    w, h = 960, 540
+    img = cv2.resize(img, (w, h), interpolation=cv2.INTER_AREA)
+    raw = OUT / "turning-tyre.avi"
+    writer = cv2.VideoWriter(str(raw), cv2.VideoWriter_fourcc(*"MJPG"), FPS, (w, h))
+    steps = 8 * FPS
+    for i in range(steps):
+        writer.write(np.roll(img, int(h * i / steps), axis=0))
+    writer.release()
+    mp4 = OUT / "turning-tyre.mp4"
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(raw), "-c:v", "libx264", "-pix_fmt", "yuv420p",
+                    str(mp4)], check=True)
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(raw), "-c:v", "mjpeg", "-q:v", "3",
+                    str(OUT / "turning-tyre.mjpeg")], check=True)
+    raw.unlink()
+    print(mp4)
     return mp4
 
 
@@ -88,4 +114,4 @@ def down() -> None:
 
 
 if __name__ == "__main__":
-    {"up": up, "down": down}.get(sys.argv[1] if len(sys.argv) > 1 else "", lambda: sys.exit(__doc__))()
+    {"up": up, "down": down, "clip": clip}.get(sys.argv[1] if len(sys.argv) > 1 else "", lambda: sys.exit(__doc__))()

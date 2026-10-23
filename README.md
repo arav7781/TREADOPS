@@ -32,7 +32,9 @@ LLMOps tracing. Inspection happens inside the chat: the photo goes to Bib, and B
 | Role | Flow |
 |---|---|
 | Inspector | Open **Bib · Inspect & ask** and attach, drop or paste a tyre photo in the chat. Bib (a LangGraph agent) calls its `classify_tyre_image` tool, which creates a pinned inspection; the chat then shows the agent's steps (guardrails, plan, tool calls, timings) and plays the real pipeline stage by stage: ingest (EXIF orientation, metadata stripped) → canonical image → 224×224 letterbox (padding tinted; no centre crop) → R/G/B tensor planes → image-quality screen → YOLO inference with calibrated probability → occlusion heatmap → annotated **classified image**. The result card, circular pathway, grounded answer and follow-up suggestions follow, and the inspector can record a review without leaving the chat. |
-| Anyone | Ask Bib about the model, drift or circularity ("How much CO2 does retreading 25 truck casings save?"). Answers cite the knowledge base and tool outputs and never certify a tyre as safe. Viewers can chat; attaching photos requires the inspector role. |
+| Inspector (video) | Attach a short clip, or record with the phone/webcam camera, of the tyre turning. The browser scores every sampled frame and sends only the sharpest well-exposed frame per sector of the turn (duplicates dropped); each frame becomes its own pinned inspection, and the **tyre verdict** is conservative: damaged if any frame is damaged, with the decisive frame's full pipeline shown. |
+| Line QC | Register RTSP cameras under **Operate → Cameras**: live view, last-hour damaged / not damaged / expert-check counts, *Inspect now*. A connector process inspects the sharpest frame whenever a new tyre is in view. Ask Bib "How are the line cameras doing?" or "What does Line 1 see right now?". |
+| Anyone | Ask Bib about the cameras, the model, drift or circularity ("How much CO2 does retreading 25 truck casings save?"). Answers cite the knowledge base and tool outputs and never certify a tyre as safe. Viewers can chat; attaching photos requires the inspector role. |
 | ML engineer | Create an eligible snapshot, train an allowlisted recipe, compare gate evidence, run shadow evaluation, run deterministic replays (low light, blur, prior shift, burst), and review drift alerts. |
 | Admin | Promote or roll back with a reason and expected generation; audit everything. |
 
@@ -90,9 +92,10 @@ resolvable ✅.
 2.07 across consecutive windows; alerts opened only after two windows above 0.20 and duplicates merged. Mean
 p(defective) fell 0.53 → 0.44 as images darkened, matching the stress-test recall drop.
 
-**Tests:** 72 unit, 9 data/ML (on the real data and artifacts) and 28 integration tests against real
-PostgreSQL/Redis/object storage (API-01..04, JOB-01..04, REL-01..04, DB-01 and regressions), 38 web component
-tests and 20 Playwright journeys against the live stack — all passing; GitHub CI (lint, mypy, contract diff,
+**Tests:** 80 unit, 9 data/ML (on the real data and artifacts) and 31 integration tests against real
+PostgreSQL/Redis/object storage (API-01..04, JOB-01..04, REL-01..04, DB-01, cameras and regressions), 43 web
+component tests and 22 Playwright journeys against the live stack and the configured LLM (including video upload and
+live-camera recording through Chromium's fake camera) — all passing; GitHub CI (lint, mypy, contract diff,
 migrations, tests, web build, Docker images) is green.
 
 ## Architecture
@@ -159,6 +162,21 @@ round arrows, a blue statement band, heavy italic upper-case headlines, and the 
 `#00205b`, yellow `#fce500`. Body text is Noto Sans (as on michelin.in) and headlines use Exo 2, an open-source
 stand-in for Michelin's proprietary display face. TreadOps uses no Michelin logo, mascot artwork or proprietary
 typeface, and is not affiliated with or endorsed by Michelin.
+
+## Line cameras (RTSP)
+
+```bash
+scripts/dev.sh up cameras                 # the connector: one reader per enabled camera
+python scripts/sim_cameras.py up          # optional: two simulated RTSP cameras (MediaMTX in Docker + ffmpeg)
+python scripts/sim_cameras.py clip        # optional: a turning-tyre clip for the chat's video upload
+```
+
+Add cameras in **Operate → Cameras** (ML engineer): *Test connection* grabs a frame before saving. Stream URLs are
+encrypted at rest and shown masked. In the default `on_change` mode a camera is inspected at most every
+`interval_s`, and only when the scene changed since its last capture (a heuristic: there is no separate tyre
+detector), using the sharpest well-exposed frame of that interval. Captures are normal inspections
+(`source=camera`, `camera_id`, `line_id`; `metadata_origin=simulated` for test streams), so they appear in
+Inspections, Reviews and Monitoring. The simulated streams replay validation photos and are labelled simulated.
 
 ## Sustainability ledger
 
