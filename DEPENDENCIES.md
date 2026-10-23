@@ -21,3 +21,5 @@ Pretrained weights are pinned by SHA-256 in `configs/weights.lock.yaml` and veri
   licence (https://www.ultralytics.com/license) before any proprietary distribution.
 - Dataset D1: CC BY 4.0, Pathmanaban P. et al., Mendeley Data V1, doi:10.17632/bn7ch8tvyp.1. Attribution is shown
   in the UI and recorded in every snapshot.
+- The full runtime inventories with every package's licence are generated into [docs/licenses/](docs/licenses/README.md)
+  (`make licenses`); [NOTICE.md](NOTICE.md) covers copyleft components, fonts, data and trademarks.

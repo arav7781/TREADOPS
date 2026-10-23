@@ -18,7 +18,7 @@ EVID    := docs/evidence
 
 .PHONY: help env bootstrap infra up down dev dev-down migrate seed-demo fetch-data prepare-data split register-data \
         train-smoke train evaluate export-parity package import-bundle pipeline replay test test-unit test-ml \
-        test-integration test-e2e test-load eval-copilot contracts contracts-check lint typecheck evidence clean-cache
+        test-integration test-e2e test-load eval-copilot contracts contracts-check lint typecheck evidence licenses clean-cache
 
 help: ## list targets
 	@grep -hE '^[a-zA-Z_-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*## "}{printf "  %-18s %s\n", $$1, $$2}'
@@ -128,6 +128,9 @@ eval-copilot: ## offline copilot eval (guardrails, tool routing, grounding) -> d
 
 evidence: ## aggregate links, checksums and results into docs/evidence/status.json
 	$(ENVRUN) $(PY) scripts/evidence.py
+
+licenses: ## regenerate the third-party licence inventories in docs/licenses/ from the lock files
+	$(PY) scripts/license_report.py
 
 clean-cache: ## remove local bundle cache (content-addressed; safe)
 	rm -rf models/cache

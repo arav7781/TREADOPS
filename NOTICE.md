@@ -1,0 +1,93 @@
+# Notices
+
+**TreadOps**
+Copyright (C) 2026 Arav Saxena and Mahi Laddha
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero
+General Public License as published by the Free Software Foundation, version 3 only (`AGPL-3.0-only`).
+It is distributed in the hope that it will be useful, but **without any warranty**; without even the implied
+warranty of merchantability or fitness for a particular purpose. See [LICENSE](LICENSE) for the full text.
+
+## Why AGPL-3.0
+
+TreadOps trains and serves models with [Ultralytics YOLO](https://github.com/ultralytics/ultralytics), which is
+licensed AGPL-3.0. The project therefore uses the same licence. AGPL section 13 matters for this kind of system: if
+you run a **modified** TreadOps as a network service (the web UI and API are one), you must offer the users of that
+service the Corresponding Source of your modified version. Ultralytics also sells a commercial licence
+(<https://www.ultralytics.com/license>) for proprietary use; review it before any closed-source distribution.
+
+## Third-party software
+
+TreadOps uses its dependencies unmodified, through their published packages. The complete runtime inventories
+are generated from the lock files by [`scripts/license_report.py`](scripts/license_report.py) (`make licenses`):
+
+- [Python runtime dependencies](docs/licenses/python-runtime.md) (from `uv.lock`)
+- [Web runtime dependencies](docs/licenses/web-runtime.md) (from `apps/web/package-lock.json`)
+
+Each package's own licence text ships inside the installed distribution (`*.dist-info/` for Python,
+`node_modules/<package>/` for the web app).
+
+| Component | Licence | How TreadOps uses it |
+|---|---|---|
+| Ultralytics YOLO (`ultralytics`, `ultralytics-thop`, `ultralytics-platform`) | AGPL-3.0 | YOLO26 classification: training, export, serving |
+| PyTorch, torchvision | BSD-style (the torch wheel declares a composite expression: BSD, Apache-2.0, MIT, BSL-1.0) | model runtime |
+| ONNX, ONNX Runtime | Apache-2.0 / MIT | export and parity checks |
+| MLflow | Apache-2.0 | tracking and model registry |
+| DVC | Apache-2.0 | data and pipeline versioning |
+| Evidently | Apache-2.0 | drift reports |
+| LangGraph | MIT | copilot state machine |
+| FastAPI, SQLAlchemy, Alembic, Celery | MIT / MIT / MIT / BSD-3-Clause | API, persistence, jobs |
+| Next.js, React | MIT | web UI |
+| lucide-react | ISC | icons |
+
+Components under copyleft or file-level copyleft licences, all used unmodified:
+
+| Component | Licence | Note |
+|---|---|---|
+| `psycopg`, `psycopg-binary` | LGPL-3.0-only | PostgreSQL driver, used as a library |
+| `@img/sharp-libvips-*` | LGPL-3.0-or-later | platform binary behind Next.js image optimisation |
+| `certifi`, `pathspec`, `shtab`, parts of `tqdm` and `orjson` | MPL-2.0 | file-level copyleft |
+| `grandalf` | GPL-2.0 OR EPL-1.0 | DVC dependency (pipeline graphs); per its bundled LICENSE file |
+| `pygit2` | GPL-2.0 with linking exception | DVC dependency |
+| `asyncssh`, `dulwich` | EPL-2.0 OR GPL-2.0-or-later / Apache-2.0 OR GPL-2.0-or-later | DVC dependencies, dual-licensed |
+
+## Fonts
+
+The web app loads these through `next/font`, which self-hosts the files at build time:
+
+- **Noto Sans**: SIL Open Font License 1.1
+- **Exo 2**: SIL Open Font License 1.1
+- **JetBrains Mono**: SIL Open Font License 1.1
+
+## Data
+
+The model is trained on **"Digital images of defective and good condition tyres"** by Pathmanaban P. et al.,
+Mendeley Data V1, doi:[10.17632/bn7ch8tvyp.1](https://doi.org/10.17632/bn7ch8tvyp.1), licensed
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+
+The images are **not** stored in this Git repository. `make fetch-data` downloads them from the publisher and
+verifies the published SHA-256 sums. Any copies in a DVC remote, and the derived images the app produces, keep the
+CC BY 4.0 licence and this attribution. The derived images are sanitised (metadata stripped), resized, letterboxed,
+attribution heatmaps and annotated classified images. The UI shows the attribution too, and every dataset
+snapshot records it.
+
+Pretrained YOLO26 weights come from Ultralytics (AGPL-3.0) and are pinned by SHA-256 in
+[`configs/weights.lock.yaml`](configs/weights.lock.yaml). Weights fine-tuned from them are distributed under the
+same terms, and they are not committed to Git.
+
+Operational metadata in replays (lines, cameras, scenarios) is **simulated** and labelled as such.
+
+## Images in this repository
+
+`docs/assets/treadops-banner.jpg` is the project banner supplied by the authors for this README.
+
+## Trademarks and affiliation
+
+TreadOps is an independent engineering prototype. It is **not affiliated with, sponsored by or endorsed by
+Michelin**. MICHELIN, the Michelin Man (Bibendum) and related names are trademarks of Compagnie Générale des
+Établissements Michelin. TreadOps names its copilot "Bib" as an homage and draws its colour palette from Michelin's
+public website. It uses no Michelin logo, mascot artwork, proprietary typeface or Michelin data. The project refers
+to Michelin's published retreading figures only to estimate the circularity ledger, and cites the source.
+
+Ultralytics and YOLO are trademarks of Ultralytics Inc. Next.js is a trademark of Vercel, Inc. All other names are
+trademarks of their respective owners, used only to identify their products.
