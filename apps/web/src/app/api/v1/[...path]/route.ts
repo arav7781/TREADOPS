@@ -28,3 +28,5 @@ async function handle(request: Request, ctx: RouteContext<"/api/v1/[...path]">):
 
 export const GET = handle;
 export const POST = handle;
+export const PATCH = handle;
+export const DELETE = handle;

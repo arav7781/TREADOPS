@@ -35,7 +35,7 @@ export function Inspections() {
       <form className="card mb-6 grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="Inspection filters" onSubmit={(e) => e.preventDefault()}>
         {select("i-status", "Status", [["", "Any"], ["queued", "Queued"], ["running", "Running"], ["succeeded", "Succeeded"], ["failed", "Failed"]], "status")}
         {select("i-triage", "Triage", [["", "Any"], ["good_candidate", "Retread candidate"], ["manual_review", "Expert review"], ["defect_flagged", "Defect flagged"]], "triage")}
-        {select("i-source", "Source", [["", "Any"], ["upload", "Upload"], ["replay", "Replay"], ["copilot", "Copilot"]], "source")}
+        {select("i-source", "Source", [["", "Any"], ["upload", "Upload"], ["camera", "Line camera"], ["replay", "Replay"], ["copilot", "Bib chat"]], "source")}
         {select("i-reviewed", "Human label", [["", "Any"], ["true", "Reviewed"], ["false", "Awaiting review"]], "reviewed")}
         {select("i-origin", "Metadata origin", [["", "Any"], ["user_provided", "User provided"], ["simulated", "Simulated"], ["observed", "Observed"]], "metadata_origin")}
         {(["camera_id", "line_id", "model"] as const).map((k) => (

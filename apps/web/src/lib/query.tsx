@@ -69,6 +69,8 @@ export const qk = {
   ledger: ["circularity", "ledger"] as const,
   passport: (id: string) => ["circularity", "passport", id] as const,
   copilotStatus: ["copilot", "status"] as const,
+  cameras: ["cameras"] as const,
+  cameraSnapshot: (id: string) => ["cameras", id, "snapshot"] as const,
   copilotSessions: ["copilot", "sessions"] as const,
   copilotSession: (id: string) => ["copilot", "session", id] as const,
   llmopsOverview: ["llmops", "overview"] as const,

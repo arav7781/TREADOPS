@@ -4,6 +4,7 @@ import clsx from "clsx";
 import {
   Activity,
   BookCheck,
+  Cctv,
   Boxes,
   Brain,
   ChevronDown,
@@ -44,6 +45,7 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
     items: [
       { href: "/dashboard", label: "Overview", icon: Gauge, role: "viewer", hint: "Throughput, queue and drift at a glance" },
       { href: "/inspections", label: "Inspections", icon: ClipboardList, role: "viewer", hint: "Every inspection, pinned to its model" },
+      { href: "/cameras", label: "Cameras", icon: Cctv, role: "viewer", hint: "Live line cameras and their quality checks" },
       { href: "/reviews", label: "Review queue", icon: BookCheck, role: "viewer", hint: "Inspector labels and dispositions" },
     ],
   },
