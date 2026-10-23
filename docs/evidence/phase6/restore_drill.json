@@ -1,0 +1,20 @@
+{
+  "dump": "runs/backups/treadops-20261023T053309Z.dump",
+  "dump_sha256": "c05e298025f299466fcb6e923b9fb56f8982a4ee46f84702f122fda4a7e7a6bc",
+  "restored_database": "treadops_restore",
+  "row_counts": {
+    "inspections": 1600,
+    "predictions": 1576,
+    "review_labels": 2,
+    "deployments": 1,
+    "model_versions": 2,
+    "audit_events": 113
+  },
+  "active_generation": 1,
+  "active_bundle_sha256": "4bdf10e66e0e44dc87b042933908099b6538c42a22b6686e7bce53739bf26676",
+  "bundle_files_checked": 20,
+  "missing_bundle_files": [],
+  "sampled_inspections": 25,
+  "missing_media_objects": [],
+  "status": "passed"
+}
