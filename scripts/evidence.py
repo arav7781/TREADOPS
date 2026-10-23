@@ -30,6 +30,19 @@ def junit(name: str):
     return {k: int(a.get(k, 0)) for k in ("tests", "failures", "errors", "skipped")}
 
 
+def serving():
+    """Active deployment and model versions as last exported by the release drill (docs/evidence/phase5)."""
+    drill = jload("docs/evidence/phase5/release_drill.json")
+    if not drill:
+        return None
+    dep = drill["deployments"]
+    active = next((d for d in dep["items"] if d["state"] == "active"), None)
+    return {"generation": dep["generation"], "active_registry_version": active and active["registry_version"],
+            "active_bundle_sha256": active and active["bundle_sha256"],
+            "models": [{k: m[k] for k in ("registry_version", "model_family", "stage", "gate_status")}
+                       for m in drill["models"]]}
+
+
 def git(*args):
     try:
         return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True, timeout=10).stdout.strip()
@@ -51,7 +64,9 @@ def main() -> int:
         "data": {"source_manifest": jload("data/manifests/source_manifest.json"),
                  "split": {k: (jload("data/manifests/split_manifest.json") or {}).get(k)
                            for k in ("counts", "actual_outer_fractions", "leakage", "split_sha256")}},
-        "model": {"bundle_sha256": (bundle or {}).get("bundle_sha256"),
+        "serving": serving(),
+        "dvc_pipeline_bundle": {"note": "artifacts/bundle from `dvc repro` (YOLO26n-cls baseline)",
+                  "bundle_sha256": (bundle or {}).get("bundle_sha256"),
                   "registry": (bundle or {}).get("registry"), "gate_status": (gate or {}).get("status"),
                   "quality_targets": (gate or {}).get("quality_targets"),
                   "hard_gates": {g["id"]: g["status"] for g in (gate or {}).get("hard_gates", [])},
@@ -71,7 +86,7 @@ def main() -> int:
     out = EVID / "status.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(status, indent=2, default=str))
-    print(json.dumps({"bundle": status["model"]["bundle_sha256"], "gate": status["model"]["gate_status"],
+    print(json.dumps({"serving": status["serving"], "dvc_bundle_gate": status["dvc_pipeline_bundle"]["gate_status"],
                       "tests": status["tests"], "missing": status["missing_evidence"]}, indent=2))
     return 0
 

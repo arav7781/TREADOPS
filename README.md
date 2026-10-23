@@ -66,8 +66,9 @@ p50 53 ms / p95 123 ms / p99 176 ms (target p95 < 1 s ✅), 600/600 completed (t
 simultaneous uploads first produced 150 client timeouts and no 429s ❌; after adding an in-flight upload cap it
 returns 8 accepted and 172 immediate 429s with `Retry-After` (p95 248 ms) ✅.
 
-**Drills:** restart drill (inference worker paused 30 s, Redis restarted under load): every accepted inspection
-reached a terminal state, zero duplicate predictions, no stuck outbox events or orphaned leases ✅. Backup/restore
+**Drills:** restart drill (inference worker paused 30 s, Redis restarted under 2 req/s load): 300/300 accepted
+(p95 73 ms), every inspection reached a terminal state, zero duplicate predictions, no stuck outbox events or
+orphaned leases ✅. Backup/restore
 drill: Postgres restored into a scratch database with the active bundle and sampled inspection media all
 resolvable ✅.
 
@@ -75,8 +76,10 @@ resolvable ✅.
 2.07 across consecutive windows; alerts opened only after two windows above 0.20 and duplicates merged. Mean
 p(defective) fell 0.53 → 0.44 as images darkened, matching the stress-test recall drop.
 
-**Tests:** 51 unit, 9 data/ML (on the real data and artifacts), 21 integration against real
-PostgreSQL/Redis/object storage (API-01..04, JOB-01..04, REL-01..04, DB-01) — all passing.
+**Tests:** 58 unit, 9 data/ML (on the real data and artifacts) and 25 integration tests against real
+PostgreSQL/Redis/object storage (API-01..04, JOB-01..04, REL-01..04, DB-01 and regressions), 30 web component
+tests and 17 Playwright journeys against the live stack — all passing; GitHub CI (lint, mypy, contract diff,
+migrations, tests, web build, Docker images) is green.
 
 ## Architecture
 

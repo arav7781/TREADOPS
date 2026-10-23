@@ -1,0 +1,279 @@
+{
+  "generated_at": "2026-10-23T06:25:49.310791+00:00",
+  "git": {
+    "sha": "dc31f6c9a4a484a25f1720b228fb2169ef452d59",
+    "branch": "main",
+    "dirty": true
+  },
+  "data": {
+    "source_manifest": {
+      "actual_counts": {
+        "archive_members_images": 1856,
+        "by_label": {
+          "defective": 1000,
+          "good": 828
+        },
+        "canonical_images": 1828,
+        "exact_duplicates": 28,
+        "groups": 948,
+        "images_in_label_conflicting_groups": 0,
+        "multi_member_groups": 359,
+        "quarantined": 0,
+        "skipped_members": 0
+      },
+      "archive_bytes": 2859136943,
+      "archive_sha256": "897278a26d4df27889c87011337219ab46c862833b2b25815a3f3f87682c05d7",
+      "attribution": "Pathmanaban P. et al., Mendeley Data, V1, doi:10.17632/bn7ch8tvyp.1",
+      "doi": "10.17632/bn7ch8tvyp.1",
+      "license": "CC BY 4.0",
+      "name": "Digital images of defective and good condition tyres",
+      "preprocess_contract": {
+        "canonical_format": "JPEG",
+        "canonical_max_side": 1024,
+        "canonical_quality": 95,
+        "canonical_resample": "LANCZOS",
+        "canonical_subsampling": 0,
+        "channel_order": "RGB",
+        "dtype": "float32",
+        "imgsz": 224,
+        "layout": "NCHW",
+        "mean": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "pad_value": 114,
+        "resize_interpolation": "cv2.INTER_LINEAR",
+        "rounding": "new=round(dim*r); top,left=round((S-new)/2-0.1)",
+        "sanitize_format": "JPEG",
+        "sanitize_quality": 95,
+        "scale": 0.00392156862745098,
+        "std": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "version": "v1"
+      },
+      "preprocess_sha256": "f514d3e30a023990d8340045e8cc39de87ad6ee684d3fdee368fe8ea01b866e5",
+      "publisher_described_images": 1854,
+      "receipt_archive_sha256_matches": true,
+      "retrieval_endpoint": "https://data.mendeley.com/public-api/zip/bn7ch8tvyp/download/1",
+      "retrieved_at": "2026-10-22T15:07:23.685735+00:00",
+      "source_id": "D1:v1",
+      "url": "https://data.mendeley.com/datasets/bn7ch8tvyp/1",
+      "version": 1
+    },
+    "split": {
+      "counts": {
+        "calibration": {
+          "by_label": {
+            "defective": 75,
+            "good": 62
+          },
+          "groups": 55,
+          "images": 137
+        },
+        "dev_train": {
+          "by_label": {
+            "defective": 595,
+            "good": 489
+          },
+          "groups": 570,
+          "images": 1084
+        },
+        "dev_val": {
+          "by_label": {
+            "defective": 105,
+            "good": 87
+          },
+          "groups": 111,
+          "images": 192
+        },
+        "policy": {
+          "by_label": {
+            "defective": 75,
+            "good": 63
+          },
+          "groups": 72,
+          "images": 138
+        },
+        "test": {
+          "by_label": {
+            "defective": 150,
+            "good": 127
+          },
+          "groups": 140,
+          "images": 277
+        }
+      },
+      "actual_outer_fractions": {
+        "test": 0.1515,
+        "train": 0.698,
+        "val": 0.1504
+      },
+      "leakage": {
+        "groups_in_multiple_roles": 0,
+        "image_ids_unassigned": 0,
+        "original_sha_in_multiple_roles": 0
+      },
+      "split_sha256": "ddf516172d7bc4d90530997190b91e8e62f984bfd5a08bb220c3bdef1e106d0e"
+    }
+  },
+  "serving": {
+    "generation": 3,
+    "active_registry_version": "2",
+    "active_bundle_sha256": "4bdf10e66e0e44dc87b042933908099b6538c42a22b6686e7bce53739bf26676",
+    "models": [
+      {
+        "registry_version": "3",
+        "model_family": "yolo26s-cls",
+        "stage": "rolled_back",
+        "gate_status": "passed"
+      },
+      {
+        "registry_version": "2",
+        "model_family": "yolo26s-cls",
+        "stage": "active",
+        "gate_status": "passed"
+      },
+      {
+        "registry_version": "1",
+        "model_family": "yolo26n-cls",
+        "stage": "rejected",
+        "gate_status": "failed"
+      }
+    ]
+  },
+  "dvc_pipeline_bundle": {
+    "note": "artifacts/bundle from `dvc repro` (YOLO26n-cls baseline)",
+    "bundle_sha256": "b44299440c2f318246ed43919ad961e3bd6b67abc62b8e73bb0626ad1a55230d",
+    "registry": {
+      "name": "treadops-yolo-classify",
+      "version": "1"
+    },
+    "gate_status": "failed",
+    "quality_targets": [
+      {
+        "ci95": [
+          0.9243482033720778,
+          0.9856795681925687
+        ],
+        "id": "defect_recall",
+        "numerator": 145,
+        "status": "passed",
+        "support": 150,
+        "target": 0.95,
+        "value": 0.9666666666666667
+      },
+      {
+        "ci95": [
+          0.8301771758422949,
+          0.9382090319792924
+        ],
+        "id": "specificity",
+        "numerator": 112,
+        "status": "failed",
+        "support": 125,
+        "target": 0.9,
+        "value": 0.896
+      }
+    ],
+    "hard_gates": {
+      "no_critical_leakage": "passed",
+      "lineage_complete": "passed",
+      "finite_probabilities": "passed",
+      "class_mapping": "passed",
+      "onnx_parity": "passed"
+    },
+    "summary_metrics": {
+      "binary_threshold": 0.205788,
+      "calibration_temperature": 1.49634912833618,
+      "gate_average_precision": 0.9873657226218292,
+      "gate_defect_recall": 0.9666666666666667,
+      "gate_specificity": 0.896,
+      "model_p95_ms_cpu": 14.978778907970987,
+      "test_average_precision": 0.979385630198583,
+      "test_brier": 0.0661486179700978,
+      "test_defect_recall": 0.94,
+      "test_specificity": 0.905511811023622
+    },
+    "parity": {
+      "status": "passed",
+      "n_images": 120,
+      "mean_abs_probability_error": 2.751919496074684e-07,
+      "max_abs_probability_error": 6.705522537231445e-06,
+      "triage_agreement": 1.0
+    }
+  },
+  "tests": {
+    "unit": {
+      "tests": 58,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "ml": {
+      "tests": 9,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "integration": {
+      "tests": 25,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "load": {
+    "measured": {
+      "requests": 600,
+      "achieved_rate_per_s": 2.0,
+      "status_counts": {
+        "202": 600
+      },
+      "acceptance_ms": {
+        "p50": 52.690332995553035,
+        "p95": 122.67475559638115,
+        "p99": 176.28091717546317
+      },
+      "accepted": 600,
+      "terminal": 600,
+      "succeeded": 600,
+      "terminal_fraction": 1.0,
+      "queue_p95_ms_server": 48129.45,
+      "worker_total_p95_ms_server": 781.7499999999999
+    },
+    "targets": {
+      "acceptance_p95_under_1s": true,
+      "terminal_fraction_at_least_0.99": true
+    },
+    "overload": {
+      "burst_requests": 180,
+      "status_counts": {
+        "202": 30,
+        "ReadTimeout": 150
+      },
+      "controlled_429": false,
+      "latency_ms": {
+        "p50": 30163.787021003373,
+        "p95": 60169.45141635879
+      },
+      "client_timeout_s": 30
+    }
+  },
+  "copilot_eval": {
+    "at": "2026-10-23T06:17:12.289387+00:00",
+    "llm_mode": "deterministic_fallback",
+    "prompt_version": "v1",
+    "cases": 15,
+    "passed": 15,
+    "pass_rate": 1.0,
+    "gate": {
+      "min_pass_rate": 0.9,
+      "status": "passed"
+    }
+  },
+  "missing_evidence": []
+}

@@ -1,0 +1,85 @@
+{
+  "started_at": "2026-10-23T06:20:08.485580+00:00",
+  "timeline": [
+    {
+      "t": 0.0,
+      "at": "2026-10-23T06:20:08.485935+00:00",
+      "event": "load started",
+      "rate": 2,
+      "duration_s": 150
+    },
+    {
+      "t": 20.3,
+      "at": "2026-10-23T06:20:28.755543+00:00",
+      "event": "pause inference worker",
+      "result": "stopped inference"
+    },
+    {
+      "t": 50.4,
+      "at": "2026-10-23T06:20:58.911519+00:00",
+      "event": "resume inference worker",
+      "result": "started inference (pid 86638, log runs/dev/inference.log)"
+    },
+    {
+      "t": 71.0,
+      "at": "2026-10-23T06:21:19.507657+00:00",
+      "event": "restart redis broker",
+      "result": "treadops-redis-1"
+    },
+    {
+      "t": 204.3,
+      "at": "2026-10-23T06:23:32.772828+00:00",
+      "event": "load finished; verifying"
+    }
+  ],
+  "checks": {
+    "accepted_during_drill": 300,
+    "non_terminal": 0,
+    "failed": 0,
+    "duplicate_predictions": 0,
+    "pending_outbox_older_than_60s": 0,
+    "running_with_expired_lease": 0,
+    "jobs_retried_during_drill": 0
+  },
+  "status": "passed",
+  "load_report": {
+    "profile": {
+      "target_rate_per_s": 2.0,
+      "duration_s": 150.0,
+      "drain_s": 420.0
+    },
+    "measured": {
+      "requests": 300,
+      "achieved_rate_per_s": 2.0,
+      "status_counts": {
+        "202": 300
+      },
+      "acceptance_ms": {
+        "p50": 38.77424999518553,
+        "p95": 72.54721488934594,
+        "p99": 101.5960257535331
+      },
+      "accepted": 300,
+      "terminal": 300,
+      "succeeded": 300,
+      "terminal_fraction": 1.0,
+      "queue_p95_ms_server": 58324.95999999996,
+      "worker_total_p95_ms_server": 1029.7799999999997
+    },
+    "targets": {
+      "acceptance_p95_under_1s": true,
+      "terminal_fraction_at_least_0.99": true
+    },
+    "overload": null,
+    "hardware": {
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "machine": "arm64",
+      "cpu_count": 10,
+      "cpu_brand": "Apple M5",
+      "ram_bytes": 17179869184,
+      "inference_device": "cpu",
+      "inference_worker_concurrency": 1
+    },
+    "note": "acceptance latency measured client-side on localhost, excluding file read; targets are proposals"
+  }
+}
