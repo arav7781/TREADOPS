@@ -58,9 +58,10 @@ export function Badge({ tone = "neutral", children, className, title }: {
   );
 }
 
-type Variant = "primary" | "secondary" | "ghost" | "danger";
+type Variant = "primary" | "brand" | "secondary" | "ghost" | "danger";
 const VARIANT: Record<Variant, string> = {
   primary: "bg-primary text-white hover:bg-primary-strong disabled:bg-primary/40",
+  brand: "bg-brand-yellow text-navy hover:brightness-95 disabled:opacity-50",
   secondary: "bg-surface text-ink ring-1 ring-inset ring-line-strong hover:bg-surface-muted disabled:text-muted",
   ghost: "text-ink-soft hover:bg-surface-muted disabled:text-muted",
   danger: "bg-bad text-white hover:brightness-95 disabled:bg-bad/40",
@@ -74,7 +75,7 @@ export function Button({ variant = "primary", className, children, busy, ...rest
       disabled={rest.disabled || busy}
       aria-busy={busy || undefined}
       className={clsx(
-        "inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-4 py-2 text-base font-semibold transition",
+        "inline-flex min-h-10 items-center justify-center gap-2 rounded-full px-5 py-2 text-base font-semibold transition",
         "disabled:cursor-not-allowed", VARIANT[variant], className)}
     >
       {busy && <RefreshCw aria-hidden className="h-4 w-4 animate-spin" />}

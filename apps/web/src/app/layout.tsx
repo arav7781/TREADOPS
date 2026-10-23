@@ -1,11 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { JetBrains_Mono, Nunito_Sans } from "next/font/google";
+import { Barlow, Barlow_Semi_Condensed, JetBrains_Mono } from "next/font/google";
 
 import { QueryProvider } from "@/lib/query";
 
 import "./globals.css";
 
-const nunito = Nunito_Sans({ variable: "--font-nunito", subsets: ["latin"], display: "swap" });
+// Barlow: a free, sturdy grotesque in the spirit of Michelin's (proprietary) brand type.
+const barlow = Barlow({ variable: "--font-barlow", subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], display: "swap" });
+const barlowCondensed = Barlow_Semi_Condensed({ variable: "--font-barlow-condensed", subsets: ["latin"], weight: ["600", "700", "800"], display: "swap" });
 const jetbrains = JetBrains_Mono({ variable: "--font-jetbrains", subsets: ["latin"], display: "swap" });
 
 export const metadata: Metadata = {
@@ -13,11 +15,11 @@ export const metadata: Metadata = {
   description: "YOLO tyre-casing triage with a governed MLOps release loop and a circularity copilot.",
 };
 
-export const viewport: Viewport = { themeColor: "#6f5ff0", width: "device-width", initialScale: 1 };
+export const viewport: Viewport = { themeColor: "#00205b", width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${nunito.variable} ${jetbrains.variable} h-full antialiased`}>
+    <html lang="en" className={`${barlow.variable} ${barlowCondensed.variable} ${jetbrains.variable} h-full antialiased`}>
       <body className="min-h-full">
         <QueryProvider>{children}</QueryProvider>
       </body>
