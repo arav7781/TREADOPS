@@ -1,0 +1,49 @@
+{
+  "job_id": "feeea870-0231-45ac-b45c-ede8ae6ec60f",
+  "kind": "replay",
+  "queue": "ops",
+  "status": "failed",
+  "attempt": 1,
+  "max_attempts": 1,
+  "progress": 0.675,
+  "progress_message": "event 540/800",
+  "error": {
+    "code": "lease_expired",
+    "message": "worker M-CT4FW0FWG6:61098 stopped heartbeating",
+    "retryable": true
+  },
+  "cancel_requested": false,
+  "result": null,
+  "resource": {
+    "type": "replay",
+    "id": null
+  },
+  "created_at": "2026-10-23T04:58:34.833248+00:00",
+  "started_at": "2026-10-23T04:58:35.205879+00:00",
+  "finished_at": "2026-10-23T05:15:23.757740+00:00",
+  "next_retry_at": null,
+  "correlation_id": "596b574d6a7b49ccbc98f6d6efb44dab",
+  "events": [
+    {
+      "at": "2026-10-23T04:58:34.835906+00:00",
+      "from": null,
+      "to": "queued",
+      "attempt": 0,
+      "reason": "accepted"
+    },
+    {
+      "at": "2026-10-23T04:58:35.209343+00:00",
+      "from": "queued",
+      "to": "running",
+      "attempt": 1,
+      "reason": "claimed by M-CT4FW0FWG6:61098"
+    },
+    {
+      "at": "2026-10-23T05:15:23.759831+00:00",
+      "from": "running",
+      "to": "failed",
+      "attempt": 1,
+      "reason": "lease_expired: worker M-CT4FW0FWG6:61098 stopped heartbeating"
+    }
+  ]
+}
