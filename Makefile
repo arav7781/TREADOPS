@@ -92,7 +92,7 @@ replay: ## start a replay through the API (SCENARIO, SEED, COUNT, RATE)
 
 lint: ## python lint + types, web lint
 	.venv/bin/ruff check packages services tests scripts
-	.venv/bin/mypy --ignore-missing-imports packages/treadops_ml/treadops_ml/preprocess.py packages/treadops_agent/treadops_agent/guardrails.py
+	.venv/bin/mypy --ignore-missing-imports services/api/treadops_api services/worker/treadops_worker packages/treadops_agent/treadops_agent packages/treadops_ml/treadops_ml/attribution.py packages/treadops_ml/treadops_ml/monitoring.py packages/treadops_ml/treadops_ml/replay.py packages/treadops_ml/treadops_ml/acquire.py packages/treadops_ml/treadops_ml/weights.py packages/treadops_ml/treadops_ml/mlflow_model.py
 	npm --prefix apps/web run lint
 
 typecheck: ## web typecheck

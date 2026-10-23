@@ -1,0 +1,50 @@
+{
+  "profile": {
+    "target_rate_per_s": 2.0,
+    "duration_s": 0.0,
+    "drain_s": 0.0
+  },
+  "measured": {
+    "requests": 0,
+    "achieved_rate_per_s": 0.0,
+    "status_counts": {},
+    "acceptance_ms": {
+      "p50": null,
+      "p95": null,
+      "p99": null
+    },
+    "accepted": 0,
+    "terminal": 0,
+    "succeeded": 0,
+    "terminal_fraction": null,
+    "queue_p95_ms_server": 48014.299999999996,
+    "worker_total_p95_ms_server": 797.4199999999998
+  },
+  "targets": {
+    "acceptance_p95_under_1s": false,
+    "terminal_fraction_at_least_0.99": false
+  },
+  "overload": {
+    "burst_requests": 180,
+    "status_counts": {
+      "429": 172,
+      "202": 8
+    },
+    "controlled_429": true,
+    "latency_ms": {
+      "p50": 189.65460400067968,
+      "p95": 248.18665803832118
+    },
+    "client_timeout_s": 30
+  },
+  "hardware": {
+    "platform": "macOS-27.0.1-arm64-arm-64bit",
+    "machine": "arm64",
+    "cpu_count": 10,
+    "cpu_brand": "Apple M5",
+    "ram_bytes": 17179869184,
+    "inference_device": "cpu",
+    "inference_worker_concurrency": 1
+  },
+  "note": "acceptance latency measured client-side on localhost, excluding file read; targets are proposals"
+}

@@ -44,7 +44,7 @@ jobs:
       - name: lint + types
         run: |
           uv run ruff check packages services tests scripts
-          uv run mypy --ignore-missing-imports packages/treadops_ml/treadops_ml/preprocess.py packages/treadops_agent/treadops_agent/guardrails.py
+          uv run mypy --ignore-missing-imports services/api/treadops_api services/worker/treadops_worker packages/treadops_agent/treadops_agent packages/treadops_ml/treadops_ml/attribution.py packages/treadops_ml/treadops_ml/monitoring.py packages/treadops_ml/treadops_ml/replay.py packages/treadops_ml/treadops_ml/acquire.py packages/treadops_ml/treadops_ml/weights.py packages/treadops_ml/treadops_ml/mlflow_model.py
       - name: generated-contract diff
         run: uv run python scripts/export_openapi.py --check
       - name: migrations (fresh upgrade, round trip, drift)
