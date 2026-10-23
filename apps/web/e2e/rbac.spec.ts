@@ -19,6 +19,12 @@ test.describe("backend enforces roles even when the UI hides actions", () => {
     expect(audit.status()).toBe(403);
   });
 
+  test("viewer can chat with Bib but cannot attach a tyre photo", async ({ page }) => {
+    await page.goto("/inspect");
+    await expect(page.locator("#chat-photo")).toBeDisabled();
+    await expect(page.getByTitle("Attaching tyre photos requires the inspector role.")).toBeVisible();
+  });
+
   test("viewer sees an access-denied state on the audit page", async ({ page }) => {
     await page.goto("/audit");
     await expect(page.getByText("Access denied")).toBeVisible();

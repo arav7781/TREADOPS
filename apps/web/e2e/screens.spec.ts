@@ -4,7 +4,7 @@ import { authFile } from "./helpers";
 
 test.use({ storageState: authFile("admin") });
 
-const PAGES = ["/dashboard", "/inspect", "/models", "/datasets", "/monitoring", "/copilot", "/circularity", "/llmops"];
+const PAGES = ["/dashboard", "/inspect", "/models", "/datasets", "/monitoring", "/circularity", "/llmops"];
 const WIDTHS = [390, 768, 1440];
 
 for (const width of WIDTHS) {

@@ -4,27 +4,29 @@ import { authFile, modelState, realTyreImage } from "./helpers";
 
 test.use({ storageState: authFile("inspector") });
 
-test("upload a real tyre photo, watch the stages, review it and see it persist", async ({ page }) => {
+test("send a real tyre photo to Bib, watch the stages in the chat, review it and see it persist", async ({ page }) => {
   await page.goto("/dashboard");
   const models = await modelState(page.request);
   test.skip(models.state !== "ready", "No trained model is active yet (/api/v1/models reports untrained)");
 
   await page.goto("/inspect");
-  const input = page.locator('input[type="file"]').first();
+  const input = page.locator("#chat-photo");
   await expect(input).toBeEnabled(); // enabled once the role and model state have loaded
   await input.setInputFiles(realTyreImage());
-  await expect(page.getByAltText("Decoded preview of the selected tyre photo")).toBeVisible();
-  await page.getByRole("button", { name: "Inspect tyre" }).click();
-  await expect(page).toHaveURL(/\/inspect\?id=/);
+  await expect(page.getByAltText("Selected tyre photo preview")).toBeVisible();
+  await page.getByRole("button", { name: "Send" }).click();
+  await expect(page).toHaveURL(/\/inspect\?session=/);
 
-  // All eight recorded stages arrive (awaited, retrying assertions - no fixed sleeps).
+  // The agent's YOLO tool creates the inspection; all recorded stages arrive inside the chat (no fixed sleeps).
   for (const stage of ["ingest", "canonical", "letterbox", "tensor", "attribution", "classified"]) {
     await expect(page.locator(`[data-stage="${stage}"] img`)).toBeVisible({ timeout: 90_000 });
   }
-  await expect(page.getByRole("heading", { name: "Decision" })).toBeVisible();
-  await expect(page.getByText(/Calibrated p\(defective\)/)).toBeVisible();
+  const result = page.getByTestId("chat-result");
+  await expect(result).toBeVisible({ timeout: 90_000 });
+  await expect(result.getByText(/Calibrated p\(defective\)/)).toBeVisible();
 
-  const id = new URL(page.url()).searchParams.get("id")!;
+  const href = await result.getByRole("link", { name: /Full inspection/ }).getAttribute("href");
+  const id = href!.split("/").pop()!;
   await page.goto(`/inspections/${id}`);
   await page.getByText("Defective", { exact: true }).first().click();
   await page.getByLabel("Reason (required)").fill("e2e: sidewall cracking visible near the shoulder");

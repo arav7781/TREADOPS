@@ -4,7 +4,7 @@ import { authFile } from "./helpers";
 
 test.use({ storageState: authFile("admin") });
 
-const PAGES = ["/dashboard", "/inspect", "/inspections", "/reviews", "/copilot", "/circularity", "/datasets", "/training",
+const PAGES = ["/dashboard", "/inspect", "/inspections", "/reviews", "/circularity", "/datasets", "/training",
   "/models", "/monitoring", "/replay", "/llmops", "/audit"];
 
 test("no uncaught errors or hydration mismatches on any page", async ({ page }) => {

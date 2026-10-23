@@ -25,7 +25,7 @@ test("inspector signs in through the form and lands on the dashboard", async ({ 
   await expect(page).toHaveURL(/\/dashboard/);
   await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible();
   const nav = page.getByRole("navigation", { name: "Primary" }).first();
-  await expect(nav.getByRole("link", { name: "Inspect", exact: true })).toBeVisible();
+  await expect(nav.getByRole("link", { name: "Bib · Inspect & ask", exact: true })).toBeVisible();
   await expect(nav.getByRole("link", { name: "Audit", exact: true })).toHaveCount(0);
 });
 
@@ -35,7 +35,8 @@ test.describe("navigation follows roles", () => {
     await page.goto("/dashboard");
     const nav = page.getByRole("navigation", { name: "Primary" }).first();
     await expect(nav.getByRole("link", { name: "Overview", exact: true })).toBeVisible();
-    for (const hidden of ["Inspect", "Training", "Replay", "LLMOps", "Audit"]) {
+    await expect(nav.getByRole("link", { name: "Bib · Inspect & ask", exact: true })).toBeVisible(); // chat yes, photos no
+    for (const hidden of ["Training", "Replay", "LLMOps", "Audit"]) {
       await expect(nav.getByRole("link", { name: hidden, exact: true })).toHaveCount(0);
     }
   });
