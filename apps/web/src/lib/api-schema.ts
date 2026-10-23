@@ -823,12 +823,22 @@ export interface components {
             /** File */
             file?: string | null;
             /**
+             * Frames
+             * @description Video turns: sampled frames of one tyre, in order
+             */
+            frames?: string[] | null;
+            /**
              * Message
              * @default
              */
             message: string;
             /** Session Id */
             session_id?: string | null;
+            /**
+             * Video
+             * @description JSON: {"source": "clip"|"camera", "duration_s", "frames_considered", "times": [seconds per frame]}
+             */
+            video?: string | null;
         };
         /** CancelIn */
         CancelIn: {

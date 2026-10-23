@@ -25,6 +25,10 @@ guardrails:
     - "\\bguarantee(d)?\\b"
     - "\\bno (need|requirement) (for|of) (an? )?(human |manual )?(inspection|review)\\b"
     - "\\bcleared for (retread|use|service)\\b"
+  # Even denials are rephrased so answers never use certification vocabulary about a tyre.
+  certification_vocabulary:
+    "road ?-?worthy": "fit for use"
+    "safe to (drive|use|run)": "fit for use"
   domain_keywords: [tyre, tire, tread, casing, retread, defect, crack, sidewall, bead, crown, bulge, cut, puncture,
                     inspection, inspect, triage, model, yolo, accuracy, recall, specificity, drift, monitor,
                     calibration, gate, deploy, release, rollback, dataset, label, review, queue, circular,

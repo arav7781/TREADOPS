@@ -26,6 +26,17 @@ TRIAGE_WORDS = {
     "manual_review": ("expert review", "manual review", "manual_review"),
     "defect_flagged": ("defect flagged", "defect_flagged", "flagged as defective"),
 }
+# Damage verdict wording. "not damaged" is matched first so it never also counts as "damaged".
+VERDICT_NOT = re.compile(r"\b(not damaged|undamaged|no (?:visible )?damage|isn't damaged)\b")
+VERDICT_YES = re.compile(r"\bdamaged\b")
+
+
+def claimed_verdict(low: str) -> str | None:
+    says_not = bool(VERDICT_NOT.search(low))
+    says_yes = bool(VERDICT_YES.search(VERDICT_NOT.sub(" ", low)))
+    if says_not != says_yes:
+        return "not_damaged" if says_not else "damaged"
+    return None
 
 
 @lru_cache
@@ -167,9 +178,11 @@ def check_output(text: str, *, tool_results: list[dict[str, Any]], system_prompt
     if classification and classification.get("triage"):
         actual = classification["triage"]
         claimed = {t for t, words in TRIAGE_WORDS.items() if any(w in low for w in words)}
-        if claimed and actual not in claimed:
+        verdict, said = classification.get("verdict"), claimed_verdict(low)
+        if (claimed and actual not in claimed) or (verdict and said and said != verdict):
             events.append(GuardEvent("output", "triage_contradiction", "rewrite",
-                                     {"tool_triage": actual, "claimed": sorted(claimed)}))
+                                     {"tool_triage": actual, "claimed": sorted(claimed), "tool_verdict": verdict,
+                                      "claimed_verdict": said}))
             if fallback_summary:
                 text, low, replaced = fallback_summary, fallback_summary.lower(), True
 
@@ -183,6 +196,15 @@ def check_output(text: str, *, tool_results: list[dict[str, Any]], system_prompt
             for m in reversed(claims):
                 text = text[: m.start()] + "[requires inspector clearance]" + text[m.end():]
             low = text.lower()
+
+    # 3b) certification vocabulary, even when negated ("does not mean it is roadworthy" -> "fit for use")
+    reworded = 0
+    for pat, plain in g.get("certification_vocabulary", {}).items():
+        text, n = re.subn(rf"\b{pat}\b", plain, text, flags=re.IGNORECASE)
+        reworded += n
+    if reworded:
+        events.append(GuardEvent("output", "certification_vocabulary", "rewrite", {"count": reworded}))
+        low = text.lower()
 
     # 4) grounding of figures
     allowed = allowed_numbers(tool_results)

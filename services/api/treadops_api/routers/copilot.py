@@ -34,6 +34,10 @@ def message_view(m: ChatMessage) -> dict:
     photo = att.get("photo")
     if isinstance(photo, dict) and photo.get("key"):  # signed short-lived link; storage keys never leave the API
         att["photo"] = {k: v for k, v in photo.items() if k != "key"} | {"url": sign_media(photo["key"])}
+    video = att.get("video")
+    if isinstance(video, dict):
+        att["video"] = {**video, "frames": [{k: v for k, v in f.items() if k != "key"} | {"url": sign_media(f["key"])}
+                                            for f in video.get("frames", []) if f.get("key")]}
     return {"id": str(m.id), "role": m.role, "content": m.content, "attachments": att,
             "suggestions": m.suggestions, "trace_id": str(m.trace_id) if m.trace_id else None,
             "created_at": m.created_at.isoformat()}
@@ -49,16 +53,32 @@ def send(
     message: str = Form("", max_length=8000),
     session_id: uuid.UUID | None = Form(None),
     file: UploadFile | None = File(None),
+    frames: list[UploadFile] | None = File(None, description="Video turns: sampled frames of one tyre, in order"),
+    video: str | None = Form(None, max_length=4000, description='JSON: {"source": "clip"|"camera", "duration_s", '
+                                                                 '"frames_considered", "times": [seconds per frame]}'),
     p: Principal = Depends(require("viewer")),
     db: Session = Depends(get_db),
 ):
-    image = None
-    if file is not None and file.filename:
-        limit = get_settings().max_upload_bytes
-        image = file.file.read(limit + 1)
-        if len(image) > limit:
-            raise ApiError(413, "payload_too_large", f"Image exceeds {limit} bytes.")
-    return service.start_turn(db, actor=p, session_id=session_id, text=message, image=image)
+    limit = get_settings().max_upload_bytes
+
+    def read(f: UploadFile, what: str) -> bytes:
+        data = f.file.read(limit + 1)
+        if len(data) > limit:
+            raise ApiError(413, "payload_too_large", f"{what} exceeds {limit} bytes.")
+        return data
+
+    image = read(file, "Image") if file is not None and file.filename else None
+    frame_bytes = [read(f, f"Frame {i + 1}") for i, f in enumerate(frames or []) if f.filename]
+    meta = None
+    if video:
+        try:
+            meta = json.loads(video)
+        except ValueError as exc:
+            raise ApiError(422, "invalid_video_meta", "video must be a JSON object.") from exc
+        if not isinstance(meta, dict) or meta.get("source", "clip") not in ("clip", "camera"):
+            raise ApiError(422, "invalid_video_meta", "video.source must be clip or camera.")
+    return service.start_turn(db, actor=p, session_id=session_id, text=message, image=image, frames=frame_bytes,
+                              video=meta)
 
 
 @router.get("/copilot/sessions")

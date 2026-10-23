@@ -154,12 +154,35 @@ def test_aggregate_endpoints_return_200_with_data(client):
     assert "psi_alert_candidate" in client.get("/v1/monitoring/windows", headers=h).json()["thresholds"]
 
 
+def fake_llm(monkeypatch, *replies: str):
+    """Bib is LLM-only. Integration tests script the model (no gateway, no credentials) through the real client."""
+    from types import SimpleNamespace
+
+    from treadops_agent import service
+    from treadops_agent.llm_client import LLMClient
+
+    script = list(replies)
+
+    def create(**_):
+        msg = SimpleNamespace(content=script.pop(0) if script else "", tool_calls=None)
+        msg.model_dump = lambda: {"role": "assistant", "content": msg.content, "tool_calls": None}
+        usage = SimpleNamespace(prompt_tokens=10, completion_tokens=5, total_tokens=15, prompt_tokens_details=None)
+        return SimpleNamespace(choices=[SimpleNamespace(message=msg)], usage=usage)
+
+    sdk = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+    sdk.with_options = lambda **_: sdk
+    real = service.llm_status
+    monkeypatch.setattr(service, "llm_status", lambda: {**real(), "configured": True, "model": "fake-model", "mode": "llm"})
+    monkeypatch.setattr(service, "_client", lambda: (LLMClient("http://fake/v1", "k", sdk_client=sdk), "fake-model"))
+
+
 @requires_bundle
 def test_copilot_photo_turn_and_agent_tool_creates_the_inspection(client, monkeypatch):
     """The chat turn stores only a sanitized preview; the agent's YOLO tool creates the pinned inspection."""
     from treadops_agent import service, tools
 
     import_and_activate(fixture_bundle(), admin_id())
+    fake_llm(monkeypatch)
     started = []
     monkeypatch.setattr(service._pool, "submit", lambda fn, *args: started.append(args))  # run the agent below
     h = login(client, "inspector")
@@ -177,7 +200,7 @@ def test_copilot_photo_turn_and_agent_tool_creates_the_inspection(client, monkey
                          files={"file": ("t.jpg", jpeg(52), "image/jpeg")})
     assert denied.status_code == 403
 
-    (_msg_id, actor, _text, image) = started[0]
+    (_msg_id, actor, _text, image, *_video) = started[0]
     events = []
     monkeypatch.setitem(tools.config(), "classify_wait_s", 0)
     ctx = tools.ToolContext(actor=actor, image_bytes=image, idempotency_key=f"copilot:{_msg_id}",
@@ -195,6 +218,8 @@ def test_copilot_answer_streams_its_steps_and_final_message(client, monkeypatch)
     from treadops_agent import service
 
     monkeypatch.setattr(service._pool, "submit", lambda fn, *args: fn(*args))  # finish the turn synchronously
+    fake_llm(monkeypatch, "Fill the frame with the tread and keep the light even.\n\nFollow-ups:\n- Why does glare "
+                          "matter?\n- Which angles are needed?\n- How is quality checked?")
     h = login(client, "inspector")
     r = client.post("/v1/copilot/messages", headers=h, data={"message": "How should I photograph a tyre?"})
     assert r.status_code == 202, r.text
@@ -209,6 +234,50 @@ def test_copilot_answer_streams_its_steps_and_final_message(client, monkeypatch)
     assert kinds[-1] == "done" and kinds.count("step") == len(stored["attachments"]["events"]) > 3
     done = json.loads(frames[-1].split("data: ", 1)[1])
     assert done["content"] == stored["content"] and done["attachments"]["status"] == "complete"
+    assert done["suggestions"] == ["Why does glare matter?", "Which angles are needed?", "How is quality checked?"]
 
     other = login(client, "viewer")
     assert client.get(f"/v1/copilot/messages/{msg_id}/stream", headers=other).status_code == 404
+
+
+def test_copilot_refuses_without_a_language_model(client, monkeypatch):
+    from treadops_agent import service
+
+    real = service.llm_status
+    monkeypatch.setattr(service, "llm_status", lambda: {**real(), "configured": False, "mode": "unavailable"})
+    r = client.post("/v1/copilot/messages", headers=login(client, "inspector"), data={"message": "hello"})
+    assert r.status_code == 503 and r.json()["error"]["code"] == "llm_not_configured"
+
+
+@requires_bundle
+def test_copilot_video_turn_creates_one_inspection_per_frame(client, monkeypatch):
+    """Frames of one tyre are stored as signed previews; the video tool creates one pinned inspection per frame."""
+    from treadops_agent import service, tools
+
+    import_and_activate(fixture_bundle(), admin_id())
+    fake_llm(monkeypatch)
+    started = []
+    monkeypatch.setattr(service._pool, "submit", lambda fn, *args: started.append(args))
+    h = login(client, "inspector")
+    files = [("frames", (f"f{i}.jpg", jpeg(60 + i), "image/jpeg")) for i in range(3)]
+    r = client.post("/v1/copilot/messages", headers=h, files=files,
+                    data={"message": "Check this tyre", "video": json.dumps({"source": "camera", "duration_s": 9.5,
+                                                                             "frames_considered": 38,
+                                                                             "times": [0.4, 4.1, 8.8]})})
+    assert r.status_code == 202, r.text
+    user, assistant = client.get(f"/v1/copilot/sessions/{r.json()['session_id']}", headers=h).json()["messages"]
+    video = user["attachments"]["video"]
+    assert video["source"] == "camera" and [f["time_s"] for f in video["frames"]] == [0.4, 4.1, 8.8]
+    assert all(f["url"].startswith("/v1/media/") and "key" not in f for f in video["frames"])
+    assert assistant["attachments"]["has_video"]
+
+    msg_id, actor, _text, _image, frames, meta = started[0]
+    monkeypatch.setitem(tools.config(), "classify_wait_s", 0)
+    ctx = tools.ToolContext(actor=actor, idempotency_key=f"copilot:{msg_id}", frames=frames,
+                            frame_times=meta["times"], video_source=meta["source"])
+    tools.classify_tyre_video(ctx)
+    tools.classify_tyre_video(ctx)  # calling again never creates more inspections
+    assert len(ctx.frame_inspections) == 3 == len(set(ctx.frame_inspections))
+    detail = client.get(f"/v1/inspections/{ctx.frame_inspections[1]}", headers=h).json()
+    assert detail["notes"] == "video frame 2/3 at 4.1 s (camera)" and detail["source"] == "copilot"
+

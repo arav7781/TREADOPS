@@ -107,6 +107,22 @@
             ],
             "title": "File"
           },
+          "frames": {
+            "anyOf": [
+              {
+                "items": {
+                  "contentMediaType": "application/octet-stream",
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Video turns: sampled frames of one tyre, in order",
+            "title": "Frames"
+          },
           "message": {
             "default": "",
             "maxLength": 8000,
@@ -124,6 +140,19 @@
               }
             ],
             "title": "Session Id"
+          },
+          "video": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "JSON: {\"source\": \"clip\"|\"camera\", \"duration_s\", \"frames_considered\", \"times\": [seconds per frame]}",
+            "title": "Video"
           }
         },
         "title": "Body_send_v1_copilot_messages_post",

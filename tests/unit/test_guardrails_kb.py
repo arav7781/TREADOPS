@@ -92,12 +92,26 @@ def test_figures_quoted_from_stage_logs_are_grounded():
     assert v.grounding["pass"]
 
 
-def test_fallback_planner_does_not_confuse_next_steps_with_preprocessing():
-    from treadops_agent.graph import plan_fallback
+@pytest.mark.parametrize(("text", "claimed"), [
+    ("The tyre is not damaged.", "not_damaged"), ("This casing is damaged near the shoulder.", "damaged"),
+    ("No visible damage was found.", "not_damaged"), ("Damaged or not damaged depends on the inspector.", None),
+])
+def test_damage_verdict_claims_are_read_from_the_answer(text, claimed):
+    assert g.claimed_verdict(text.lower()) == claimed
 
-    iid = "c65b0e94-c703-4d63-ae5a-b7bc051b0f0d"
-    assert plan_fallback(f"Explain inspection {iid} and recommend next steps", False)[0][0] == "get_inspection"
-    assert plan_fallback(f"show the preprocessing stages for {iid}", False)[0][0] == "get_preprocessing_trace"
+
+def test_frames_aggregate_to_one_conservative_tyre_verdict():
+    from treadops_agent.tools import aggregate_frames
+
+    frames = [{"frame": 0, "time_s": 0.0, "inspection_id": "a", "status": "succeeded", "verdict": "not_damaged",
+               "triage": "good_candidate", "p_defective": 0.05, "quality_status": "accepted"},
+              {"frame": 1, "time_s": 3.2, "inspection_id": "b", "status": "succeeded", "verdict": "damaged",
+               "triage": "manual_review", "p_defective": 0.41, "quality_status": "accepted"},
+              {"frame": 2, "time_s": 6.1, "inspection_id": "c", "status": "failed"}]
+    out = aggregate_frames(frames)
+    assert out["verdict"] == "damaged" and out["decisive_frame"] == 1 and out["decisive_time_s"] == 3.2
+    assert out["needs_expert_check"] and out["frames_classified"] == 2 and out["frames_submitted"] == 3
+    assert aggregate_frames([{"frame": 0, "status": "failed"}])["error"] == "no_frame_classified"
 
 
 @pytest.mark.parametrize("args", ["[1]", "3", '"text"', "   "])
@@ -107,3 +121,30 @@ def test_tool_executor_rejects_non_object_arguments(args):
     ctx = tools.ToolContext(actor=None)
     out = tools.execute(ctx, "search_knowledge", args)
     assert out.get("error") in ("invalid_arguments", "bad_arguments")
+
+
+@pytest.mark.parametrize(("raw", "expected"), [
+    ('{}""', {}), ('{"query": "blur"}  ', {"query": "blur"}), ("", {}), (None, {}), ('{"a": 1}"', {"a": 1}),
+])
+def test_tool_arguments_tolerate_gateway_stream_artefacts(raw, expected):
+    from treadops_agent.tools import parse_arguments
+
+    assert parse_arguments(raw) == expected
+
+
+def test_tool_arguments_still_reject_real_garbage():
+    import json
+
+    from treadops_agent.tools import parse_arguments
+
+    with pytest.raises(json.JSONDecodeError):
+        parse_arguments('{"a": 1} trailing words')
+
+
+def test_certification_vocabulary_is_rephrased_even_when_denied():
+    cls = {"triage": "defect_flagged", "verdict": "damaged", "p_defective": 0.97}
+    v = g.check_output("The model does not certify a tyre as safe, roadworthy, or safe to drive.", tool_results=[cls],
+                       system_prompt=SYSTEM, classification=cls, fallback_summary=None)
+    assert "roadworthy" not in v.text.lower() and "safe to drive" not in v.text.lower()
+    assert "fit for use" in v.text and any(e.rule == "certification_vocabulary" for e in v.events)
+

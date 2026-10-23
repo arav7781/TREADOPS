@@ -34,12 +34,20 @@ TRIAGE_LABEL = {"good_candidate": "Retread candidate", "manual_review": "Expert 
                 "defect_flagged": "Defect flagged"}
 
 
+VERDICT_LABEL = {"damaged": "Damaged", "not_damaged": "Not damaged"}
+TRIAGE_ORDER = {"good_candidate": 0, "manual_review": 1, "defect_flagged": 2}
+
+
 @dataclass
 class ToolContext:
     actor: Any
     inspection_id: uuid.UUID | None = None          # set once classify_tyre_image has submitted the photo
     image_bytes: bytes | None = None                # the user's photo for this turn (in memory, never persisted raw)
     idempotency_key: str | None = None              # one inspection per turn, even if the tool is called twice
+    frames: list[bytes] = field(default_factory=list)       # video turns: sampled frames of one tyre, in order
+    frame_times: list[float] = field(default_factory=list)  # seconds into the clip for each frame
+    video_source: str | None = None                          # "clip" or "camera"
+    frame_inspections: list[uuid.UUID] = field(default_factory=list)
     emit: Callable[[str, dict[str, Any]], None] = lambda *_: None
     results: list[dict[str, Any]] = field(default_factory=list)
 
@@ -51,9 +59,15 @@ def _schema(name: str, description: str, properties: dict | None = None, require
 
 SCHEMAS = [
     _schema("classify_tyre_image",
-            "Run the deployed YOLO tyre-casing classifier on the photo attached to the user's current message. "
-            "Returns triage, calibrated p(defective), image quality, the preprocessing stages and the "
-            "recommended circular pathway. Only valid when the user attached a photo."),
+            "Run the deployed YOLO tyre quality classifier on the photo attached to the user's current message. "
+            "Returns the damage verdict (damaged / not damaged), whether an expert check is needed, triage, "
+            "calibrated p(defective), image quality, the preprocessing stages and the recommended pathway. Only "
+            "valid when the user attached a photo."),
+    _schema("classify_tyre_video",
+            "Inspect one tyre from the video frames attached to the user's current message (sampled around its "
+            "circumference). Classifies every frame with the deployed YOLO model and returns a tyre-level verdict: "
+            "damaged if any frame is damaged, the decisive (worst) frame, and per-frame results. Only valid when "
+            "the user attached a video."),
     _schema("get_inspection", "Fetch the stored result and lineage of an earlier inspection by ID.",
             {"inspection_id": {"type": "string", "description": "inspection UUID"}}, ["inspection_id"]),
     _schema("get_preprocessing_trace", "Explain each preprocessing stage (ingest, canonical, letterbox, tensor, "
@@ -82,7 +96,10 @@ def _compact(insp: Inspection, pred: Prediction | None, stages: list[InspectionS
                            "metadata_origin": insp.metadata_origin}
     if pred is not None:
         circ = pred.circularity or {}
+        verdict = "damaged" if pred.binary_defective else "not_damaged"
         out.update({
+            "verdict": verdict, "verdict_label": VERDICT_LABEL[verdict],
+            "needs_expert_check": pred.triage == "manual_review" or pred.quality_status == "low_quality",
             "triage": pred.triage, "triage_label": TRIAGE_LABEL[pred.triage], "triage_reason": pred.triage_reason,
             "p_defective": round(pred.p_defective, 4),
             "raw_probs": {k: round(v, 4) for k, v in pred.raw_probs.items()},
@@ -172,6 +189,95 @@ def classify_tyre_image(ctx: ToolContext) -> dict[str, Any]:
         if time.monotonic() - t0 > wait:
             return {"error": "timeout", "inspection_id": res["inspection_id"], "status": res["status"],
                     "message": "The inspection is still queued; results will appear on the inspection page."}
+        time.sleep(0.5)
+
+
+def aggregate_frames(frames: list[dict[str, Any]]) -> dict[str, Any]:
+    """One decision per tyre from its frames. Conservative: any damaged frame makes the tyre damaged, and the
+    worst frame (triage first, then p(defective)) decides the triage and is shown as the evidence."""
+    done = [f for f in frames if f.get("triage")]
+    if not done:
+        return {"error": "no_frame_classified", "frames": frames}
+    decisive = max(done, key=lambda f: (TRIAGE_ORDER[f["triage"]], f["p_defective"]))
+    verdict = "damaged" if any(f["verdict"] == "damaged" for f in done) else "not_damaged"
+    low_q = sum(1 for f in done if f.get("quality_status") == "low_quality")
+    return {
+        "tyre_level": True,
+        "rule": "any damaged frame makes the tyre damaged; the worst frame decides the triage",
+        "verdict": verdict, "verdict_label": VERDICT_LABEL[verdict],
+        "needs_expert_check": decisive["triage"] == "manual_review" or low_q > 0,
+        "triage": decisive["triage"], "triage_label": TRIAGE_LABEL[decisive["triage"]],
+        "p_defective": decisive["p_defective"], "p_defective_min": min(f["p_defective"] for f in done),
+        "decisive_frame": decisive["frame"], "decisive_time_s": decisive.get("time_s"),
+        "decisive_inspection_id": decisive["inspection_id"],
+        "frames_submitted": len(frames), "frames_classified": len(done), "frames_low_quality": low_q,
+        "frames": frames,
+    }
+
+
+def classify_tyre_video(ctx: ToolContext) -> dict[str, Any]:
+    """Each sampled frame becomes its own pinned inspection; the tool waits for all, then aggregates per tyre."""
+    from treadops_api.errors import ApiError
+    from treadops_api.services.inspections import accept
+    from treadops_api.storage import get_storage
+
+    if not ctx.frames:
+        return {"error": "no_video", "message": "No video is attached to this message."}
+    base = ctx.idempotency_key or f"copilot:{uuid.uuid4()}"
+    if not ctx.frame_inspections:
+        ctx.emit("tool_progress", {"tool": "classify_tyre_video",
+                                   "message": f"submitting {len(ctx.frames)} frames to the YOLO inspection pipeline"})
+        for i, raw in enumerate(ctx.frames):
+            t = ctx.frame_times[i] if i < len(ctx.frame_times) else None
+            db = new_session()
+            try:
+                insp, _ = accept(db, get_storage(), actor=ctx.actor, actor_id=ctx.actor.id, raw=raw,
+                                 idempotency_key=f"{base}:f{i}", source="copilot", metadata_origin="user_provided",
+                                 notes=f"video frame {i + 1}/{len(ctx.frames)}"
+                                       + (f" at {t:.1f} s" if t is not None else "") + f" ({ctx.video_source or 'clip'})",
+                                 enforce_backpressure=False)
+            except ApiError as exc:
+                return {"error": exc.code, "message": exc.message, "frame": i}
+            finally:
+                db.close()
+            ctx.frame_inspections.append(insp.id)
+            ctx.emit("inspection", {"inspection_id": str(insp.id), "frame": i, "time_s": t,
+                                    "deployment_generation": insp.deployment_generation})
+    wait = float(config()["classify_wait_s"]) * 2
+    t0 = time.monotonic()
+    reported: set[int] = set()
+    while True:
+        db = new_session()
+        try:
+            loaded = [_load(db, iid) for iid in ctx.frame_inspections]
+        finally:
+            db.close()
+        frames = []
+        for i, res in enumerate(loaded):
+            t = ctx.frame_times[i] if i < len(ctx.frame_times) else None
+            if res is None:
+                frames.append({"frame": i, "time_s": t, "status": "missing"})
+                continue
+            f = {"frame": i, "time_s": t, "inspection_id": res["inspection_id"], "status": res["status"]}
+            if res.get("triage"):
+                f.update({k: res[k] for k in ("verdict", "triage", "p_defective", "quality_status")})
+                if i not in reported:
+                    reported.add(i)
+                    ctx.emit("frame_result", {"tool": "classify_tyre_video", "frame": i, "time_s": t,
+                                              "inspection_id": res["inspection_id"], "verdict": res["verdict"],
+                                              "triage": res["triage"], "p_defective": res["p_defective"],
+                                              "message": f"frame {i + 1}: {res['verdict_label']} "
+                                                         f"(p(defective) {res['p_defective']:.3f})"})
+            frames.append(f)
+        if all(f["status"] in ("succeeded", "failed", "cancelled", "missing") for f in frames):
+            out = aggregate_frames(frames)
+            if not out.get("error"):
+                decisive = loaded[out["decisive_frame"]] or {}
+                out.update({"model": decisive.get("model"), "recommended_pathway": decisive.get("recommended_pathway")})
+            return out
+        if time.monotonic() - t0 > wait:
+            return {"error": "timeout", "message": "Some frames are still queued; results will appear in Inspections.",
+                    "frames": frames}
         time.sleep(0.5)
 
 
@@ -275,6 +381,7 @@ def get_review_queue(ctx: ToolContext) -> dict[str, Any]:
 
 IMPLS: dict[str, Callable[..., dict[str, Any]]] = {
     "classify_tyre_image": classify_tyre_image,
+    "classify_tyre_video": classify_tyre_video,
     "get_inspection": get_inspection,
     "get_preprocessing_trace": get_preprocessing_trace,
     "get_model_status": get_model_status,
@@ -285,13 +392,30 @@ IMPLS: dict[str, Callable[..., dict[str, Any]]] = {
 }
 
 
+def parse_arguments(raw: str | dict | None) -> Any:
+    """Tool-call arguments as JSON. Some OpenAI-compatible gateways append stream artefacts after the object
+    (for example `{}""`); the first JSON value is used when everything after it is only quotes or whitespace."""
+    if raw is None or isinstance(raw, dict):
+        return raw or {}
+    text = raw.strip()
+    if not text:
+        return {}
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        value, end = json.JSONDecoder().raw_decode(text)  # raises if there is no leading JSON value at all
+        if text[end:].strip().strip("\"'`").strip():
+            raise
+        return value
+
+
 def execute(ctx: ToolContext, name: str, arguments: str | dict | None) -> dict[str, Any]:
     if name not in IMPLS:
         return {"error": "unknown_tool", "name": name}
     try:
-        args: Any = json.loads(arguments) if isinstance(arguments, str) and arguments.strip() else arguments
+        args: Any = parse_arguments(arguments)
     except json.JSONDecodeError:
-        return {"error": "invalid_arguments"}
+        return {"error": "invalid_arguments", "message": "tool arguments are not valid JSON"}
     if args in (None, "") or (isinstance(args, str) and not args.strip()):
         args = {}
     if not isinstance(args, dict):  # LLMs occasionally send a list, number or bare string
