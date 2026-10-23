@@ -1,0 +1,1030 @@
+{
+  "scenario": "low_light:v1 seed 42, 800 events @ 2/s (simulated metadata, public images)",
+  "replay_jobs": [
+    {
+      "job_id": "feeea870-0231-45ac-b45c-ede8ae6ec60f",
+      "status": "failed",
+      "progress": 0.675,
+      "progress_message": "event 540/800",
+      "params": {
+        "rate": 2.0,
+        "seed": 42,
+        "count": 800,
+        "scenario": "low_light"
+      },
+      "result": null,
+      "inspections": 800,
+      "completed": 800,
+      "created_at": "2026-10-23T04:58:34.833248+00:00",
+      "error": "worker M-CT4FW0FWG6:61098 stopped heartbeating"
+    }
+  ],
+  "windows": [
+    {
+      "status": "alert_candidate",
+      "n_inspections": 200,
+      "n_distinct_parents": 200,
+      "first_at": "2026-10-23T04:55:40.442648+00:00",
+      "last_at": "2026-10-23T05:00:13.832202+00:00",
+      "descriptor_psi": {
+        "contrast": {
+          "psi": 0.051159082272365666,
+          "bins": 10,
+          "smoothing": 0.0001,
+          "current_mean": 0.15448887126750516,
+          "reference_mean": 0.15587833140538015,
+          "current_distribution": [
+            0.115,
+            0.12,
+            0.105,
+            0.095,
+            0.115,
+            0.08,
+            0.08,
+            0.07,
+            0.075,
+            0.145
+          ],
+          "reference_distribution": [
+            0.1018,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.1018
+          ]
+        },
+        "brightness": {
+          "psi": 0.03508619205284984,
+          "bins": 10,
+          "smoothing": 0.0001,
+          "current_mean": 0.47814914768627675,
+          "reference_mean": 0.4859080967483846,
+          "current_distribution": [
+            0.1,
+            0.135,
+            0.105,
+            0.1,
+            0.105,
+            0.095,
+            0.085,
+            0.1,
+            0.06,
+            0.115
+          ],
+          "reference_distribution": [
+            0.1018,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.1018
+          ]
+        },
+        "saturation": {
+          "psi": 0.0753932092062709,
+          "bins": 10,
+          "smoothing": 0.0001,
+          "current_mean": 0.10537103884220801,
+          "reference_mean": 0.0989203861010901,
+          "current_distribution": [
+            0.1,
+            0.055,
+            0.08,
+            0.06,
+            0.13,
+            0.125,
+            0.105,
+            0.105,
+            0.1,
+            0.14
+          ],
+          "reference_distribution": [
+            0.1018,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.1018
+          ]
+        },
+        "aspect_ratio": {
+          "psi": 0.1634300260293766,
+          "bins": 5,
+          "smoothing": 0.0001,
+          "current_mean": 1.1455957972741926,
+          "reference_mean": 1.341630171710692,
+          "current_distribution": [
+            0.0001,
+            0.265,
+            0.4749,
+            0.0351,
+            0.225
+          ],
+          "reference_distribution": [
+            0.0001,
+            0.1746,
+            0.4072,
+            0.1128,
+            0.3054
+          ]
+        },
+        "blur_variance": {
+          "psi": 0.20705795811094846,
+          "bins": 10,
+          "smoothing": 0.0001,
+          "current_mean": 666.3731721364663,
+          "reference_mean": 1084.413428892743,
+          "current_distribution": [
+            0.1899,
+            0.095,
+            0.11,
+            0.11,
+            0.11,
+            0.13,
+            0.105,
+            0.08,
+            0.0351,
+            0.0351
+          ],
+          "reference_distribution": [
+            0.1018,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.1018
+          ]
+        }
+      },
+      "embedding_drift": {
+        "auc": 0.6055636363636364,
+        "note": "diagnostic only; not a defect-recall estimate",
+        "seed": 42,
+        "folds": 5,
+        "status": "ok",
+        "n_current": 200,
+        "n_reference": 275,
+        "pc_psi_mean": 0.1537109925677821
+      },
+      "prediction_shift": {
+        "note": "a prior shift is not automatically a model failure",
+        "current_triage_fraction": {
+          "manual_review": 0.12,
+          "defect_flagged": 0.485,
+          "good_candidate": 0.395
+        },
+        "current_mean_p_defective": 0.5297186495899172,
+        "reference_triage_fraction": {
+          "manual_review": 0.08,
+          "defect_flagged": 0.4909090909090909,
+          "good_candidate": 0.4290909090909091
+        }
+      },
+      "labelled_quality": {
+        "status": "insufficient_data",
+        "coverage": 0.0,
+        "labelled": 0
+      },
+      "evidently": {
+        "status": "ok",
+        "version": "0.7.23",
+        "drifted_columns": {
+          "count": 2.0,
+          "share": 0.4
+        },
+        "per_column_drift_score": {
+          "contrast": 0.683913184096882,
+          "brightness": 0.617927166204773,
+          "saturation": 0.10646424677924975,
+          "aspect_ratio": 0.003062782792337527,
+          "blur_variance": 0.002562378023023212
+        }
+      },
+      "reference_version": "da50842684163c4c",
+      "cohort_sha256": "5ac8c10c5ecfb2b4585f33701a06601bedb177c70ec9e668c35b70ea163045bd"
+    },
+    {
+      "status": "alert_candidate",
+      "n_inspections": 400,
+      "n_distinct_parents": 400,
+      "first_at": "2026-10-23T04:55:40.442648+00:00",
+      "last_at": "2026-10-23T05:01:53.900698+00:00",
+      "descriptor_psi": {
+        "contrast": {
+          "psi": 0.19380594539362692,
+          "bins": 10,
+          "smoothing": 0.0001,
+          "current_mean": 0.13713884950444533,
+          "reference_mean": 0.15587833140538015,
+          "current_distribution": [
+            0.2274,
+            0.1375,
+            0.1,
+            0.07,
+            0.0975,
+            0.0625,
+            0.06,
+            0.07,
+            0.06,
+            0.115
+          ],
+          "reference_distribution": [
+            0.1018,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.1018
+          ]
+        },
+        "brightness": {
+          "psi": 0.27398018068463265,
+          "bins": 10,
+          "smoothing": 0.0001,
+          "current_mean": 0.42157803179668735,
+          "reference_mean": 0.4859080967483846,
+          "current_distribution": [
+            0.2873,
+            0.115,
+            0.085,
+            0.07,
+            0.085,
+            0.07,
+            0.0725,
+            0.0775,
+            0.0476,
+            0.09
+          ],
+          "reference_distribution": [
+            0.1018,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.1018
+          ]
+        },
+        "saturation": {
+          "psi": 0.060656019915579326,
+          "bins": 10,
+          "smoothing": 0.0001,
+          "current_mean": 0.10561730465189328,
+          "reference_mean": 0.0989203861010901,
+          "current_distribution": [
+            0.1,
+            0.0575,
+            0.1125,
+            0.0775,
+            0.115,
+            0.1175,
+            0.0825,
+            0.085,
+            0.0975,
+            0.1549
+          ],
+          "reference_distribution": [
+            0.1018,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.1018
+          ]
+        },
+        "aspect_ratio": {
+          "psi": 0.15988843903361188,
+          "bins": 5,
+          "smoothing": 0.0001,
+          "current_mean": 1.1199493577377455,
+          "reference_mean": 1.341630171710692,
+          "current_distribution": [
+            0.0001,
+            0.2725,
+            0.4799,
+            0.0451,
+            0.2025
+          ],
+          "reference_distribution": [
+            0.0001,
+            0.1746,
+            0.4072,
+            0.1128,
+            0.3054
+          ]
+        },
+        "blur_variance": {
+          "psi": 0.3447991244556934,
+          "bins": 10,
+          "smoothing": 0.0001,
+          "current_mean": 587.7843435458644,
+          "reference_mean": 1084.413428892743,
+          "current_distribution": [
+            0.2499,
+            0.125,
+            0.1225,
+            0.0925,
+            0.095,
+            0.105,
+            0.085,
+            0.07,
+            0.0251,
+            0.0301
+          ],
+          "reference_distribution": [
+            0.1018,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.1018
+          ]
+        }
+      },
+      "embedding_drift": {
+        "auc": 0.5989545454545455,
+        "note": "diagnostic only; not a defect-recall estimate",
+        "seed": 42,
+        "folds": 5,
+        "status": "ok",
+        "n_current": 400,
+        "n_reference": 275,
+        "pc_psi_mean": 0.13583630426288335
+      },
+      "prediction_shift": {
+        "note": "a prior shift is not automatically a model failure",
+        "current_triage_fraction": {
+          "manual_review": 0.145,
+          "defect_flagged": 0.4375,
+          "good_candidate": 0.4175
+        },
+        "current_mean_p_defective": 0.490583430167823,
+        "reference_triage_fraction": {
+          "manual_review": 0.08,
+          "defect_flagged": 0.4909090909090909,
+          "good_candidate": 0.4290909090909091
+        }
+      },
+      "labelled_quality": {
+        "status": "insufficient_data",
+        "coverage": 0.0,
+        "labelled": 0
+      },
+      "evidently": {
+        "status": "ok",
+        "version": "0.7.23",
+        "drifted_columns": {
+          "count": 4.0,
+          "share": 0.8
+        },
+        "per_column_drift_score": {
+          "contrast": 1.0957614382681866e-05,
+          "brightness": 5.680988513525384e-07,
+          "saturation": 0.42153740054501954,
+          "aspect_ratio": 5.49529685795541e-05,
+          "blur_variance": 3.606254609210149e-07
+        }
+      },
+      "reference_version": "da50842684163c4c",
+      "cohort_sha256": "1a3a89cb04b3fe4b97023e0246872d1a7ca8fd140351815649d5534a569c6b1b"
+    },
+    {
+      "status": "alert_candidate",
+      "n_inspections": 500,
+      "n_distinct_parents": 415,
+      "first_at": "2026-10-23T04:59:23.773833+00:00",
+      "last_at": "2026-10-23T05:15:49.012850+00:00",
+      "descriptor_psi": {
+        "contrast": {
+          "psi": 0.5678907916894915,
+          "bins": 10,
+          "smoothing": 0.0001,
+          "current_mean": 0.11670194160147523,
+          "reference_mean": 0.15587833140538015,
+          "current_distribution": [
+            0.3557,
+            0.1659,
+            0.09,
+            0.0461,
+            0.078,
+            0.0441,
+            0.05,
+            0.056,
+            0.0401,
+            0.074
+          ],
+          "reference_distribution": [
+            0.1018,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.1018
+          ]
+        },
+        "brightness": {
+          "psi": 0.9297404742881714,
+          "bins": 10,
+          "smoothing": 0.0001,
+          "current_mean": 0.35722940117368696,
+          "reference_mean": 0.4859080967483846,
+          "current_distribution": [
+            0.5036,
+            0.078,
+            0.06,
+            0.058,
+            0.058,
+            0.0441,
+            0.05,
+            0.058,
+            0.0261,
+            0.064
+          ],
+          "reference_distribution": [
+            0.1018,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.1018
+          ]
+        },
+        "saturation": {
+          "psi": 0.07066022545383249,
+          "bins": 10,
+          "smoothing": 0.0001,
+          "current_mean": 0.10611896111093304,
+          "reference_mean": 0.0989203861010901,
+          "current_distribution": [
+            0.1,
+            0.052,
+            0.108,
+            0.07,
+            0.122,
+            0.11,
+            0.092,
+            0.082,
+            0.114,
+            0.15
+          ],
+          "reference_distribution": [
+            0.1018,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.1018
+          ]
+        },
+        "aspect_ratio": {
+          "psi": 0.1458843662468126,
+          "bins": 5,
+          "smoothing": 0.0001,
+          "current_mean": 1.136821872081375,
+          "reference_mean": 1.341630171710692,
+          "current_distribution": [
+            0.0001,
+            0.26,
+            0.4839,
+            0.0441,
+            0.212
+          ],
+          "reference_distribution": [
+            0.0001,
+            0.1746,
+            0.4072,
+            0.1128,
+            0.3054
+          ]
+        },
+        "blur_variance": {
+          "psi": 0.6266207096953503,
+          "bins": 10,
+          "smoothing": 0.0001,
+          "current_mean": 470.84738085398584,
+          "reference_mean": 1084.413428892743,
+          "current_distribution": [
+            0.3378,
+            0.1539,
+            0.12,
+            0.082,
+            0.072,
+            0.066,
+            0.066,
+            0.062,
+            0.0201,
+            0.0201
+          ],
+          "reference_distribution": [
+            0.1018,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.1018
+          ]
+        }
+      },
+      "embedding_drift": {
+        "auc": 0.6157090909090909,
+        "note": "diagnostic only; not a defect-recall estimate",
+        "seed": 42,
+        "folds": 5,
+        "status": "ok",
+        "n_current": 500,
+        "n_reference": 275,
+        "pc_psi_mean": 0.13933106222178826
+      },
+      "prediction_shift": {
+        "note": "a prior shift is not automatically a model failure",
+        "current_triage_fraction": {
+          "manual_review": 0.196,
+          "defect_flagged": 0.398,
+          "good_candidate": 0.406
+        },
+        "current_mean_p_defective": 0.4713366399699746,
+        "reference_triage_fraction": {
+          "manual_review": 0.08,
+          "defect_flagged": 0.4909090909090909,
+          "good_candidate": 0.4290909090909091
+        }
+      },
+      "labelled_quality": {
+        "status": "insufficient_data",
+        "coverage": 0.0,
+        "labelled": 0
+      },
+      "evidently": {
+        "status": "ok",
+        "version": "0.7.23",
+        "drifted_columns": {
+          "count": 4.0,
+          "share": 0.8
+        },
+        "per_column_drift_score": {
+          "contrast": 3.0274668423057013e-19,
+          "brightness": 6.617023976326078e-28,
+          "saturation": 0.1652052397761404,
+          "aspect_ratio": 6.338091019645184e-05,
+          "blur_variance": 7.378223712500137e-18
+        }
+      },
+      "reference_version": "da50842684163c4c",
+      "cohort_sha256": "9d9bdfe71f97f6dc1f092b43ae5565be573c3ccb413f872abce61cb706ca6b98"
+    },
+    {
+      "status": "alert_candidate",
+      "n_inspections": 500,
+      "n_distinct_parents": 415,
+      "first_at": "2026-10-23T05:01:03.770747+00:00",
+      "last_at": "2026-10-23T05:17:28.803802+00:00",
+      "descriptor_psi": {
+        "contrast": {
+          "psi": 1.348002799580232,
+          "bins": 10,
+          "smoothing": 0.0001,
+          "current_mean": 0.09352100780386684,
+          "reference_mean": 0.15587833140538015,
+          "current_distribution": [
+            0.4796,
+            0.2299,
+            0.08,
+            0.0241,
+            0.0461,
+            0.0341,
+            0.0181,
+            0.0241,
+            0.0181,
+            0.0461
+          ],
+          "reference_distribution": [
+            0.1018,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.1018
+          ]
+        },
+        "brightness": {
+          "psi": 2.0673502792713325,
+          "bins": 10,
+          "smoothing": 0.0001,
+          "current_mean": 0.2864029391302579,
+          "reference_mean": 0.4859080967483846,
+          "current_distribution": [
+            0.7334,
+            0.0441,
+            0.0341,
+            0.0321,
+            0.0321,
+            0.0201,
+            0.0261,
+            0.0281,
+            0.0141,
+            0.0361
+          ],
+          "reference_distribution": [
+            0.1018,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.1018
+          ]
+        },
+        "saturation": {
+          "psi": 0.06892892734966702,
+          "bins": 10,
+          "smoothing": 0.0001,
+          "current_mean": 0.10651093637226319,
+          "reference_mean": 0.0989203861010901,
+          "current_distribution": [
+            0.086,
+            0.058,
+            0.102,
+            0.104,
+            0.106,
+            0.114,
+            0.092,
+            0.068,
+            0.108,
+            0.1619
+          ],
+          "reference_distribution": [
+            0.1018,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.1018
+          ]
+        },
+        "aspect_ratio": {
+          "psi": 0.1786131089347861,
+          "bins": 5,
+          "smoothing": 0.0001,
+          "current_mean": 1.1213947138994336,
+          "reference_mean": 1.341630171710692,
+          "current_distribution": [
+            0.0001,
+            0.276,
+            0.4799,
+            0.0381,
+            0.206
+          ],
+          "reference_distribution": [
+            0.0001,
+            0.1746,
+            0.4072,
+            0.1128,
+            0.3054
+          ]
+        },
+        "blur_variance": {
+          "psi": 1.1644949205444575,
+          "bins": 10,
+          "smoothing": 0.0001,
+          "current_mean": 296.5122597349862,
+          "reference_mean": 1084.413428892743,
+          "current_distribution": [
+            0.4257,
+            0.1679,
+            0.144,
+            0.064,
+            0.05,
+            0.056,
+            0.0361,
+            0.0381,
+            0.0121,
+            0.0061
+          ],
+          "reference_distribution": [
+            0.1018,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.1018,
+            0.0982,
+            0.1018
+          ]
+        }
+      },
+      "embedding_drift": {
+        "auc": 0.6426909090909091,
+        "note": "diagnostic only; not a defect-recall estimate",
+        "seed": 42,
+        "folds": 5,
+        "status": "ok",
+        "n_current": 500,
+        "n_reference": 275,
+        "pc_psi_mean": 0.1568234077902348
+      },
+      "prediction_shift": {
+        "note": "a prior shift is not automatically a model failure",
+        "current_triage_fraction": {
+          "manual_review": 0.24,
+          "defect_flagged": 0.354,
+          "good_candidate": 0.406
+        },
+        "current_mean_p_defective": 0.44176225717840906,
+        "reference_triage_fraction": {
+          "manual_review": 0.08,
+          "defect_flagged": 0.4909090909090909,
+          "good_candidate": 0.4290909090909091
+        }
+      },
+      "labelled_quality": {
+        "status": "insufficient_data",
+        "coverage": 0.0,
+        "labelled": 0
+      },
+      "evidently": {
+        "status": "ok",
+        "version": "0.7.23",
+        "drifted_columns": {
+          "count": 4.0,
+          "share": 0.8
+        },
+        "per_column_drift_score": {
+          "contrast": 9.67398167532543e-47,
+          "brightness": 3.3482274300410414e-71,
+          "saturation": 0.18579288559003387,
+          "aspect_ratio": 1.3893271469462983e-05,
+          "blur_variance": 1.600566409391008e-32
+        }
+      },
+      "reference_version": "da50842684163c4c",
+      "cohort_sha256": "97228f3b123976bc7bb04b1b7de85fdde08b8e43cb6e3ff547b6122869c451af"
+    }
+  ],
+  "alerts": [
+    {
+      "id": "dc4c6fe2-6767-4fef-b26d-cbd2407ba6e4",
+      "state": "open",
+      "severity": "high",
+      "features": [
+        "contrast"
+      ],
+      "reference_version": "da50842684163c4c",
+      "cohort_sha256": "97228f3b123976bc7bb04b1b7de85fdde08b8e43cb6e3ff547b6122869c451af",
+      "window_ids": [
+        "98802052-63c5-4de1-a477-cda34a895283",
+        "fd72ef93-2053-419b-958d-cdb7d24ebf24"
+      ],
+      "details": {
+        "value": 1.348002799580232,
+        "feature": "contrast",
+        "affected": {
+          "cameras": [
+            {
+              "n": 140,
+              "mean_p": 0.3942,
+              "camera_id": "SIM-C03",
+              "mean_brightness": 0.2677
+            },
+            {
+              "n": 114,
+              "mean_p": 0.4936,
+              "camera_id": "SIM-C02",
+              "mean_brightness": 0.2725
+            },
+            {
+              "n": 121,
+              "mean_p": 0.4293,
+              "camera_id": "SIM-C04",
+              "mean_brightness": 0.2892
+            }
+          ],
+          "scenarios": [
+            {
+              "n": 500,
+              "mean_p": 0.4418,
+              "scenario_id": "low_light:v1",
+              "mean_brightness": 0.2864
+            }
+          ]
+        },
+        "threshold": 0.2,
+        "labelled_quality": {
+          "status": "insufficient_data",
+          "coverage": 0.0,
+          "labelled": 0
+        },
+        "sample_inspection_ids": [
+          "de2a6669-b8a3-4e2f-bcbb-3f279dd7f16f",
+          "4be28e16-210a-4d2c-b73d-8e71375dc328",
+          "31116d28-35e9-479f-a9ce-d8b80333295e",
+          "ef4711a4-c12c-4e13-b704-fa731599746f",
+          "a460d188-0c48-4f5b-b18c-37eec4fa0b07",
+          "764e34b7-6b2d-449c-88ea-8c2b35db84f6"
+        ]
+      },
+      "recommendation": "Inspect affected cameras/scenarios and sample images; collect verified labels to measure quality. Retraining and promotion remain separate gated operations.",
+      "created_at": "2026-10-23T05:18:33.766364+00:00",
+      "updated_at": "2026-10-23T05:18:33.766366+00:00",
+      "reviews": []
+    },
+    {
+      "id": "971ce820-4eb5-4db7-8582-3571449d1545",
+      "state": "open",
+      "severity": "high",
+      "features": [
+        "brightness"
+      ],
+      "reference_version": "da50842684163c4c",
+      "cohort_sha256": "9d9bdfe71f97f6dc1f092b43ae5565be573c3ccb413f872abce61cb706ca6b98",
+      "window_ids": [
+        "b5a4bdf7-c924-46fc-82f7-6b3949b0885c",
+        "98802052-63c5-4de1-a477-cda34a895283",
+        "fd72ef93-2053-419b-958d-cdb7d24ebf24"
+      ],
+      "details": {
+        "value": 2.0673502792713325,
+        "feature": "brightness",
+        "affected": {
+          "cameras": [
+            {
+              "n": 140,
+              "mean_p": 0.3942,
+              "camera_id": "SIM-C03",
+              "mean_brightness": 0.2677
+            },
+            {
+              "n": 114,
+              "mean_p": 0.4936,
+              "camera_id": "SIM-C02",
+              "mean_brightness": 0.2725
+            },
+            {
+              "n": 121,
+              "mean_p": 0.4293,
+              "camera_id": "SIM-C04",
+              "mean_brightness": 0.2892
+            }
+          ],
+          "scenarios": [
+            {
+              "n": 500,
+              "mean_p": 0.4418,
+              "scenario_id": "low_light:v1",
+              "mean_brightness": 0.2864
+            }
+          ]
+        },
+        "threshold": 0.2,
+        "labelled_quality": {
+          "status": "insufficient_data",
+          "coverage": 0.0,
+          "labelled": 0
+        },
+        "sample_inspection_ids": [
+          "de2a6669-b8a3-4e2f-bcbb-3f279dd7f16f",
+          "4be28e16-210a-4d2c-b73d-8e71375dc328",
+          "31116d28-35e9-479f-a9ce-d8b80333295e",
+          "ef4711a4-c12c-4e13-b704-fa731599746f",
+          "a460d188-0c48-4f5b-b18c-37eec4fa0b07",
+          "764e34b7-6b2d-449c-88ea-8c2b35db84f6"
+        ]
+      },
+      "recommendation": "Inspect affected cameras/scenarios and sample images; collect verified labels to measure quality. Retraining and promotion remain separate gated operations.",
+      "created_at": "2026-10-23T05:18:24.221632+00:00",
+      "updated_at": "2026-10-23T05:18:33.763794+00:00",
+      "reviews": []
+    },
+    {
+      "id": "84cdfbbf-acfe-47c3-9804-45ca25fd2c04",
+      "state": "open",
+      "severity": "high",
+      "features": [
+        "blur_variance"
+      ],
+      "reference_version": "da50842684163c4c",
+      "cohort_sha256": "9d9bdfe71f97f6dc1f092b43ae5565be573c3ccb413f872abce61cb706ca6b98",
+      "window_ids": [
+        "b5a4bdf7-c924-46fc-82f7-6b3949b0885c",
+        "98802052-63c5-4de1-a477-cda34a895283",
+        "fd72ef93-2053-419b-958d-cdb7d24ebf24"
+      ],
+      "details": {
+        "value": 1.1644949205444575,
+        "feature": "blur_variance",
+        "affected": {
+          "cameras": [
+            {
+              "n": 140,
+              "mean_p": 0.3942,
+              "camera_id": "SIM-C03",
+              "mean_brightness": 0.2677
+            },
+            {
+              "n": 114,
+              "mean_p": 0.4936,
+              "camera_id": "SIM-C02",
+              "mean_brightness": 0.2725
+            },
+            {
+              "n": 121,
+              "mean_p": 0.4293,
+              "camera_id": "SIM-C04",
+              "mean_brightness": 0.2892
+            }
+          ],
+          "scenarios": [
+            {
+              "n": 500,
+              "mean_p": 0.4418,
+              "scenario_id": "low_light:v1",
+              "mean_brightness": 0.2864
+            }
+          ]
+        },
+        "threshold": 0.2,
+        "labelled_quality": {
+          "status": "insufficient_data",
+          "coverage": 0.0,
+          "labelled": 0
+        },
+        "sample_inspection_ids": [
+          "de2a6669-b8a3-4e2f-bcbb-3f279dd7f16f",
+          "4be28e16-210a-4d2c-b73d-8e71375dc328",
+          "31116d28-35e9-479f-a9ce-d8b80333295e",
+          "ef4711a4-c12c-4e13-b704-fa731599746f",
+          "a460d188-0c48-4f5b-b18c-37eec4fa0b07",
+          "764e34b7-6b2d-449c-88ea-8c2b35db84f6"
+        ]
+      },
+      "recommendation": "Inspect affected cameras/scenarios and sample images; collect verified labels to measure quality. Retraining and promotion remain separate gated operations.",
+      "created_at": "2026-10-23T05:18:24.219308+00:00",
+      "updated_at": "2026-10-23T05:18:33.761703+00:00",
+      "reviews": []
+    }
+  ],
+  "notes": [
+    "windows recomputed after fixing boundary definition (audit: monitoring.recompute)",
+    "replay job record is failed: host slept mid-run and the lease expired; all 800 events were accepted"
+  ]
+}

@@ -89,13 +89,24 @@ async def run(api: str, rate: float, duration: float, drain: float, overload: bo
         if overload:
             codes: dict[int, int] = {}
 
+            burst_ms: list[float] = []
+
             async def burst(k):
-                r = await c.post("/v1/inspections", headers={**h, "Idempotency-Key": f"ovl-{uuid.uuid4()}"},
-                                 files={"file": (f"o{k}.jpg", payloads[k % len(payloads)], "image/jpeg")})
-                codes[r.status_code] = codes.get(r.status_code, 0) + 1
+                t0 = time.perf_counter()
+                try:
+                    r = await c.post("/v1/inspections", headers={**h, "Idempotency-Key": f"ovl-{uuid.uuid4()}"},
+                                     files={"file": (f"o{k}.jpg", payloads[k % len(payloads)], "image/jpeg")})
+                    key = r.status_code
+                except httpx.HTTPError as exc:  # a client timeout is a measured outcome, not a crash
+                    key = type(exc).__name__
+                codes[key] = codes.get(key, 0) + 1
+                burst_ms.append((time.perf_counter() - t0) * 1000)
             await asyncio.gather(*(burst(k) for k in range(int(os.environ.get("OVERLOAD_BURST", "180")))))
-            overload_result = {"burst_requests": sum(codes.values()), "status_counts": codes,
-                               "controlled_429": codes.get(429, 0) > 0}
+            overload_result = {"burst_requests": sum(codes.values()), "status_counts": {str(k): v for k, v in codes.items()},
+                               "controlled_429": codes.get(429, 0) > 0,
+                               "latency_ms": {"p50": float(np.percentile(burst_ms, 50)),
+                                              "p95": float(np.percentile(burst_ms, 95))},
+                               "client_timeout_s": 30}
 
     lat = np.array([r["ms"] for r in results if r["status"] == 202])
     statuses: dict[str, int] = {}
