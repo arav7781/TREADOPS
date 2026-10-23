@@ -1,3 +1,16 @@
+<p align="center">
+  <img src="docs/assets/treadops-banner.jpg" width="100%"
+    alt="TreadOps, AI for tyre circularity: inspect smarter, keep casings in circulation. YOLO26, governed MLOps, LangGraph copilot.">
+</p>
+
+<p align="center">
+  <a href="https://github.com/arav7781/TREADOPS/actions/workflows/ci.yml"><img src="https://github.com/arav7781/TREADOPS/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI status"></a>
+  <img src="https://img.shields.io/badge/licence-AGPL--3.0-27509b" alt="Licence: AGPL-3.0">
+  <img src="https://img.shields.io/badge/python-3.11-27509b" alt="Python 3.11">
+  <img src="https://img.shields.io/badge/Next.js-16-111111" alt="Next.js 16">
+  <img src="https://img.shields.io/badge/YOLO26-Ultralytics-fce500?labelColor=111111" alt="Ultralytics YOLO26">
+</p>
+
 # TreadOps — casing circularity with YOLO26, governed MLOps and a guarded copilot
 
 TreadOps turns a phone photo of a tyre into a **casing-intake decision** for a retreading operation:
@@ -161,7 +174,7 @@ packages/treadops_agent/  LangGraph copilot, guardrails, tools, tracing, evals
 configs/                  data, split, recipes, policy, drift, replay, sustainability, copilot, prompts
 migrations/               Alembic
 tests/                    unit, ml, integration, load (+ web tests in apps/web)
-docs/                     adr/, runbooks/, kb/, evidence/
+docs/                     adr/, runbooks/, kb/, evidence/, assets/ (README banner)
 ```
 
 ## Limitations
