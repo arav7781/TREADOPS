@@ -53,6 +53,20 @@ which is exactly what the monitoring and replay tooling is for.
 **Serving (real photo, end to end):** warm YOLO inference 7–13 ms; whole worker job incl. preprocessing,
 occlusion attribution and stage images ≈ 0.3–0.6 s.
 
+**Load (2 req/s for 5 min, Apple M5, single dev API process, CPU inference):** 600/600 accepted, acceptance
+p50 53 ms / p95 123 ms / p99 176 ms (target p95 < 1 s ✅), 600/600 completed (target ≥ 99 % ✅). A burst of 180
+simultaneous uploads first produced 150 client timeouts and no 429s ❌; after adding an in-flight upload cap it
+returns 8 accepted and 172 immediate 429s with `Retry-After` (p95 248 ms) ✅.
+
+**Drills:** restart drill (inference worker paused 30 s, Redis restarted under load): every accepted inspection
+reached a terminal state, zero duplicate predictions, no stuck outbox events or orphaned leases ✅. Backup/restore
+drill: Postgres restored into a scratch database with the active bundle and sampled inspection media all
+resolvable ✅.
+
+**Drift (seed-42 low-light replay, 800 events, simulated metadata):** brightness PSI rose 0.035 → 0.27 → 0.93 →
+2.07 across consecutive windows; alerts opened only after two windows above 0.20 and duplicates merged. Mean
+p(defective) fell 0.53 → 0.44 as images darkened, matching the stress-test recall drop.
+
 **Tests:** 51 unit, 9 data/ML (on the real data and artifacts), 21 integration against real
 PostgreSQL/Redis/object storage (API-01..04, JOB-01..04, REL-01..04, DB-01) — all passing.
 
