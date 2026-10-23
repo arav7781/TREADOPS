@@ -132,16 +132,18 @@ function AssistantMessage({ m, onSuggest, showStages }: { m: ChatMessage; onSugg
   );
 }
 
-export function ChatThread({ messages, onSuggest, showStages = true }: {
+export function ChatThread({ messages, onSuggest, showStages = true, autoScroll = true }: {
   messages: ChatMessage[];
   onSuggest: (s: string) => void;
   showStages?: boolean;
+  /** Embedded threads must not drag the whole page away from what the user is looking at. */
+  autoScroll?: boolean;
 }) {
   const end = useRef<HTMLDivElement>(null);
   const last = messages[messages.length - 1];
   useEffect(() => {
-    end.current?.scrollIntoView?.({ behavior: "smooth", block: "end" });
-  }, [messages.length, last?.content, last?.attachments?.events?.length]);
+    if (autoScroll) end.current?.scrollIntoView?.({ behavior: "smooth", block: "end" });
+  }, [autoScroll, messages.length, last?.content, last?.attachments?.events?.length]);
   return (
     <div className="space-y-4">
       {messages.map((m) => m.role === "user" ? (

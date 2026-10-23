@@ -19,3 +19,16 @@ test("prompt injection is blocked by the input guardrail", async ({ page }) => {
   await page.getByRole("button", { name: "Send" }).click();
   await expect(page.getByText(/can't change my instructions/)).toBeVisible({ timeout: 60_000 });
 });
+
+test("a photo turn runs the YOLO tool and shows its stages inside the chat", async ({ page }) => {
+  const { modelState, realTyreImage } = await import("./helpers");
+  await page.goto("/copilot");
+  test.skip((await modelState(page.request)).state !== "ready", "No trained model is active yet");
+  await page.locator("#copilot-file").setInputFiles(realTyreImage());
+  await expect(page.getByAltText("Selected tyre photo preview")).toBeVisible();
+  await page.getByLabel("Message").fill("Is this casing suitable for retreading?");
+  await page.getByRole("button", { name: "Send" }).click();
+  await expect(page.locator('[data-stage="classified"] img')).toBeVisible({ timeout: 120_000 });
+  await expect(page.getByText(/Triage: (Retread candidate|Expert review|Defect flagged)/).first()).toBeVisible({ timeout: 120_000 });
+  await expect(page.getByText(/qualified inspector/).first()).toBeVisible();
+});

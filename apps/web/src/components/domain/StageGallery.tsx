@@ -38,7 +38,7 @@ function DataPanel({ stage }: { stage: Stage }) {
       ["Brightness", d.brightness, 1], ["Contrast", d.contrast, 0.5], ["Saturation", d.saturation, 1],
     ];
     return (
-      <div className="flex h-full flex-col justify-center gap-2 p-3">
+      <div className="flex h-full flex-col justify-center gap-2 p-3 pt-11">
         {rows.map(([k, v, max]) => (
           <div key={k}>
             <div className="flex justify-between text-sm"><span className="text-muted">{k}</span>
@@ -59,7 +59,7 @@ function DataPanel({ stage }: { stage: Stage }) {
     const raw = (p.raw_probs ?? {}) as Record<string, number>;
     const cal = (p.calibrated_probs ?? {}) as Record<string, number>;
     return (
-      <div className="flex h-full flex-col justify-center gap-2 p-3">
+      <div className="flex h-full flex-col justify-center gap-2 p-3 pt-11">
         {[["raw defective", raw.defective, "bg-primary/50"], ["calibrated defective", cal.defective, "bg-bad"],
           ["calibrated good", cal.good, "bg-good"]].map(([k, v, c]) => (
           <div key={String(k)}>
@@ -74,7 +74,7 @@ function DataPanel({ stage }: { stage: Stage }) {
       </div>
     );
   }
-  return <pre className="mono overflow-auto p-3 text-xs text-ink-soft">{JSON.stringify(p, null, 1)}</pre>;
+  return <pre className="mono overflow-auto p-3 pt-11 text-xs text-ink-soft">{JSON.stringify(p, null, 1)}</pre>;
 }
 
 export function StageGallery({ stages, running, animate = true }: { stages: Stage[]; running: boolean; animate?: boolean }) {
@@ -107,12 +107,10 @@ export function StageGallery({ stages, running, animate = true }: { stages: Stag
               </span>
             </div>
             <div className="flex flex-1 flex-col gap-0.5 p-3">
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-bold text-ink">{plan.title}</span>
-                {s ? <span className="mono text-sm text-accent-ink">{ms(s.duration_ms)}</span>
-                  : <span className="text-sm text-muted">{running ? "waiting" : ""}</span>}
-              </div>
-              <span className="text-sm text-muted">{s?.title && s.title !== plan.title ? s.title : plan.caption}</span>
+              <span className="font-bold leading-tight text-ink">{plan.title}</span>
+              {s ? <span className="mono text-sm text-accent-ink">{ms(s.duration_ms)}</span>
+                : <span className="text-sm text-muted">{running ? "waiting…" : "—"}</span>}
+              <span className="text-sm text-muted">{plan.caption}</span>
             </div>
           </li>
         );
