@@ -39,6 +39,7 @@ Each package's own licence text ships inside the installed distribution (`*.dist
 | FastAPI, SQLAlchemy, Alembic, Celery | MIT / MIT / MIT / BSD-3-Clause | API, persistence, jobs |
 | Next.js, React | MIT | web UI |
 | lucide-react | ISC | icons |
+| react-markdown, remark-gfm | MIT | rendering copilot answers (no raw HTML) |
 
 Components under copyleft or file-level copyleft licences, all used unmodified:
 
