@@ -1,27 +1,29 @@
 @import "tailwindcss";
 
-/* TreadOps design tokens. Palette inspired by Michelin's public site (blue #27509b, navy #00205b, yellow #fce500);
-   TreadOps is an independent prototype and uses no Michelin logo or proprietary typeface. */
+/* TreadOps design tokens, following the michelin.in visual language: black header, navy panels (#00205b), Michelin
+   blue (#27509b), signal yellow (#fce500) calls to action, near-black text on white. TreadOps uses no Michelin logo,
+   artwork or proprietary typeface. */
 :root {
   color-scheme: light;
-  --canvas: #f3f5f9;
+  --canvas: #f4f4f5;
   --surface: #ffffff;
-  --surface-muted: #f1f4f9;
-  --line: #dde3ec;
-  --line-strong: #c3ccda;
-  --ink: #0e1b3d;
-  --ink-soft: #2b3a5c;
-  --muted: #5a6681;
+  --surface-muted: #f3f4f6;
+  --line: #e1e3e8;
+  --line-strong: #c8ccd4;
+  --ink: #111111;
+  --ink-soft: #343a46;
+  --muted: #646b78;
 
   --primary: #27509b;
   --primary-strong: #00205b;
-  --primary-soft: #e8eef8;
+  --primary-soft: #e9eef8;
   --primary-ink: #1d4282;
-  --accent: #e8c400;
-  --accent-soft: #fff8c7;
-  --accent-ink: #00205b;
+  --accent: #e8cf00;
+  --accent-soft: #fff8c4;
+  --accent-ink: #111111;
   --navy: #00205b;
   --brand-yellow: #fce500;
+  --brand-yellow-strong: #efd600;
 
   --good: #0d8a5c;
   --good-soft: #e1f4ec;
@@ -30,12 +32,20 @@
   --bad: #c62839;
   --bad-soft: #fde8ea;
   --info: #27509b;
-  --info-soft: #e8eef8;
+  --info-soft: #e9eef8;
   --sim: #7b46c9;
   --sim-soft: #f2eafc;
 
-  --radius-card: 0.875rem;
-  --shadow-card: 0 1px 2px rgb(0 32 91 / 0.05), 0 6px 18px rgb(0 32 91 / 0.05);
+  --radius-card: 1rem;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px rgb(0 0 0 / 0.05);
+  /* Height of the sticky header: utility row (lg+) plus the 4rem navigation row. */
+  --header-h: 4rem;
+}
+
+@media (min-width: 64rem) {
+  :root {
+    --header-h: 6.25rem;
+  }
 }
 
 @theme inline {
@@ -66,8 +76,9 @@
   --color-sim-soft: var(--sim-soft);
   --color-navy: var(--navy);
   --color-brand-yellow: var(--brand-yellow);
-  --font-sans: var(--font-barlow);
-  --font-display: var(--font-barlow-condensed);
+  --color-brand-yellow-strong: var(--brand-yellow-strong);
+  --font-sans: var(--font-noto);
+  --font-display: var(--font-exo);
   --font-mono: var(--font-jetbrains);
   --shadow-card: var(--shadow-card);
 }
@@ -79,16 +90,32 @@ html {
 body {
   background: var(--canvas);
   color: var(--ink);
-  font-family: var(--font-barlow), Arial, ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-noto), Arial, ui-sans-serif, system-ui, sans-serif;
   line-height: 1.5;
 }
 
-h1,
-h2,
-h3,
-h4 {
-  font-family: var(--font-barlow-condensed), var(--font-barlow), Arial, sans-serif;
+/* Michelin-style headline: heavy, italic, upper case. */
+.headline {
+  font-family: var(--font-exo), var(--font-noto), Arial, sans-serif;
+  font-weight: 900;
+  font-style: italic;
+  text-transform: uppercase;
   letter-spacing: -0.005em;
+  line-height: 1.04;
+}
+
+.headline-light {
+  font-weight: 300;
+}
+
+/* While the Bib chat is open it owns the viewport below the header (set by the chat page itself, so a route kept
+   alive in a hidden <Activity> never affects other pages). */
+html.chat-mode body {
+  overflow: hidden;
+}
+
+html.chat-mode .site-footer {
+  display: none;
 }
 
 /* One thin, quiet scrollbar style everywhere instead of the platform's heavy default. */

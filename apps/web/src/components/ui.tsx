@@ -60,9 +60,10 @@ export function Badge({ tone = "neutral", children, className, title }: {
 
 type Variant = "primary" | "brand" | "secondary" | "ghost" | "danger";
 const VARIANT: Record<Variant, string> = {
-  primary: "bg-primary text-white hover:bg-primary-strong disabled:bg-primary/40",
-  brand: "bg-brand-yellow text-navy hover:brightness-95 disabled:opacity-50",
-  secondary: "bg-surface text-ink ring-1 ring-inset ring-line-strong hover:bg-surface-muted disabled:text-muted",
+  // Michelin-style calls to action: signal yellow with black text; outlined secondary.
+  primary: "bg-brand-yellow text-black hover:bg-brand-yellow-strong disabled:opacity-45",
+  brand: "bg-brand-yellow text-black hover:bg-brand-yellow-strong disabled:opacity-45",
+  secondary: "bg-surface text-ink ring-1 ring-inset ring-ink/70 hover:bg-surface-muted disabled:text-muted disabled:ring-line-strong",
   ghost: "text-ink-soft hover:bg-surface-muted disabled:text-muted",
   danger: "bg-bad text-white hover:brightness-95 disabled:bg-bad/40",
 };
@@ -75,7 +76,7 @@ export function Button({ variant = "primary", className, children, busy, ...rest
       disabled={rest.disabled || busy}
       aria-busy={busy || undefined}
       className={clsx(
-        "inline-flex min-h-10 items-center justify-center gap-2 rounded-full px-5 py-2 text-base font-semibold transition",
+        "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-5 py-2 text-base font-semibold transition",
         "disabled:cursor-not-allowed", VARIANT[variant], className)}
     >
       {busy && <RefreshCw aria-hidden className="h-4 w-4 animate-spin" />}
@@ -143,7 +144,7 @@ export function ErrorState({ error, onRetry, title }: { error: unknown; onRetry?
 }
 
 const TONE_TEXT: Record<Tone, string> = {
-  neutral: "text-muted", primary: "text-primary", accent: "text-accent", good: "text-good", warn: "text-warn",
+  neutral: "text-muted", primary: "text-primary", accent: "text-primary-strong", good: "text-good", warn: "text-warn",
   bad: "text-bad", info: "text-info", sim: "text-sim",
 };
 
@@ -160,7 +161,7 @@ export function Stat({ label, value, hint, tone, icon }: {
         <span className="text-sm font-semibold uppercase tracking-wide text-muted">{label}</span>
         {icon && <span aria-hidden className={TONE_TEXT[tone ?? "primary"]}>{icon}</span>}
       </div>
-      <span className="text-2xl font-extrabold text-ink">{value}</span>
+      <span className="font-display text-2xl font-extrabold italic text-ink">{value}</span>
       {hint && <span className="text-sm text-muted">{hint}</span>}
     </div>
   );
@@ -177,7 +178,7 @@ export function Field({ label, htmlFor, children, hint }: { label: string; htmlF
 }
 
 export const inputClass =
-  "min-h-10 w-full rounded-xl border border-line-strong bg-surface px-3 py-2 text-base text-ink placeholder:text-muted focus:border-primary";
+  "min-h-11 w-full rounded-lg border border-line-strong bg-surface px-3 py-2 text-base text-ink placeholder:text-muted focus:border-primary";
 
 export function PageHeader({ title, subtitle, actions, eyebrow }: {
   title: string;
@@ -186,14 +187,50 @@ export function PageHeader({ title, subtitle, actions, eyebrow }: {
   eyebrow?: string;
 }) {
   return (
-    <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-      <div className="min-w-0">
-        {eyebrow && <p className="text-sm font-bold uppercase tracking-wider text-accent-ink">{eyebrow}</p>}
-        <h1 className="text-3xl font-extrabold tracking-tight text-ink">{title}</h1>
-        {subtitle && <p className="mt-1 max-w-3xl text-ink-soft">{subtitle}</p>}
+    <div className="relative mb-6 overflow-hidden rounded-3xl bg-navy px-6 py-7 text-white sm:px-9 sm:py-8">
+      <TreadArc />
+      <div className="relative flex flex-wrap items-end justify-between gap-4">
+        <div className="min-w-0">
+          {eyebrow && <p className="text-sm font-bold uppercase tracking-[0.16em] text-brand-yellow">{eyebrow}</p>}
+          <h1 className="headline mt-1 text-3xl text-white sm:text-4xl">{title}</h1>
+          {subtitle && <p className="mt-2 max-w-3xl text-white/80">{subtitle}</p>}
+        </div>
+        {actions && <div className="flex flex-wrap items-center gap-2 rounded-xl bg-white p-2 text-ink shadow-lg">{actions}</div>}
       </div>
-      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
+  );
+}
+
+/** Decorative tyre-tread arc for navy panels. */
+export function TreadArc({ className }: { className?: string }) {
+  return (
+    <svg aria-hidden viewBox="0 0 200 200" className={clsx("pointer-events-none absolute -right-16 -top-24 h-72 w-72 text-white/[0.07]", className)}>
+      <circle cx="100" cy="100" r="88" fill="none" stroke="currentColor" strokeWidth="22" strokeDasharray="14 9" />
+      <circle cx="100" cy="100" r="52" fill="none" stroke="currentColor" strokeWidth="6" />
+    </svg>
+  );
+}
+
+/** The blue statement band from the michelin.in home page: short italic upper-case claims side by side. */
+export function StatementBand({ items }: { items: { title: string; text?: ReactNode }[] }) {
+  return (
+    <div className="mb-6 grid overflow-hidden rounded-2xl bg-primary text-white sm:grid-cols-3 sm:divide-x sm:divide-white/30">
+      {items.map((it) => (
+        <div key={it.title} className="px-6 py-5 text-center">
+          <p className="headline text-xl">{it.title}</p>
+          {it.text && <p className="mt-1 text-sm text-white/80">{it.text}</p>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Yellow round arrow, as on the michelin.in search widget. */
+export function ArrowDot({ className }: { className?: string }) {
+  return (
+    <span aria-hidden className={clsx("flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-yellow text-black transition group-hover:bg-brand-yellow-strong", className)}>
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 6 6 6-6 6" /></svg>
+    </span>
   );
 }
 
@@ -216,7 +253,7 @@ export function ProgressBar({ value, label }: { value: number; label: string }) 
     <div className="w-full">
       <div className="h-2.5 w-full overflow-hidden rounded-full bg-line" role="progressbar" aria-label={label}
         aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(v * 100)}>
-        <div className="h-full rounded-full bg-gradient-to-r from-primary to-accent transition-all" style={{ width: `${v * 100}%` }} />
+        <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${v * 100}%` }} />
       </div>
     </div>
   );

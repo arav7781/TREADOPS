@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   cacheComponents: true,
+  devIndicators: false,
   async redirects() {
     return [
       { source: "/", destination: "/dashboard", permanent: false },
