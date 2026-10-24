@@ -109,7 +109,9 @@ def ingest(data: bytes, limits: Limits = Limits(), contract: PreprocessContract 
         probe = Image.open(io.BytesIO(data))
         fmt = probe.format
         w, h = probe.size
-    except (UnidentifiedImageError, OSError) as exc:
+    # ImportError: once Ultralytics is imported it patches Image.open to retry unknown files as HEIF, and raises
+    # ModuleNotFoundError when that optional decoder is absent; it is still just "not an image".
+    except (UnidentifiedImageError, OSError, ImportError) as exc:
         raise ImageRejected("unsupported_media", f"Not a decodable image ({exc.__class__.__name__}).", 415) from exc
     if fmt not in ALLOWED_FORMATS:
         raise ImageRejected("unsupported_media", f"Image format {fmt} is not accepted.", 415)

@@ -2,9 +2,10 @@
 
 import { useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
-import { ArrowDown, Camera, ChevronDown, History, ImagePlus, MessageSquare, Plus, Search, ShieldCheck, X } from "lucide-react";
+import { ArrowDown, Camera, Cctv, ChevronDown, History, ImagePlus, MessageSquare, Plus, Search, ShieldCheck, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { CamerasPanel } from "@/components/domain/CamerasPanel";
 import { ChatThread, Composer, CopilotModeBadge, useCopilotSession, usePhotoPicker, useSendTurn } from "@/components/domain/ChatThread";
 import { useVideoPicker } from "@/components/domain/VideoCapture";
 import { useMe } from "@/components/AppShell";
@@ -32,7 +33,7 @@ const STARTERS = [
 const GRAPH = [
   ["guard_input", "PII redaction, injection and off-topic checks"],
   ["plan", "the LLM picks tools (or the deterministic planner)"],
-  ["tools", "classify_tyre_image runs the pinned YOLO bundle"],
+  ["tools", "classify_tyre_image runs the pinned model bundle"],
   ["guard_output", "no certification claims; every figure grounded"],
   ["suggest", "next steps for the inspector"],
 ] as const;
@@ -169,7 +170,7 @@ function HistorySidebar({ rows, error, onRetry, active, onPick, onNew }: {
             </li>
           ))}
         </ol>
-        <p className="mt-2 text-xs text-muted">It never certifies a tyre as safe and never contradicts the YOLO triage.</p>
+        <p className="mt-2 text-xs text-muted">It never certifies a tyre as safe and never contradicts the classifier&apos;s triage.</p>
       </details>
     </div>
   );
@@ -199,7 +200,7 @@ function Welcome({ canAttach, blockedReason, onAsk }: { canAttach: boolean; bloc
   );
 }
 
-/** Inspect + copilot in one chat window: the photo goes into the chat and the agent's YOLO tool does the inspection. */
+/** Inspect + copilot in one chat window: the photo goes into the chat and the agent's inspection tool does the inspection. */
 export function BibView() {
   const me = useMe();
   const models = useModels();
@@ -213,6 +214,7 @@ export function BibView() {
   const [progress, setProgress] = useState<number | null>(null);
   const [dragging, setDragging] = useState(false);
   const [drawer, setDrawer] = useState(false);
+  const [camerasOpen, setCamerasOpen] = useState(false);
   const { scroller, content, atBottom, unread, jump } = useStickToBottom(session);
   const isInspector = hasRole(me.data?.roles, "inspector");
   const photoBlocked = !me.data ? "Loading your role…" : !isInspector ? "Attaching tyre photos requires the inspector role."
@@ -271,6 +273,11 @@ export function BibView() {
             {title && <p className="truncate text-sm text-muted">{title}</p>}
           </div>
           <span className="hidden lg:inline-flex"><CopilotModeBadge /></span>
+          <button type="button" onClick={() => setCamerasOpen((o) => !o)} aria-pressed={camerasOpen}
+            className={clsx("inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold ring-1 ring-inset",
+              camerasOpen ? "bg-primary text-white ring-primary" : "text-ink ring-line-strong hover:bg-surface-muted")}>
+            <Cctv aria-hidden className="h-4 w-4" /> Live cameras
+          </button>
         </header>
 
         <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
@@ -307,6 +314,12 @@ export function BibView() {
           </div>
         )}
       </section>
+      {camerasOpen && (
+        <aside aria-label="Live cameras" className="fixed inset-y-0 right-0 top-[var(--header-h)] z-30 w-full max-w-md border-l border-line bg-canvas shadow-xl xl:static xl:z-auto xl:w-[440px] xl:max-w-none xl:shadow-none">
+          <CamerasPanel canConnect={isInspector} onAsk={(t) => { ask(t); if (window.innerWidth < 1280) setCamerasOpen(false); }}
+            onClose={() => setCamerasOpen(false)} />
+        </aside>
+      )}
     </div>
   );
 }

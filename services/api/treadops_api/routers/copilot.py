@@ -18,9 +18,10 @@ from sqlalchemy.orm import Session
 
 from treadops_agent import service
 
+from .. import llm_tracing
 from ..db import get_db, must_get, new_session
 from ..errors import ApiError
-from ..models import ChatFeedback, ChatMessage, ChatSession
+from ..models import ChatFeedback, ChatMessage, ChatSession, LLMTrace
 from ..security import Principal, require, sign_media
 from ..settings import get_settings
 
@@ -119,7 +120,7 @@ def _sse(event: str, data: object) -> str:
             responses={200: {"content": {"text/event-stream": {}}}})
 async def stream(message_id: uuid.UUID, request: Request, p: Principal = Depends(require("viewer"))):
     """Server-sent events for one answer: `step` for each agent/pipeline event as it is recorded, `inspection` once
-    the YOLO tool has created one, and `done` with the final, guardrail-checked message. The answer text is only
+    the inspection tool has created one, and `done` with the final, guardrail-checked message. The answer text is only
     sent after the output guardrails have seen all of it."""
     first = await run_in_threadpool(_owned_message, message_id, p.id)
 
@@ -172,4 +173,8 @@ def feedback(message_id: uuid.UUID, body: FeedbackIn, p: Principal = Depends(req
     db.execute(stmt.on_conflict_do_update(constraint="uq_feedback_once",
                                           set_={"score": body.score, "comment": body.comment}))
     db.commit()
+    trace = db.get(LLMTrace, m.trace_id) if m.trace_id else None
+    if trace is not None and trace.mlflow_trace_id:  # the same rating on the MLflow trace (best effort)
+        llm_tracing.log_assessment(trace.mlflow_trace_id, "user_feedback", body.score > 0, human=str(p.id),
+                                   rationale=body.comment)
     return {"message_id": str(m.id), "score": body.score}

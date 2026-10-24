@@ -44,8 +44,9 @@ def test_an_unusual_image_the_vision_model_calls_no_tyre_is_rejected_without_a_v
     d = _inspect(client, "sg-logo", 71)
     assert d["status"] == "rejected" and d["prediction"] is None and d["job"]["status"] == "succeeded"
     assert d["rejection"]["reason"] == "not_a_tyre" and d["rejection"]["subject"]["vision_subject"] == "a company logo"
-    assert [s["name"] for s in d["stages"]][-1] == "quality"  # no YOLO verdict, attribution or classified image
-    quality = d["stages"][-1]
+    names = [s["name"] for s in d["stages"]]
+    assert not {"inference", "attribution", "classified"} & set(names)  # no verdict, attribution or classified image
+    quality = next(s for s in d["stages"] if s["name"] == "quality")
     assert quality["params"]["status"] == "rejected" and any("REJECTED" in line for line in quality["log"])
     listed = client.get("/v1/inspections", headers=login(client, "inspector")).json()["items"]
     assert next(i for i in listed if i["inspection_id"] == d["inspection_id"])["rejected_reason"] == "not_a_tyre"

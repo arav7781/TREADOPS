@@ -290,7 +290,9 @@ class Prediction(Base):
     lineage: Mapped[dict[str, Any]] = mapped_column(JSONB)
     attribution: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     embedding_key: Mapped[str | None] = mapped_column(String(300))
-    second_opinion: Mapped[dict[str, Any] | None] = mapped_column(JSONB)  # vision model re-check of auto-clears
+    second_opinion: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    # Damage locator boxes (normalised xyxy, class, confidence) and whether they escalated an auto-clear.
+    damage: Mapped[dict[str, Any] | None] = mapped_column(JSONB)  # vision model re-check of auto-clears
     circularity: Mapped[dict[str, Any]] = mapped_column(JSONB)
     created_at: Mapped[datetime] = mapped_column(TS, default=utcnow)
 
@@ -514,6 +516,7 @@ class LLMTrace(Base):
     guardrail_flags: Mapped[list[str]] = mapped_column(JSONB, default=list)
     grounding: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     error: Mapped[str | None] = mapped_column(Text)
+    mlflow_trace_id: Mapped[str | None] = mapped_column(String(64))  # the MLflow Tracing mirror, when tracing is on
     created_at: Mapped[datetime] = mapped_column(TS, default=utcnow, index=True)
 
 
@@ -573,6 +576,9 @@ class Camera(Base):
     interval_s: Mapped[float] = mapped_column(Float, default=5.0)
     change_threshold: Mapped[float] = mapped_column(Float, default=0.04)
     min_sharpness: Mapped[float] = mapped_column(Float, default=15.0)
+    # Inspection zone, normalised [x0, y0, x1, y1]: only this crop is inspected (null = the whole frame).
+    roi: Mapped[list[float] | None] = mapped_column(JSONB)
+    overlay: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")  # annotate the live view
     state: Mapped[str] = mapped_column(String(16), default="idle")
     last_error: Mapped[str | None] = mapped_column(Text)
     last_frame_at: Mapped[datetime | None] = mapped_column(TS)

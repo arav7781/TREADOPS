@@ -6,6 +6,9 @@ outer test  (15%) -> test                        locked final benchmark only
 
 Groups (exact + reviewed near-duplicate clusters from `prepare`) never cross roles. Groups whose members carry
 conflicting publisher labels are excluded from every role and reported.
+
+Each source is carved on its own (a group's home is the primary source when it holds any primary image), with the
+same fractions and seed, so adding a source never moves a primary-source image to another role.
 """
 
 from __future__ import annotations
@@ -48,28 +51,45 @@ def _carve(groups: dict[str, list[str]], label_of: dict[str, str], fraction: flo
     return taken, rest
 
 
-def assign_roles(df: pd.DataFrame, cfg: dict[str, Any]) -> tuple[pd.DataFrame, dict[str, Any]]:
+def _carve_roles(groups: dict[str, list[str]], label_of: dict[str, str], cfg: dict[str, Any]) -> dict[str, str]:
     seed = cfg["seed"]
-    ok = df[df.status == "ok"].copy()
-    conflict_groups = set(ok[ok.group_label_conflict.fillna(False).astype(bool)].group_id)
-    excluded = ok[ok.group_id.isin(conflict_groups)]
-    ok = ok[~ok.group_id.isin(conflict_groups)]
-    groups: dict[str, list[str]] = defaultdict(list)
-    for iid, gid in zip(ok.image_id, ok.group_id, strict=True):
-        groups[gid].append(iid)
-    label_of = dict(zip(ok.group_id, ok.label, strict=False))
-
     test, rest = _carve(groups, label_of, cfg["outer"]["test"], seed, "test:")
     val_frac_of_rest = cfg["outer"]["val"] / (cfg["outer"]["train"] + cfg["outer"]["val"])
     val, train = _carve(rest, label_of, val_frac_of_rest, seed, "val:")
     dev_val, dev_train = _carve(train, label_of, cfg["dev_val_fraction"], seed, "dev:")
     calibration, policy = _carve(val, label_of, cfg["calibration_fraction"], seed, "cal:")
-
     role_of_group = {}
     for role, part in (("dev_train", dev_train), ("dev_val", dev_val), ("calibration", calibration),
                        ("policy", policy), ("test", test)):
         for gid in part:
             role_of_group[gid] = role
+    return role_of_group
+
+
+def assign_roles(df: pd.DataFrame, cfg: dict[str, Any], primary_source: str | None = None
+                 ) -> tuple[pd.DataFrame, dict[str, Any]]:
+    primary_source = primary_source or load_yaml("configs/data.yaml")["source"]["id"]
+    ok = df[df.status == "ok"].copy()
+    if "source_id" not in ok.columns:
+        ok["source_id"] = primary_source
+    conflict_groups = set(ok[ok.group_label_conflict.astype("boolean").fillna(False).astype(bool)].group_id)
+    excluded = ok[ok.group_id.isin(conflict_groups)]
+    ok = ok[~ok.group_id.isin(conflict_groups)]
+    sources_of = ok.groupby("group_id").source_id.agg(set).to_dict()
+    order = [primary_source, *sorted(set(ok.source_id) - {primary_source})]
+    home = {g: next(s for s in order if s in srcs) for g, srcs in sources_of.items()}
+    # A group's stratification label comes from its home source, so an attached photo can never re-stratify it.
+    label_of = {g: lab for g, lab, s in zip(ok.group_id, ok.label, ok.source_id, strict=True) if s == home[g]}
+
+    role_of_group: dict[str, str] = {}
+    for src in order:
+        # Carve this source's home groups by their members *from this source*: duplicates attached from another
+        # source follow the group's role without changing the carve.
+        groups: dict[str, list[str]] = defaultdict(list)
+        for iid, gid, sid in zip(ok.image_id, ok.group_id, ok.source_id, strict=True):
+            if home[gid] == src and sid == src:
+                groups[gid].append(iid)
+        role_of_group.update(_carve_roles(groups, label_of, cfg))
     ok["role"] = ok.group_id.map(role_of_group)
     ok["outer_split"] = ok.role.map(OUTER_OF)
     ok["training_eligible"] = ok.role.isin(["dev_train", "dev_val"])
@@ -101,7 +121,7 @@ def run(config_path: str = "configs/split.yaml", manifest: str = "data/manifests
     cfg = load_yaml(config_path)
     data_cfg = load_yaml("configs/data.yaml")
     df = pd.read_parquet(repo_path(manifest))
-    assigned, report = assign_roles(df, cfg)
+    assigned, report = assign_roles(df, cfg, data_cfg["source"]["id"])
     assigned = assigned.sort_values("image_id").reset_index(drop=True)
 
     processed = repo_path(data_cfg["processed_dir"]) / "images"
@@ -120,7 +140,7 @@ def run(config_path: str = "configs/split.yaml", manifest: str = "data/manifests
             _link(src, yolo_root / sub / r.label / f"{r.image_id}.jpg", cfg["link_mode"])
         rows_by_role[r.role].append({
             "image_id": r.image_id, "label": r.label, "group_id": r.group_id, "role": r.role,
-            "original_sha256": r.original_sha256, "path": rel,
+            "original_sha256": r.original_sha256, "path": rel, "source_id": r.source_id,
         })
     for role in ("calibration", "policy", "test"):
         with (eval_dir / f"{role}.jsonl").open("w") as fh:
@@ -132,7 +152,7 @@ def run(config_path: str = "configs/split.yaml", manifest: str = "data/manifests
             for row in rows_by_role[role]:
                 fh.write(json.dumps(row, sort_keys=True) + "\n")
 
-    assignments = assigned[["image_id", "group_id", "label", "outer_split", "role", "original_sha256"]]
+    assignments = assigned[["image_id", "group_id", "label", "outer_split", "role", "original_sha256", "source_id"]]
     records = assignments.to_dict("records")
     counts = {
         role: {
@@ -142,12 +162,18 @@ def run(config_path: str = "configs/split.yaml", manifest: str = "data/manifests
         }
         for role in ROLES
     }
+    by_source = {
+        sid: {role: {k: int(v) for k, v in g[g.role == role].label.value_counts().sort_index().items()}
+              for role in ROLES}
+        for sid, g in assigned.groupby("source_id")
+    }
     total = int(len(assigned))
     manifest_out = {
         "schema_version": 1,
         "config": cfg,
         "source_manifest_sha256": sha256_json(json.loads(repo_path("data/manifests/source_manifest.json").read_text())),
         "counts": counts,
+        "counts_by_source": by_source,
         "actual_outer_fractions": {
             o: round(sum(counts[r]["images"] for r in ROLES if OUTER_OF[r] == o) / total, 4) for o in ("train", "val", "test")
         },

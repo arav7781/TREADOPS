@@ -40,20 +40,31 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
 
 
 class NativeRunner:
+    """The trained checkpoint in its own framework: Ultralytics for YOLO26, torch for the torchvision family."""
+
     def __init__(self, weights: Path, device: str = "cpu", imgsz: int = 224):
-        from ultralytics import YOLO
+        from . import tvmodel
 
-        from .bundle import tensor_input_only
+        self.family = tvmodel.FAMILY if tvmodel.is_checkpoint(weights) else "yolo"
+        if self.family == tvmodel.FAMILY:
+            self.model, self.names = tvmodel.load(weights)
+        else:
+            from ultralytics import YOLO
 
-        self.model = tensor_input_only(YOLO(str(weights), task="classify"))
+            from .bundle import tensor_input_only
+
+            self.model = tensor_input_only(YOLO(str(weights), task="classify"))
+            self.names = {int(k): v for k, v in self.model.names.items()}
         self.device = device
         self.contract = PreprocessContract(imgsz=imgsz)
-        self.names = {int(k): v for k, v in self.model.names.items()}
         self.mapping = {v: k for k, v in self.names.items()}
 
     def raw(self, x: np.ndarray) -> np.ndarray:
+        from . import tvmodel
         from .bundle import native_raw_probs
 
+        if self.family == tvmodel.FAMILY:
+            return tvmodel.raw_probs(self.model, x)
         return native_raw_probs(self.model, x, self.device, self.contract.imgsz)
 
 
@@ -81,6 +92,19 @@ def _cohort_report(p, y, groups, triage, threshold) -> dict[str, Any]:
         "triage": triage_coverage(triage, y),
         "parents": int(len(set(groups))),
     }
+
+
+def _by_source(rows, p, y, triage, threshold) -> dict[str, Any]:
+    """The same report per data source: a model that only works on one camera or place shows up here."""
+    src = np.array([r.get("source_id", "D1:v1") for r in rows])
+    groups = np.array([r["group_id"] for r in rows])
+    tri = np.array(triage, dtype=object)
+    return {s: _cohort_report(p[src == s], y[src == s], groups[src == s].tolist(), tri[src == s].tolist(), threshold)
+            for s in sorted(set(src))}
+
+
+def _metric_key(source_id: str) -> str:
+    return source_id.split(":")[0].lower()  # MLflow metric names allow no colon
 
 
 def run(
@@ -140,6 +164,7 @@ def run(
         "calibration": binary_metrics(p_cal, y_of(rows["calibration"]), policy.binary_threshold),
         "policy": binary_metrics(p_pol, y_of(rows["policy"]), policy.binary_threshold),
     }
+    gate["by_source"] = _by_source(gate_rows, p_gate, y_gate, tri_gate, policy.binary_threshold)
     gate["evidence_label"] = "development evidence (outer validation: calibration + policy roles)"
     gate["finite_probabilities"] = bool(np.isfinite(raw_cal).all() and np.isfinite(raw_pol).all())
     gate_preds = pd.DataFrame({
@@ -164,6 +189,7 @@ def run(
         g_test = [r["group_id"] for r in rows["test"]]
         tri_test = _decide(policy, p_test, d_test)
         test_report = _cohort_report(p_test, y_test, g_test, tri_test, policy.binary_threshold)
+        test_report["by_source"] = _by_source(rows["test"], p_test, y_test, tri_test, policy.binary_threshold)
         test_report["status"] = "ok"
         test_report["evidence_label"] = "locked final test (frozen checkpoint, calibrator and policy)"
         stress = stress_eval(runner, calibrator, policy, rows["test"], p_test, tri_test, cfg)
@@ -210,6 +236,9 @@ def run(
         "test_brier": test_report.get("probabilistic", {}).get("brier"),
         "model_p95_ms_cpu": latency["model_only"].get("p95_ms"),
     }
+    for sid, rep in (test_report.get("by_source") or {}).items():
+        summary[f"test_defect_recall_{_metric_key(sid)}"] = v(rep["binary"]["defect_recall"])
+        summary[f"test_specificity_{_metric_key(sid)}"] = v(rep["binary"]["specificity"])
     write_json(metrics_path or cfg["metrics_path"], summary)
     return summary
 

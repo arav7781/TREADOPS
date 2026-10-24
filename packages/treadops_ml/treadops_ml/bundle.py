@@ -23,6 +23,8 @@ from .preprocess import Limits, PreprocessContract, ingest, run_stages, tensor_f
 
 REQUIRED_FILES = ("best.pt", "class_mapping.json", "preprocess.json", "calibration.json", "policy.json",
                   "metrics.json", "gate_report.json", "model_card.md")
+# Optional: the damage locator (a YOLO26 detector) and its settings; packaged only when its own gate passed.
+LOCATOR_FILES = ("damage_locator.pt", "damage.json")
 
 
 _PREDICT_LOCK = threading.Lock()
@@ -42,7 +44,7 @@ def native_raw_probs(model, x: np.ndarray, device: str, imgsz: int, batch: int =
     """Run an Ultralytics classify model on prepared (N,3,S,S) tensors; no Ultralytics transforms applied."""
     import torch
 
-    out = []
+    out: list[np.ndarray] = []
     for i in range(0, len(x), batch):
         chunk = torch.from_numpy(np.ascontiguousarray(x[i : i + batch]))
         with _PREDICT_LOCK:
@@ -99,18 +101,24 @@ class Prediction:
 
 
 class Bundle:
-    def __init__(self, root: str | Path, device: str = "cpu", verify: bool = True, runtime: str = "native"):
+    def __init__(self, root: str | Path, device: str = "cpu", verify: bool = True, runtime: str | None = None):
         self.root = Path(root)
         self.manifest = verify_bundle(self.root) if verify else json.loads((self.root / "manifest.json").read_text())
         self.sha = self.manifest["bundle_sha256"]
         self.device = device
-        self.runtime = runtime
+        # Default: what the bundle was packaged to serve with (ONNX for torchvision models, parity-checked).
+        self.runtime = runtime or self.manifest.get("serving", {}).get("preferred_runtime", "native")
+        self._tv = False
         self.class_mapping: dict[str, int] = json.loads((self.root / "class_mapping.json").read_text())["mapping"]
         self.preprocess = PreprocessContract.from_dict(json.loads((self.root / "preprocess.json").read_text()))
         self.calibrator = TemperatureCalibrator.from_dict(json.loads((self.root / "calibration.json").read_text()))
         self.policy = Policy.from_dict(json.loads((self.root / "policy.json").read_text()))
-        self._model = None
-        self._ort = None
+        self._model: Any = None
+        self._ort: Any = None
+        self._locator: Any = None
+        files = self.manifest.get("files", {})
+        self.damage_cfg = (json.loads((self.root / "damage.json").read_text())
+                           if all(f in files for f in LOCATOR_FILES) else None)
         self.load()
 
     # -- runtimes ----------------------------------------------------------------------------------
@@ -122,6 +130,12 @@ class Bundle:
                 raise BundleInvalid("missing_file", "model.onnx not present in this bundle")
             self._ort = ort.InferenceSession(str(self.root / "model.onnx"), providers=["CPUExecutionProvider"])
             names = self.manifest["serving"]["class_names"]
+        elif self.manifest.get("model_framework") == "torchvision":
+            from . import tvmodel
+
+            self._model, tv_names = tvmodel.load(self.root / "best.pt")
+            self._tv = True
+            names = {str(k): v for k, v in tv_names.items()}
         else:
             from ultralytics import YOLO
 
@@ -141,7 +155,38 @@ class Bundle:
         if self._ort is not None:
             inp = self._ort.get_inputs()[0].name
             return np.asarray(self._ort.run(None, {inp: x.astype(np.float32)})[0], dtype=np.float64)
+        if self._tv:
+            from . import tvmodel
+
+            with _PREDICT_LOCK:
+                return tvmodel.raw_probs(self._model, x)
         return native_raw_probs(self._model, x, self.device, self.preprocess.imgsz)
+
+    def locate_damage(self, rgb: np.ndarray) -> dict[str, Any] | None:
+        """Boxes around local damage on the canonical image, strongest first; None when the bundle has no locator.
+        `escalate` is true when the strongest box reaches the threshold chosen on the policy role's good tyres and
+        the locator passed its own gate (authority "escalate"); a display-only locator never escalates."""
+        if self.damage_cfg is None:
+            return None
+        if self._locator is None:
+            from ultralytics import YOLO
+
+            self._locator = YOLO(str(self.root / "damage_locator.pt"), task="detect")
+        cfg = self.damage_cfg
+        can_escalate = cfg.get("authority", "escalate") == "escalate"  # bundles before authority: gate had passed
+        t0 = time.perf_counter()
+        with _PREDICT_LOCK:
+            res = self._locator.predict(source=[rgb], imgsz=cfg["imgsz"], conf=cfg["display_confidence"],
+                                        verbose=False, device="cpu")[0]
+        boxes = sorted(({"class": res.names[int(c)], "confidence": round(float(p), 4),
+                         "box": [round(float(v), 4) for v in xyxyn],
+                         "escalates": can_escalate and float(p) >= cfg["escalation_threshold"]}
+                        for c, p, xyxyn in zip(res.boxes.cls, res.boxes.conf, res.boxes.xyxyn, strict=True)),
+                       key=lambda b: -b["confidence"])[:10]
+        return {"version": cfg["version"], "threshold": cfg["escalation_threshold"], "boxes": boxes,
+                "authority": cfg.get("authority", "escalate"), "gate_status": cfg.get("gate_status", "passed"),
+                "max_confidence": boxes[0]["confidence"] if boxes else 0.0,
+                "escalate": bool(boxes and boxes[0]["escalates"]), "ms": round((time.perf_counter() - t0) * 1000, 1)}
 
     # -- semantics ---------------------------------------------------------------------------------
     @property

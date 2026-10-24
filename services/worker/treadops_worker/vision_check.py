@@ -29,6 +29,23 @@ from treadops_ml.common import load_yaml, sha256_bytes
 
 ESCALATE_CONFIDENCE = {"medium", "high"}
 TIMEOUT_S = 25
+BREAKER_S = 300.0  # after the provider is unreachable or times out, skip it (fail-safe: expert check) this long
+_breaker: dict[str, Any] = {"open_until": 0.0, "reason": ""}
+
+
+def _reachable(base_url: str | None, timeout: float = 1.5) -> bool:
+    """A TCP connect to the provider: a dead gateway costs 1.5 s instead of two 25 s request timeouts."""
+    import socket
+    from urllib.parse import urlsplit
+
+    u = urlsplit(base_url or "")
+    if not u.hostname:
+        return True  # let the client report the misconfiguration
+    try:
+        socket.create_connection((u.hostname, u.port or (443 if u.scheme == "https" else 80)), timeout=timeout).close()
+        return True
+    except OSError:
+        return False
 
 
 @lru_cache
@@ -88,6 +105,11 @@ def second_opinion(canonical_rgb: np.ndarray) -> dict[str, Any]:
     img.convert("RGB").save(buf, "JPEG", quality=85)
     b64 = base64.b64encode(buf.getvalue()).decode()
     meta = {"model": s.vision_check_model, "prompt_version": version, "prompt_sha256": sha}
+    if time.monotonic() < _breaker["open_until"]:  # a line camera must not wait 50 s per frame on a dead provider
+        return {**meta, "error": f"skipped: provider unreachable moments ago ({_breaker['reason']})", "latency_ms": 0.0}
+    if not _reachable(s.llm_base_url):
+        _breaker.update(open_until=time.monotonic() + BREAKER_S, reason="no connection")
+        return {**meta, "error": "provider unreachable (no connection)", "latency_ms": 1500.0}
     t0 = time.perf_counter()
     try:
         client = OpenAI(base_url=s.llm_base_url, api_key=s.llm_api_key or "not-needed", max_retries=1)
@@ -99,4 +121,6 @@ def second_opinion(canonical_rgb: np.ndarray) -> dict[str, Any]:
         out = parse(r.choices[0].message.content or "")
     except Exception as exc:  # any provider failure means "no usable answer", never an auto-clear
         out = {"error": f"{exc.__class__.__name__}: {str(exc)[:160]}"}
+        if exc.__class__.__name__ in ("APITimeoutError", "APIConnectionError"):
+            _breaker.update(open_until=time.monotonic() + BREAKER_S, reason=exc.__class__.__name__)
     return {**meta, **out, "latency_ms": round((time.perf_counter() - t0) * 1000, 1)}

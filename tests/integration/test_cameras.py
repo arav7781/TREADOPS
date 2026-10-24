@@ -44,8 +44,18 @@ def test_camera_registry_masks_urls_enforces_roles_and_audits(client):
         assert "hunter2" not in row.stream_url_enc
         assert db.execute(select(AuditEvent).where(AuditEvent.action == "camera.create",
                                                    AuditEvent.resource_id == cam["id"])).scalar_one()
-    assert client.post("/v1/cameras", headers=login(client, "inspector"),
+    # Inspectors connect their own line cameras; viewers cannot; only ML engineers remove one.
+    assert client.post("/v1/cameras", headers=login(client, "viewer"),
                        json={"name": "x camera", "stream_url": url}).status_code == 403
+    insp = client.post("/v1/cameras", headers=login(client, "inspector"),
+                       json={"name": "Inspector cam", "stream_url": url, "roi": [0.2, 0.1, 0.8, 0.9]})
+    assert insp.status_code == 201 and insp.json()["roi"] == [0.2, 0.1, 0.8, 0.9] and insp.json()["overlay"] is True
+    assert client.patch(f"/v1/cameras/{insp.json()['id']}", headers=login(client, "inspector"),
+                        json={"roi": [0.5, 0.0, 0.55, 1.0]}).json()["error"]["code"] == "invalid_roi"
+    assert client.get(f"/v1/cameras/{insp.json()['id']}/live", headers=login(client, "viewer")).json()["error"]["code"] \
+        == "no_live_frame"
+    assert client.delete(f"/v1/cameras/{insp.json()['id']}", headers=login(client, "inspector")).status_code == 403
+    assert client.delete(f"/v1/cameras/{insp.json()['id']}", headers=ml).status_code == 204
     assert client.post("/v1/cameras", headers=ml, json={"name": "Line 9 intake", "stream_url": url}).status_code == 409
     p = client.patch(f"/v1/cameras/{cam['id']}", headers=ml, json={"enabled": False, "interval_s": 10})
     assert p.json()["state"] == "disabled" and p.json()["interval_s"] == 10

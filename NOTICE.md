@@ -66,15 +66,38 @@ The model is trained on **"Digital images of defective and good condition tyres"
 Mendeley Data V1, doi:[10.17632/bn7ch8tvyp.1](https://doi.org/10.17632/bn7ch8tvyp.1), licensed
 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 
-The images are **not** stored in this Git repository. `make fetch-data` downloads them from the publisher and
-verifies the published SHA-256 sums. Any copies in a DVC remote, and the derived images the app produces, keep the
-CC BY 4.0 licence and this attribution. The derived images are sanitised (metadata stripped), resized, letterboxed,
+Two further phone-photo classification sources are added to training and evaluation, each kept in its own role
+carve so the D1 split never changes ([`configs/data.yaml`](configs/data.yaml) `extra_sources`):
+
+| Source | Licence | Attribution |
+|---|---|---|
+| TyreNet (1,698 photos, service stations and showrooms) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | Mahendrada V. S., Parameswaran M., "TyreNet: A High-quality Annotated Dataset for Tyre Defect Classification with Deep Learning Models", Mendeley Data V1, doi:[10.17632/32b5vfj6tc.1](https://doi.org/10.17632/32b5vfj6tc.1) |
+| Tire sidewall and tread textures (1,036 photos, cracked or normal) | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) | Siegel J. E. et al., Michigan State University, "Oxidized and non-oxidized tire sidewall and tread images", Harvard Dataverse, doi:[10.7910/DVN/Z3ZYLI](https://doi.org/10.7910/DVN/Z3ZYLI) |
+
+The damage locator (a YOLO26 detector, [`configs/damage.yaml`](configs/damage.yaml)) is trained on two
+box-annotated Roboflow Universe exports, both [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/):
+"tire_quality_dataset" v1 by *tirequalitydetection*
+(<https://universe.roboflow.com/tirequalitydetection/tire_quality_dataset/dataset/1>) and "TireWear_v2" v11 by
+*laundrystain* (<https://universe.roboflow.com/laundrystain/tirewear_v2/dataset/11>). Their classes are renamed
+onto TreadOps' five (`Debries` becomes `foreign_object`); photos that duplicate a D1 evaluation image are dropped.
+
+None of these images are stored in this Git repository. `make fetch-data` downloads them from the publishers and
+verifies the published SHA-256 (or, for Harvard Dataverse, MD5) sums; download receipts are in
+[`docs/evidence/data/`](docs/evidence/data/). Any copies in a DVC remote, and the derived images the app produces,
+keep their source's licence and attribution. The derived images are sanitised (metadata stripped), resized, letterboxed,
 attribution heatmaps and annotated classified images. The UI shows the attribution too, and every dataset
 snapshot records it.
 
-Pretrained YOLO26 weights come from Ultralytics (AGPL-3.0) and are pinned by SHA-256 in
-[`configs/weights.lock.yaml`](configs/weights.lock.yaml). Weights fine-tuned from them are distributed under the
-same terms, and they are not committed to Git.
+Pretrained weights are pinned by SHA-256 in [`configs/weights.lock.yaml`](configs/weights.lock.yaml):
+
+| Weights | Licence | Used for |
+|---|---|---|
+| YOLO26 n/s/m classification and n/s detection (Ultralytics) | AGPL-3.0 | benchmark candidates, the damage locator, the drift / subject-gate encoder |
+| ConvNeXt-Tiny, ImageNet-1k (torchvision, `convnext_tiny-983f1562.pth`) | BSD-3-Clause | the serving classifier (fine-tuned) |
+| Depth Anything V2 Small (ONNX export by onnx-community; upstream depth-anything/Depth-Anything-V2-Small) | Apache-2.0 | the advisory depth stage (unmodified) |
+
+Weights fine-tuned from Ultralytics checkpoints are distributed under AGPL-3.0, the fine-tuned ConvNeXt under the
+project licence (its ImageNet weights stay BSD-3-Clause); no weights are committed to Git.
 
 Operational metadata in replays (lines, cameras, scenarios) is **simulated** and labelled as such.
 

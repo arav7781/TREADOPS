@@ -43,6 +43,11 @@ export function stageChanges(stage: Stage, byIndex: Map<number, Stage>): string[
         pct(p.pad_fraction) && `${pct(p.pad_fraction)} padding (value ${p.pad_value})`, "aspect kept, nothing cropped");
       break;
     }
+    case "depth":
+      out.push(pct(p.near_surface_fraction, 0) && `nearest surface covers ${pct(p.near_surface_fraction, 0)} of the frame`,
+        p.framing ? String(p.framing) : null, num(p.input_px) && `${p.model ?? "depth model"} at ${p.input_px} px`,
+        "relative depth, no units", "advisory: not used for the verdict");
+      break;
     case "tensor":
       out.push(Array.isArray(p.shape) && `shape [${(p.shape as number[]).join(", ")}]`, String(p.dtype ?? ""),
         num(p.min) !== null && `range [${fixed(p.min)}, ${fixed(p.max)}]`);
@@ -73,9 +78,11 @@ export function stageChanges(stage: Stage, byIndex: Map<number, Stage>): string[
     }
     case "classified": {
       const so = p.second_opinion as { decision?: string; model?: string } | undefined;
+      const dm = p.damage as { boxes?: { class: string; confidence: number }[]; escalate?: boolean } | undefined;
       out.push(p.triage ? humanize(String(p.triage)) : null, fixed(p.p_defective) && `p(defective) ${fixed(p.p_defective)}`,
         so?.decision && `vision second opinion ${so.decision}${so.model ? ` (${so.model})` : ""}`,
-        p.policy_triage && p.policy_triage !== p.triage ? `YOLO alone: ${humanize(String(p.policy_triage))}` : null,
+        p.policy_triage && p.policy_triage !== p.triage ? `classifier alone: ${humanize(String(p.policy_triage))}` : null,
+        dm ? (dm.boxes?.length ? `damage locator: ${dm.boxes.slice(0, 2).map((b) => `${b.class.replace("_", " ")} ${b.confidence.toFixed(2)}`).join(", ")}${dm.escalate ? " (escalated)" : ""}` : "damage locator: no boxes") : null,
         "human clearance required");
       break;
     }
@@ -314,7 +321,7 @@ function InferenceLens({ stage, byIndex, thresholds }: { stage: Stage; byIndex: 
   const raw = num(((p.raw_probs ?? {}) as Params).defective);
   return (
     <div className="grid items-center gap-5 md:grid-cols-[auto_1fr]">
-      <Shot src={mediaUrl(byIndex.get(3)?.image_url)} pixelated label="what YOLO sees: 224×224×3" />
+      <Shot src={mediaUrl(byIndex.get(3)?.image_url)} pixelated label="what the classifier sees: 224×224×3" />
       <div className="flex flex-col items-center gap-2 text-white">
         <ProbabilityDial p={pd} raw={raw} thresholds={thresholds} />
         <p className="headline text-3xl">{(pd * 100).toFixed(1)}%</p>
@@ -362,12 +369,26 @@ function AttributionLens({ stage, byIndex }: { stage: Stage; byIndex: Map<number
   );
 }
 
+function DepthLens({ stage, byIndex }: { stage: Stage; byIndex: Map<number, Stage> }) {
+  const p = params(stage);
+  return (
+    <div className="space-y-3">
+      <Compare before={<Shot src={mediaUrl(byIndex.get(2)?.image_url)} label="canonical photo" />}
+        after={<Shot src={mediaUrl(stage.image_url)} label="relative depth: bright = near · yellow outline = nearest surface" />} />
+      <p className="text-center text-xs text-white/75">
+        {String(p.limits ?? "Relative depth: advisory only, not used for the verdict.")}
+      </p>
+    </div>
+  );
+}
+
 /** The large visual for one stage: before → after, pixel-level detail, or a chart, depending on what changed. */
 export function StageLens({ stage, byIndex, thresholds }: { stage: Stage; byIndex: Map<number, Stage>; thresholds: Thresholds | null }) {
   switch (stage.name) {
     case "canonical":
       return <Compare before={<Shot src={mediaUrl(byIndex.get(1)?.image_url)} label="uploaded (oriented, metadata removed)" />}
         after={<Shot src={mediaUrl(stage.image_url)} label="canonical JPEG (training path)" />} />;
+    case "depth": return <DepthLens stage={stage} byIndex={byIndex} />;
     case "letterbox": return <LetterboxLens stage={stage} byIndex={byIndex} />;
     case "tensor": return <TensorLens stage={stage} byIndex={byIndex} />;
     case "quality": return <QualityLens stage={stage} byIndex={byIndex} />;

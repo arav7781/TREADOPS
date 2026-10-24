@@ -19,7 +19,13 @@ def pretrained(name: str) -> Path:
     if entry is None:
         raise WeightsMismatch(f"{name} is not listed in {LOCK}")
     path = repo_path(lock["weights_dir"]) / name
-    if not path.exists():
+    if not path.exists() and not name.endswith(".pt"):
+        # torchvision checkpoints: plain download from the pinned URL, verified below.
+        import torch
+
+        path.parent.mkdir(parents=True, exist_ok=True)
+        torch.hub.download_url_to_file(entry["url"], str(path), progress=False)
+    elif not path.exists():
         # Ultralytics downloads into the CWD; fetch into the pinned directory, then verify.
         import os
 

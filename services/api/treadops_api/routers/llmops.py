@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from treadops_ml.common import repo_path
 
+from .. import llm_tracing
 from ..db import get_db
 from ..errors import ApiError
 from ..models import ChatFeedback, ChatMessage, GuardrailEvent, LLMSpan, LLMTrace
@@ -66,6 +67,7 @@ def overview(since: datetime | None = None, p: Principal = Depends(require("ml_e
         "grounding": {"passed": grounding, "checked": grounded_total,
                       "pass_rate": grounding / grounded_total if grounded_total else None},
         "feedback": {"up": fb.get(1, 0), "down": fb.get(-1, 0)},
+        "mlflow": llm_tracing.links(),
         "timeline": [{"t": t.isoformat(), "turns": c, "p95_ms": p95, "flagged": int(f or 0)} for t, c, p95, f in series],
     }
 
@@ -83,7 +85,7 @@ def traces(status: str | None = None, rule: str | None = None, limit: int = Quer
                        "mode": t.llm_mode, "model": t.model, "prompt_version": t.prompt_version,
                        "latency_ms": round(t.latency_ms, 1), "tokens": t.prompt_tokens + t.completion_tokens,
                        "cost_usd": t.cost_usd, "tools": t.tools_used, "guardrail_flags": t.guardrail_flags,
-                       "grounding": t.grounding} for t in rows]}
+                       "grounding": t.grounding, "mlflow_trace_id": t.mlflow_trace_id} for t in rows]}
 
 
 @router.get("/llmops/traces/{trace_id}")
@@ -112,6 +114,7 @@ def trace(trace_id: uuid.UUID, p: Principal = Depends(require("ml_engineer")), d
                              for e in events],
         "user_message": user_msg.content if user_msg else None,
         "assistant_message": msg.content if msg else None,
+        "mlflow": llm_tracing.links(t.mlflow_trace_id) if t.mlflow_trace_id else None,
     }
 
 

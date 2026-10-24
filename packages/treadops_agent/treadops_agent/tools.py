@@ -1,7 +1,7 @@
 """Copilot tools. Each is an OpenAI function schema plus an implementation backed by the real services.
 
 `classify_tyre_image` never classifies inside the agent: it submits (or waits for) a real inspection job, so
-the YOLO bundle pinned by the active deployment produces the decision and full lineage is stored.
+the model bundle pinned by the active deployment produces the decision and full lineage is stored.
 """
 
 from __future__ import annotations
@@ -26,6 +26,7 @@ from treadops_api.models import (
     ReviewLabel,
 )
 from treadops_api.services.inspections import active_deployment
+from treadops_api.verdicts import verdict_of
 
 from . import kb
 from .guardrails import config
@@ -36,13 +37,6 @@ TRIAGE_LABEL = {"good_candidate": "Retread candidate", "manual_review": "Expert 
 
 VERDICT_LABEL = {"damaged": "Damaged", "not_damaged": "Not damaged", "uncertain": "Uncertain (expert check)"}
 TRIAGE_ORDER = {"good_candidate": 0, "manual_review": 1, "defect_flagged": 2}
-
-
-def verdict_of(binary_defective: bool, triage: str, quality_status: str) -> str:
-    """Damaged if the policy says so; 'not damaged' only for a clean auto-clear; anything else is uncertain."""
-    if binary_defective:
-        return "damaged"
-    return "not_damaged" if triage == "good_candidate" and quality_status != "low_quality" else "uncertain"
 
 
 @dataclass
@@ -67,14 +61,14 @@ def _schema(name: str, description: str, properties: dict | None = None, require
 
 SCHEMAS = [
     _schema("classify_tyre_image",
-            "Run the deployed YOLO tyre quality classifier on the photo attached to the user's current message. "
+            "Run the deployed tyre quality classifier on the photo attached to the user's current message. "
             "Returns the damage verdict (damaged / not damaged), whether an expert check is needed, triage, "
             "calibrated p(defective), image quality, the preprocessing stages and the recommended pathway. Only "
             "valid when the user attached a photo. Returns error not_a_tyre when the image does not show a tyre: "
             "then give no damage verdict and ask for a tyre photo."),
     _schema("classify_tyre_video",
             "Inspect one tyre from the video frames attached to the user's current message (sampled around its "
-            "circumference). Classifies every frame with the deployed YOLO model and returns a tyre-level verdict: "
+            "circumference). Classifies every frame with the deployed classifier and returns a tyre-level verdict: "
             "damaged if any frame is damaged, the decisive (worst) frame, and per-frame results. Only valid when "
             "the user attached a video."),
     _schema("get_inspection", "Fetch the stored result and lineage of an earlier inspection by ID.",
@@ -104,7 +98,7 @@ SCHEMAS = [
             {"hours": {"type": "integer", "minimum": 1, "maximum": 168},
              "camera": {"type": "string", "description": "camera name or code; omit for all cameras"}}),
     _schema("inspect_camera", "Inspect the tyre currently in front of a line camera: takes its live frame and runs the "
-            "deployed YOLO model on it as a normal pinned inspection. Use when the user asks what a camera sees now.",
+            "deployed classifier on it as a normal pinned inspection. Use when the user asks what a camera sees now.",
             {"camera": {"type": "string", "description": "camera name or code"}}, ["camera"]),
 ]
 
@@ -135,6 +129,10 @@ def _compact(insp: Inspection, pred: Prediction | None, stages: list[InspectionS
             "p_defective": round(pred.p_defective, 4),
             "raw_probs": {k: round(v, 4) for k, v in pred.raw_probs.items()},
             "quality_status": pred.quality_status, "quality_reasons": pred.quality.get("reasons", []),
+            "damage_locator": ({"boxes": [{k: b[k] for k in ("class", "confidence")} for b in pred.damage["boxes"][:5]],
+                                "escalated_auto_clear": pred.damage["escalate"], "threshold": pred.damage["threshold"],
+                                "note": "boxes from a detector trained on public damage photos; an inspector confirms"}
+                               if pred.damage else None),
             "image_check": {k: (pred.quality.get("subject") or {}).get(k)
                             for k in ("score", "unusual", "unusual_above", "vision_tyre_visible", "vision_subject")},
             "descriptors": {k: round(v, 3) for k, v in pred.quality.get("descriptors", {}).items()
@@ -167,7 +165,7 @@ def _submit_photo(ctx: ToolContext) -> dict[str, Any] | None:
     from treadops_api.storage import get_storage
 
     ctx.emit("tool_progress", {"tool": "classify_tyre_image",
-                               "message": "submitting the photo to the YOLO inspection pipeline"})
+                               "message": "submitting the photo to the inspection pipeline"})
     db = new_session()
     try:
         insp, _ = accept(db, get_storage(), actor=ctx.actor, actor_id=ctx.actor.id, raw=ctx.image_bytes or b"",
@@ -202,7 +200,7 @@ def classify_tyre_image(ctx: ToolContext) -> dict[str, Any]:
     t0 = time.monotonic()
     seen_stages = 0
     ctx.emit("tool_progress", {"tool": "classify_tyre_image",
-                               "message": "YOLO inspection job queued; waiting for the worker"})
+                               "message": "inspection job queued; waiting for the worker"})
     while True:
         db = new_session()
         try:
@@ -346,7 +344,7 @@ def classify_tyre_video(ctx: ToolContext) -> dict[str, Any]:
     base = ctx.idempotency_key or f"copilot:{uuid.uuid4()}"
     if not ctx.frame_inspections:
         ctx.emit("tool_progress", {"tool": "classify_tyre_video",
-                                   "message": f"submitting {len(ctx.frames)} frames to the YOLO inspection pipeline"})
+                                   "message": f"submitting {len(ctx.frames)} frames to the inspection pipeline"})
         for i, raw in enumerate(ctx.frames):
             t = ctx.frame_times[i] if i < len(ctx.frame_times) else None
             db = new_session()

@@ -35,6 +35,7 @@ import {
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { DamagePanel } from "@/components/domain/DamagePanel";
 import { Markdown } from "@/components/domain/Markdown";
 import { RejectionPanel } from "@/components/domain/Rejection";
 import { SecondOpinionPanel } from "@/components/domain/SecondOpinion";
@@ -218,7 +219,7 @@ export function eventText(e: ChatEvent): string {
 }
 
 const TOOL_LABEL: Record<string, string> = {
-  classify_tyre_image: "the YOLO inspection", search_knowledge: "a knowledge-base search",
+  classify_tyre_image: "the model inspection", search_knowledge: "a knowledge-base search",
   get_inspection: "an inspection lookup", get_preprocessing_trace: "the preprocessing trace",
   show_attribution_heatmap: "the attribution heatmap",
 };
@@ -232,7 +233,7 @@ export function statusLine(e: ChatEvent | undefined): string {
     case "guard_input": return e.status === "blocked" ? "Blocked by the input guardrails" : "Input guardrails passed";
     case "plan": return "Planning the next step";
     case "tool_call": return `Running ${tool}`;
-    case "inspection": return "YOLO inspection created, waiting for the worker";
+    case "inspection": return "Inspection created, waiting for the worker";
     case "inspection_ref": return `Showing inspection ${e.inspection_id?.slice(0, 8) ?? ""}`;
     case "tool_progress": return e.message ?? `Running ${tool}`;
     case "stage": return `Stage ${e.stage}: ${e.title}`;
@@ -349,6 +350,7 @@ function ChatResult({ d, canReview }: { d: InspectionDetail; canReview: boolean 
       </div>
       <p className="mt-1 text-sm text-ink-soft">{p.triage_reason}</p>
       {p.second_opinion && <SecondOpinionPanel s={p.second_opinion} className="mt-3" />}
+      {p.damage && <DamagePanel d={p.damage} className="mt-3" />}
       <div className="mt-3 grid gap-4 md:grid-cols-[minmax(0,220px)_1fr]">
         {classified && (
           // eslint-disable-next-line @next/next/no-img-element
@@ -359,7 +361,7 @@ function ChatResult({ d, canReview }: { d: InspectionDetail; canReview: boolean 
             temperature={typeof temperature === "number" ? temperature : null}
             thresholds={policy ? { low: policy.triage_low, high: policy.triage_high, binary: policy.binary_threshold } : undefined} />
           <p className="mono text-sm text-muted">
-            preprocess {ms(p.timing.preprocess_ms)} · YOLO {ms(p.timing.inference_ms)} · attribution {ms(p.timing.attribution_ms)} · worker {ms(p.timing.worker_total_ms)}
+            preprocess {ms(p.timing.preprocess_ms)} · model {ms(p.timing.inference_ms)} · attribution {ms(p.timing.attribution_ms)} · worker {ms(p.timing.worker_total_ms)}
           </p>
         </div>
       </div>
@@ -401,7 +403,7 @@ function ChatResult({ d, canReview }: { d: InspectionDetail; canReview: boolean 
   );
 }
 
-/** The YOLO run the agent's tool started: stage images, the worker's log and the final classified result. */
+/** The model run the agent's tool started: stage images, the worker's log and the final classified result. */
 function InspectionInChat({ id, canReview, animate, revealed, onRevealed, focus }: {
   id: string;
   canReview: boolean;
@@ -426,10 +428,10 @@ function InspectionInChat({ id, canReview, animate, revealed, onRevealed, focus 
   const d = q.data;
   const running = !d || d.status === "queued" || d.status === "running";
   return (
-    <section className="mt-3 space-y-3" aria-label="YOLO inspection pipeline">
+    <section className="mt-3 space-y-3" aria-label="Inspection pipeline">
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <ScanLine aria-hidden className="h-4 w-4 text-primary" />
-        <span className="font-semibold text-ink">{focus === undefined ? "YOLO pipeline" : "Inspection on record"}</span>
+        <span className="font-semibold text-ink">{focus === undefined ? "Inspection pipeline" : "Inspection on record"}</span>
         <StatusBadge status={d?.status ?? "queued"} />
         {d && <span className="mono text-muted">{d.deployment.model_family} v{d.deployment.registry_version ?? "?"} · gen {d.deployment.generation ?? "?"} · {id.slice(0, 8)}</span>}
         <button type="button" onClick={() => setShowLog(!logOpen)} aria-expanded={logOpen}
@@ -747,7 +749,7 @@ export function Composer({ onSend, busy, photo, video, progress, placeholder, er
           <img src={preview} alt="Selected tyre photo preview" className="h-16 w-16 rounded-lg object-cover" />
           <span className="min-w-0 flex-1 text-sm text-ink-soft">
             <span className="block truncate font-semibold text-ink">{file?.name}</span>
-            {((file?.size ?? 0) / 1024).toFixed(0)} KB · {ASSISTANT_NAME} will run the YOLO tool on it
+            {((file?.size ?? 0) / 1024).toFixed(0)} KB · {ASSISTANT_NAME} will run the inspection tool on it
           </span>
           <button type="button" aria-label="Remove photo" onClick={() => { photo.clear(); if (fileRef.current) fileRef.current.value = ""; }}
             className="rounded-lg p-1.5 text-muted hover:bg-line"><X className="h-4 w-4" /></button>

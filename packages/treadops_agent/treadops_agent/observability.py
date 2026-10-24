@@ -1,4 +1,7 @@
-"""LLMOps tracing: one trace per copilot turn, spans for graph nodes, LLM calls and tool calls."""
+"""LLMOps tracing: one trace per copilot turn, spans for graph nodes, LLM calls and tool calls.
+
+Stored in PostgreSQL (the LLMOps page) and mirrored, span for span, into MLflow Tracing when it is on
+(treadops_api.llm_tracing): the same tree, with full inputs and outputs, in the MLflow UI."""
 
 from __future__ import annotations
 
@@ -8,9 +11,12 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Any
 
+from treadops_api import llm_tracing
 from treadops_api.models import GuardrailEvent, LLMSpan, LLMTrace
 
-from .guardrails import GuardEvent, config
+from .guardrails import GuardEvent, config, redact
+
+llm_tracing.register_redactor(lambda text: redact(text)[0])
 
 
 @dataclass
@@ -38,25 +44,51 @@ class Tracer:
         self.tools_used: list[str] = []
         self.model: str | None = None
         self._stack: list[uuid.UUID] = []
+        self._ml: list[Any] = []  # open MLflow spans (None entries when tracing is off)
+        self.mlflow_trace_id: str | None = None
 
     def _now(self) -> float:
         return (time.perf_counter() - self._t0) * 1000
 
     @contextmanager
     def span(self, name: str, kind: str, **attributes):
+        root = not self._stack
         rec = SpanRecord(uuid.uuid4(), self._stack[-1] if self._stack else None, name, kind, self._now(),
                          attributes=dict(attributes))
         self.spans.append(rec)
         self._stack.append(rec.id)
-        try:
-            yield rec.attributes
-        except Exception as exc:
-            rec.status = "error"
-            rec.attributes["error"] = f"{exc.__class__.__name__}: {str(exc)[:300]}"
-            raise
-        finally:
-            rec.duration_ms = self._now() - rec.start_ms
-            self._stack.pop()
+        with llm_tracing.span(name, "turn" if root else kind, {"treadops.span_id": str(rec.id), **attributes}) as ml:
+            self._ml.append(ml)
+            if root and ml is not None:
+                self.mlflow_trace_id = ml.trace_id
+                llm_tracing.tag_trace(
+                    session_id=str(self.session_id), user=str(self.user_id),
+                    tags={"prompt_version": self.prompt_version, "app": "treadops-bib"},
+                    metadata={"treadops.llm_trace_id": str(self.trace_id), "prompt_sha256": self.prompt_sha})
+            try:
+                yield rec.attributes
+            except Exception as exc:
+                rec.status = "error"
+                rec.attributes["error"] = f"{exc.__class__.__name__}: {str(exc)[:300]}"
+                raise
+            finally:
+                rec.duration_ms = self._now() - rec.start_ms
+                self._stack.pop()
+                self._ml.pop()
+                llm_tracing.set_io(ml, **{f"treadops.{k}": v for k, v in rec.attributes.items()
+                                          if isinstance(v, str | int | float | bool)})
+                if kind == "llm" and rec.attributes.get("error"):  # caught by the graph, so not raised
+                    llm_tracing.mark_error(ml, rec.attributes["error"])
+
+    def fail(self, message: str) -> None:
+        """Mark the innermost open span (the turn, at the end of run_turn) as failed in MLflow."""
+        if self._ml:
+            llm_tracing.mark_error(self._ml[-1], message)
+
+    def io(self, inputs: Any = None, outputs: Any = None) -> None:
+        """Full inputs/outputs of the innermost open span, for MLflow (PostgreSQL keeps the compact attributes)."""
+        if self._ml:
+            llm_tracing.set_io(self._ml[-1], inputs=inputs, outputs=outputs)
 
     def add_usage(self, usage: dict[str, int] | None, model: str | None) -> None:
         self.n_llm += 1
@@ -81,7 +113,7 @@ class Tracer:
             cost_usd=self.cost_usd(), n_llm_calls=self.n_llm, n_tool_calls=len(self.tools_used),
             tools_used=self.tools_used, guardrail_flags=sorted({e.rule for e in self.guard_events
                                                                  if e.action != "pass"}),
-            grounding=grounding, error=error,
+            grounding=grounding, error=error, mlflow_trace_id=self.mlflow_trace_id,
         )
         db.add(tr)
         db.flush()

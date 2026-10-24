@@ -10,3 +10,23 @@ weights:
     url: https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26s-cls.pt
     sha256: 816790029d5df3fef358f03c8144b96339d8824ee25577aeda8be0963e5c5f09
     params: 6724008
+  yolo26m-cls.pt:
+    url: https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26m-cls.pt
+    sha256: 9f6546f33a70d910e2cd6dcca5265c4617b5670b19a1f287c39e99258bade01a
+    params: 11634216
+  yolo26n.pt:                     # detection (damage locator)
+    url: https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26n.pt
+    sha256: 9b09cc8bf347f0fc8a5f7657480587f25db09b34bf33b0652110fb03a8ad4fef
+    params: 2572280
+  yolo26s.pt:
+    url: https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26s.pt
+    sha256: 646f8bc3fe0a656803d95c294f7852321748cb29d13466a1af8862e2db384a1b
+    params: 10009784
+  convnext_tiny-983f1562.pth:     # torchvision ConvNeXt-Tiny, ImageNet-1k (BSD-3-Clause); benchmark candidate
+    url: https://download.pytorch.org/models/convnext_tiny-983f1562.pth
+    sha256: 983f1562536e84ff750a1576fb08e54de751dbf2e17c0d8a4a13704341fdcd3d
+    params: 28589128
+  depth_anything_v2_small.onnx:   # Depth Anything V2 Small (Apache-2.0), ONNX export by onnx-community; relief view
+    url: https://huggingface.co/onnx-community/depth-anything-v2-small/resolve/main/onnx/model.onnx
+    sha256: afb6a5c28f3b6bf1618c6e43f02073ef9dfdc70e937502d51603e57b0a1df10c
+    params: 24785089

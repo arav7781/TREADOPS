@@ -11,15 +11,19 @@ const stage = (index: number, name: string, ms: number, image = true): Stage => 
 afterEach(() => vi.useRealTimers());
 
 describe("StageGallery", () => {
-  it("orders stages by index regardless of arrival order and shows recorded timings", () => {
-    render(<StageGallery stages={[stage(3, "letterbox", 2.5), stage(1, "ingest", 40), stage(2, "canonical", 120)]} running={false} animate={false} />);
+  it("orders stages by the pipeline plan regardless of arrival order and shows recorded timings", () => {
+    render(<StageGallery stages={[stage(3, "letterbox", 2.5), stage(9, "depth", 280), stage(1, "ingest", 40), stage(2, "canonical", 120)]}
+      running={false} animate={false} />);
     const items = within(screen.getByRole("list", { name: /stages/i })).getAllByRole("listitem");
-    expect(items).toHaveLength(8); // the full plan is always shown
+    expect(items).toHaveLength(9); // the full plan is always shown
     expect(items[0]).toHaveAttribute("data-stage", "ingest");
     expect(within(items[0]).getByRole("img")).toHaveAttribute("src", "/api/v1/media/ingest");
     expect(within(items[1]).getByText("120 ms")).toBeInTheDocument();
-    expect(within(items[2]).getByText("2.5 ms")).toBeInTheDocument();
-    expect(within(items[3]).queryByRole("img")).toBeNull(); // tensor stage not produced yet
+    // depth is stored as stage 9 (added later) but runs on the canonical photo: shown third, numbered 3
+    expect(items[2]).toHaveAttribute("data-stage", "depth");
+    expect(within(items[2]).getByText("3")).toBeInTheDocument();
+    expect(within(items[3]).getByText("2.5 ms")).toBeInTheDocument();
+    expect(within(items[4]).queryByRole("img")).toBeNull(); // tensor stage not produced yet
   });
 
   it("reveals newly arrived stages one at a time", () => {

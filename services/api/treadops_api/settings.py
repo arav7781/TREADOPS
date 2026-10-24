@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     s3_access_key_id: str = Field(alias="S3_ACCESS_KEY_ID")
     s3_secret_access_key: str = Field(alias="S3_SECRET_ACCESS_KEY")
     mlflow_tracking_uri: str | None = Field(None, alias="MLFLOW_TRACKING_URI")
+    mlflow_ui_url: str | None = Field(None, alias="MLFLOW_UI_URL")  # browser-reachable MLflow; default: tracking URI
+    llm_mlflow_tracing: bool = Field(True, alias="LLM_MLFLOW_TRACING")  # MLflow Tracing of Bib and the vision check
 
     jwt_secret: str = Field(alias="JWT_SECRET")
     jwt_issuer: str = Field("treadops-api", alias="JWT_ISSUER")

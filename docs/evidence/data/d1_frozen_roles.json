@@ -1,0 +1,13 @@
+{
+  "source_id": "D1:v1",
+  "images": 1828,
+  "roles": {
+    "calibration": 137,
+    "dev_train": 1084,
+    "dev_val": 192,
+    "policy": 138,
+    "test": 277
+  },
+  "image_role_pairs_sha256": "8ff3af40547ea9c12ed1b8b132c238e66bfbe07ca95a52c4e26cf1932727b32c",
+  "note": "D1 roles frozen before extra sources were added; tests/ml asserts every later split reproduces them"
+}

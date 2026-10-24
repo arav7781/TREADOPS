@@ -1,0 +1,765 @@
+{
+  "at": "2026-10-24T17:08:48.587724+00:00",
+  "split_sha256": "e90ad86443c43bcf363aa2e348c56faac87fcc41d35f0277112b860b7273c30d",
+  "counts_by_source": {
+    "D1:v1": {
+      "calibration": {
+        "defective": 75,
+        "good": 62
+      },
+      "dev_train": {
+        "defective": 595,
+        "good": 489
+      },
+      "dev_val": {
+        "defective": 105,
+        "good": 87
+      },
+      "policy": {
+        "defective": 75,
+        "good": 63
+      },
+      "test": {
+        "defective": 150,
+        "good": 127
+      }
+    },
+    "MSU:v1": {
+      "calibration": {
+        "good": 5
+      },
+      "dev_train": {
+        "defective": 4,
+        "good": 79
+      },
+      "dev_val": {
+        "defective": 1,
+        "good": 16
+      },
+      "policy": {
+        "defective": 1,
+        "good": 11
+      },
+      "test": {
+        "defective": 2,
+        "good": 25
+      }
+    },
+    "TYRENET:v1": {
+      "calibration": {
+        "defective": 64,
+        "good": 64
+      },
+      "dev_train": {
+        "defective": 513,
+        "good": 493
+      },
+      "dev_val": {
+        "defective": 91,
+        "good": 87
+      },
+      "policy": {
+        "defective": 65,
+        "good": 62
+      },
+      "test": {
+        "defective": 130,
+        "good": 124
+      }
+    }
+  },
+  "candidates": {
+    "convnext_tiny_robust": {
+      "spec": {
+        "kind": "torchvision",
+        "arch": "convnext_tiny",
+        "epochs": 30,
+        "lr": 0.0001,
+        "batch": 32,
+        "patience": 6,
+        "seed": 42,
+        "augment": "configs/recipes/small_224_robust.yaml",
+        "weights": "convnext_tiny-983f1562.pth"
+      },
+      "split_sha256": "e90ad86443c43bcf363aa2e348c56faac87fcc41d35f0277112b860b7273c30d",
+      "train": {
+        "duration_s": 6579.8,
+        "epochs_completed": 9,
+        "history": [
+          {
+            "epoch": 1,
+            "train_loss": 0.3529899045584995,
+            "val_loss": 0.3242232287422939,
+            "val_accuracy": 0.9147286821705426
+          },
+          {
+            "epoch": 2,
+            "train_loss": 0.2427131800513305,
+            "val_loss": 0.30527289847070854,
+            "val_accuracy": 0.9354005167958657
+          },
+          {
+            "epoch": 3,
+            "train_loss": 0.22544503157115783,
+            "val_loss": 0.26810689617035,
+            "val_accuracy": 0.9612403100775194
+          },
+          {
+            "epoch": 4,
+            "train_loss": 0.2149343907462799,
+            "val_loss": 0.28503638875576875,
+            "val_accuracy": 0.9431524547803618
+          },
+          {
+            "epoch": 5,
+            "train_loss": 0.20490508378786368,
+            "val_loss": 0.2793943555087082,
+            "val_accuracy": 0.9483204134366925
+          },
+          {
+            "epoch": 6,
+            "train_loss": 0.2053003305191276,
+            "val_loss": 0.2844290636306585,
+            "val_accuracy": 0.9509043927648578
+          },
+          {
+            "epoch": 7,
+            "train_loss": 0.2066611949057827,
+            "val_loss": 0.2892173708101268,
+            "val_accuracy": 0.937984496124031
+          },
+          {
+            "epoch": 8,
+            "train_loss": 0.21135457353113546,
+            "val_loss": 0.2780155017394428,
+            "val_accuracy": 0.9612403100775194
+          },
+          {
+            "epoch": 9,
+            "train_loss": 0.20498067637741757,
+            "val_loss": 0.2704754269246291,
+            "val_accuracy": 0.9509043927648578
+          }
+        ],
+        "best_pt_sha256": "a829daa95116331a052040824c0023f3183bfd30cef69f80fd240a0320ea2bf7",
+        "mlflow_run_id": "adaf5e13904045878580c91663e37330",
+        "device": "mps"
+      },
+      "score": {
+        "temperature": 0.5816870743366597,
+        "threshold": 0.898012,
+        "gate": {
+          "threshold": 0.898012,
+          "support": {
+            "defective": 280,
+            "good": 267,
+            "total": 547
+          },
+          "confusion": {
+            "tp": 267,
+            "fn": 13,
+            "tn": 259,
+            "fp": 8
+          },
+          "defect_recall": {
+            "value": 0.9535714285714286,
+            "numerator": 267,
+            "denominator": 280,
+            "ci95": [
+              0.922196709546931,
+              0.9726690405132961
+            ],
+            "status": "ok"
+          },
+          "specificity": {
+            "value": 0.9700374531835206,
+            "numerator": 259,
+            "denominator": 267,
+            "ci95": [
+              0.9420005552084797,
+              0.984740871442925
+            ],
+            "status": "ok"
+          },
+          "precision": {
+            "value": 0.9709090909090909,
+            "numerator": 267,
+            "denominator": 275,
+            "ci95": [
+              0.9436562702187175,
+              0.9851869550287069
+            ],
+            "status": "ok"
+          },
+          "accuracy": {
+            "value": 0.9616087751371115,
+            "numerator": 526,
+            "denominator": 547,
+            "ci95": [
+              0.9420244850043661,
+              0.9747547295188191
+            ],
+            "status": "ok"
+          }
+        },
+        "average_precision": 0.9924996421381633,
+        "by_source": {
+          "D1:v1": {
+            "defect_recall": 0.94,
+            "specificity": 1.0,
+            "parents": 127,
+            "defective": 150
+          },
+          "MSU:v1": {
+            "defect_recall": 1.0,
+            "specificity": 0.9375,
+            "parents": 12,
+            "defective": 1
+          },
+          "TYRENET:v1": {
+            "defect_recall": 0.9689922480620154,
+            "specificity": 0.9444444444444444,
+            "parents": 157,
+            "defective": 129
+          }
+        },
+        "stress": {
+          "low_light": {
+            "threshold": 0.898012,
+            "support": {
+              "defective": 280,
+              "good": 267,
+              "total": 547
+            },
+            "confusion": {
+              "tp": 267,
+              "fn": 13,
+              "tn": 258,
+              "fp": 9
+            },
+            "defect_recall": {
+              "value": 0.9535714285714286,
+              "numerator": 267,
+              "denominator": 280,
+              "ci95": [
+                0.922196709546931,
+                0.9726690405132961
+              ],
+              "status": "ok"
+            },
+            "specificity": {
+              "value": 0.9662921348314607,
+              "numerator": 258,
+              "denominator": 267,
+              "ci95": [
+                0.9371903560576453,
+                0.9821666767558996
+              ],
+              "status": "ok"
+            },
+            "precision": {
+              "value": 0.967391304347826,
+              "numerator": 267,
+              "denominator": 276,
+              "ci95": [
+                0.9391992362196995,
+                0.9827513604909874
+              ],
+              "status": "ok"
+            },
+            "accuracy": {
+              "value": 0.9597806215722121,
+              "numerator": 525,
+              "denominator": 547,
+              "ci95": [
+                0.9398564798097537,
+                0.9732919259430426
+              ],
+              "status": "ok"
+            }
+          },
+          "camera_blur": {
+            "threshold": 0.898012,
+            "support": {
+              "defective": 280,
+              "good": 267,
+              "total": 547
+            },
+            "confusion": {
+              "tp": 260,
+              "fn": 20,
+              "tn": 258,
+              "fp": 9
+            },
+            "defect_recall": {
+              "value": 0.9285714285714286,
+              "numerator": 260,
+              "denominator": 280,
+              "ci95": [
+                0.8922541160728416,
+                0.9532883249289478
+              ],
+              "status": "ok"
+            },
+            "specificity": {
+              "value": 0.9662921348314607,
+              "numerator": 258,
+              "denominator": 267,
+              "ci95": [
+                0.9371903560576453,
+                0.9821666767558996
+              ],
+              "status": "ok"
+            },
+            "precision": {
+              "value": 0.966542750929368,
+              "numerator": 260,
+              "denominator": 269,
+              "ci95": [
+                0.9376481605160681,
+                0.9823000065592352
+              ],
+              "status": "ok"
+            },
+            "accuracy": {
+              "value": 0.946983546617916,
+              "numerator": 518,
+              "denominator": 547,
+              "ci95": [
+                0.924896885748701,
+                0.9628358586113734
+              ],
+              "status": "ok"
+            }
+          }
+        },
+        "cpu_p95_ms": 40.658633096609265
+      }
+    },
+    "yolo26s_robust": {
+      "spec": {
+        "kind": "yolo",
+        "recipe": "configs/recipes/small_224_robust.yaml"
+      },
+      "split_sha256": "e90ad86443c43bcf363aa2e348c56faac87fcc41d35f0277112b860b7273c30d",
+      "train": {
+        "duration_s": 4213.5,
+        "epochs_completed": 31,
+        "best_pt_sha256": "2591105df250109e94860ee25729f3d183229fea94b61e01e60393a563399282",
+        "mlflow_run_id": "792ce7508dc2406388753573c66149c4",
+        "device": "mps"
+      },
+      "score": {
+        "temperature": 1.6035008428322202,
+        "threshold": 0.531717,
+        "gate": {
+          "threshold": 0.531717,
+          "support": {
+            "defective": 280,
+            "good": 267,
+            "total": 547
+          },
+          "confusion": {
+            "tp": 265,
+            "fn": 15,
+            "tn": 244,
+            "fp": 23
+          },
+          "defect_recall": {
+            "value": 0.9464285714285714,
+            "numerator": 265,
+            "denominator": 280,
+            "ci95": [
+              0.9135037996934171,
+              0.9672695763501132
+            ],
+            "status": "ok"
+          },
+          "specificity": {
+            "value": 0.9138576779026217,
+            "numerator": 244,
+            "denominator": 267,
+            "ci95": [
+              0.8740613565392875,
+              0.9419141625442201
+            ],
+            "status": "ok"
+          },
+          "precision": {
+            "value": 0.9201388888888888,
+            "numerator": 265,
+            "denominator": 288,
+            "ci95": [
+              0.8830202020292462,
+              0.9461971440176408
+            ],
+            "status": "ok"
+          },
+          "accuracy": {
+            "value": 0.9305301645338209,
+            "numerator": 509,
+            "denominator": 547,
+            "ci95": [
+              0.9060841449583591,
+              0.9489713204682156
+            ],
+            "status": "ok"
+          }
+        },
+        "average_precision": 0.981420729440965,
+        "by_source": {
+          "D1:v1": {
+            "defect_recall": 0.9266666666666666,
+            "specificity": 0.968,
+            "parents": 127,
+            "defective": 150
+          },
+          "MSU:v1": {
+            "defect_recall": 0.0,
+            "specificity": 0.6875,
+            "parents": 12,
+            "defective": 1
+          },
+          "TYRENET:v1": {
+            "defect_recall": 0.9767441860465116,
+            "specificity": 0.8888888888888888,
+            "parents": 157,
+            "defective": 129
+          }
+        },
+        "stress": {
+          "low_light": {
+            "threshold": 0.531717,
+            "support": {
+              "defective": 280,
+              "good": 267,
+              "total": 547
+            },
+            "confusion": {
+              "tp": 256,
+              "fn": 24,
+              "tn": 249,
+              "fp": 18
+            },
+            "defect_recall": {
+              "value": 0.9142857142857143,
+              "numerator": 256,
+              "denominator": 280,
+              "ci95": [
+                0.87563272050401,
+                0.9417249724643861
+              ],
+              "status": "ok"
+            },
+            "specificity": {
+              "value": 0.9325842696629213,
+              "numerator": 249,
+              "denominator": 267,
+              "ci95": [
+                0.8959631982821991,
+                0.9569342899906076
+              ],
+              "status": "ok"
+            },
+            "precision": {
+              "value": 0.9343065693430657,
+              "numerator": 256,
+              "denominator": 274,
+              "ci95": [
+                0.8985583799045027,
+                0.9580452420253773
+              ],
+              "status": "ok"
+            },
+            "accuracy": {
+              "value": 0.923217550274223,
+              "numerator": 505,
+              "denominator": 547,
+              "ci95": [
+                0.8978370679283364,
+                0.9426951624166829
+              ],
+              "status": "ok"
+            }
+          },
+          "camera_blur": {
+            "threshold": 0.531717,
+            "support": {
+              "defective": 280,
+              "good": 267,
+              "total": 547
+            },
+            "confusion": {
+              "tp": 260,
+              "fn": 20,
+              "tn": 245,
+              "fp": 22
+            },
+            "defect_recall": {
+              "value": 0.9285714285714286,
+              "numerator": 260,
+              "denominator": 280,
+              "ci95": [
+                0.8922541160728416,
+                0.9532883249289478
+              ],
+              "status": "ok"
+            },
+            "specificity": {
+              "value": 0.9176029962546817,
+              "numerator": 245,
+              "denominator": 267,
+              "ci95": [
+                0.8784014514323433,
+                0.9449584614890243
+              ],
+              "status": "ok"
+            },
+            "precision": {
+              "value": 0.9219858156028369,
+              "numerator": 260,
+              "denominator": 282,
+              "ci95": [
+                0.8847107317270441,
+                0.9479186598645951
+              ],
+              "status": "ok"
+            },
+            "accuracy": {
+              "value": 0.923217550274223,
+              "numerator": 505,
+              "denominator": 547,
+              "ci95": [
+                0.8978370679283364,
+                0.9426951624166829
+              ],
+              "status": "ok"
+            }
+          }
+        },
+        "cpu_p95_ms": 16.53492078767158
+      }
+    },
+    "yolo26n_robust": {
+      "spec": {
+        "kind": "yolo",
+        "recipe": "configs/recipes/nano_224_robust.yaml"
+      },
+      "split_sha256": "e90ad86443c43bcf363aa2e348c56faac87fcc41d35f0277112b860b7273c30d",
+      "train": {
+        "duration_s": 4198.6,
+        "epochs_completed": 28,
+        "best_pt_sha256": "3d05c86b6d183891a46f96bb5ca74f07045fa5ef9d40ecb9d3e3c16042136ecf",
+        "mlflow_run_id": "345214b02d414a24a027a33318bc9f1a",
+        "device": "mps"
+      },
+      "score": {
+        "temperature": 1.716300818006552,
+        "threshold": 0.210939,
+        "gate": {
+          "threshold": 0.210939,
+          "support": {
+            "defective": 280,
+            "good": 267,
+            "total": 547
+          },
+          "confusion": {
+            "tp": 271,
+            "fn": 9,
+            "tn": 206,
+            "fp": 61
+          },
+          "defect_recall": {
+            "value": 0.9678571428571429,
+            "numerator": 271,
+            "denominator": 280,
+            "ci95": [
+              0.9400514082152394,
+              0.9829990898783805
+            ],
+            "status": "ok"
+          },
+          "specificity": {
+            "value": 0.7715355805243446,
+            "numerator": 206,
+            "denominator": 267,
+            "ci95": [
+              0.717535277007382,
+              0.8178332762374534
+            ],
+            "status": "ok"
+          },
+          "precision": {
+            "value": 0.8162650602409639,
+            "numerator": 271,
+            "denominator": 332,
+            "ci95": [
+              0.7710715274884654,
+              0.8542235170826251
+            ],
+            "status": "ok"
+          },
+          "accuracy": {
+            "value": 0.8720292504570384,
+            "numerator": 477,
+            "denominator": 547,
+            "ci95": [
+              0.8414175254571006,
+              0.8974520593170308
+            ],
+            "status": "ok"
+          }
+        },
+        "average_precision": 0.9727793908143797,
+        "by_source": {
+          "D1:v1": {
+            "defect_recall": 0.9466666666666667,
+            "specificity": 0.848,
+            "parents": 127,
+            "defective": 150
+          },
+          "MSU:v1": {
+            "defect_recall": 1.0,
+            "specificity": 0.5,
+            "parents": 12,
+            "defective": 1
+          },
+          "TYRENET:v1": {
+            "defect_recall": 0.9922480620155039,
+            "specificity": 0.7301587301587301,
+            "parents": 157,
+            "defective": 129
+          }
+        },
+        "stress": {
+          "low_light": {
+            "threshold": 0.210939,
+            "support": {
+              "defective": 280,
+              "good": 267,
+              "total": 547
+            },
+            "confusion": {
+              "tp": 270,
+              "fn": 10,
+              "tn": 208,
+              "fp": 59
+            },
+            "defect_recall": {
+              "value": 0.9642857142857143,
+              "numerator": 270,
+              "denominator": 280,
+              "ci95": [
+                0.9355172437348753,
+                0.9804870673503965
+              ],
+              "status": "ok"
+            },
+            "specificity": {
+              "value": 0.7790262172284644,
+              "numerator": 208,
+              "denominator": 267,
+              "ci95": [
+                0.7254979277422215,
+                0.8246394131783334
+              ],
+              "status": "ok"
+            },
+            "precision": {
+              "value": 0.8206686930091185,
+              "numerator": 270,
+              "denominator": 329,
+              "ci95": [
+                0.7755882078645362,
+                0.8583472420916864
+              ],
+              "status": "ok"
+            },
+            "accuracy": {
+              "value": 0.8738574040219378,
+              "numerator": 478,
+              "denominator": 547,
+              "ci95": [
+                0.8434019630725564,
+                0.8990984304719638
+              ],
+              "status": "ok"
+            }
+          },
+          "camera_blur": {
+            "threshold": 0.210939,
+            "support": {
+              "defective": 280,
+              "good": 267,
+              "total": 547
+            },
+            "confusion": {
+              "tp": 271,
+              "fn": 9,
+              "tn": 218,
+              "fp": 49
+            },
+            "defect_recall": {
+              "value": 0.9678571428571429,
+              "numerator": 271,
+              "denominator": 280,
+              "ci95": [
+                0.9400514082152394,
+                0.9829990898783805
+              ],
+              "status": "ok"
+            },
+            "specificity": {
+              "value": 0.8164794007490637,
+              "numerator": 218,
+              "denominator": 267,
+              "ci95": [
+                0.7656721313104029,
+                0.8583091479887501
+              ],
+              "status": "ok"
+            },
+            "precision": {
+              "value": 0.846875,
+              "numerator": 271,
+              "denominator": 320,
+              "ci95": [
+                0.8033244346196519,
+                0.8821961925628427
+              ],
+              "status": "ok"
+            },
+            "accuracy": {
+              "value": 0.8939670932358318,
+              "numerator": 489,
+              "denominator": 547,
+              "ci95": [
+                0.8653624486255019,
+                0.9170768413932956
+              ],
+              "status": "ok"
+            }
+          }
+        },
+        "cpu_p95_ms": 8.016478811623529
+      }
+    }
+  },
+  "decision": {
+    "winner": "convnext_tiny_robust",
+    "eligible": [
+      "convnext_tiny_robust"
+    ],
+    "rule": "(fixed before any result was seen):\n  1. must meet the gate targets on the gate cohort (defect recall >= 0.95, specificity >= 0.90);\n  2. among those, the highest worst-source defect recall (it has to work on every camera and place), over the\n     sources with at least MIN_SOURCE_DEFECTIVE defective gate-cohort photos (smaller ones are reported only);\n  3. ties (within 0.005): higher low-light recall, then lower CPU latency."
+  },
+  "completed": [
+    "convnext_tiny_robust",
+    "yolo26n_robust",
+    "yolo26s_robust"
+  ],
+  "not_completed": {
+    "yolo26m_robust": "stopped at epoch 5 when the benchmark was stopped at the user's request (MLflow run KILLED)",
+    "yolo26s_control": "not started (benchmark stopped at the user's request)"
+  },
+  "note": "development evidence only (gate cohort); the locked test is run once, for the winner"
+}

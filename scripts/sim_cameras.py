@@ -4,6 +4,8 @@ Builds one looping slideshow video per camera from validation images (never the 
 MediaMTX RTSP server in Docker and publishes each video with ffmpeg:
 
     rtsp://127.0.0.1:8554/line1-intake      rtsp://127.0.0.1:8554/line2-buffing
+    rtsp://127.0.0.1:8554/line3-conveyor    (scripts/make_demo_line_video.py: a stop-and-go belt; inspection zone
+                                             ROI printed by that script)
 
 Register them in Cameras with "Simulated stream" ticked so their inspections are labelled simulated.
 `clip` writes runs/sim-cameras/turning-tyre.mp4 (upload it in the Bib chat) and turning-tyre.mjpeg (Chromium's fake
@@ -103,6 +105,14 @@ def up() -> None:
                                 stdout=log, stderr=log, start_new_session=True)
         (OUT / f"{name}.pid").write_text(str(proc.pid))
         print(f"rtsp://127.0.0.1:8554/{name}  ({len(images)} tyres, {SECONDS_PER_TYRE} s each, looping)")
+    conveyor = ROOT / "runs" / "demo" / "treadops_demo_line.mp4"
+    if conveyor.exists():  # already H.264 at real-time frame rate: published as it is
+        log = (OUT / "line3-conveyor.log").open("w")
+        proc = subprocess.Popen(["ffmpeg", "-re", "-stream_loop", "-1", "-i", str(conveyor), "-c", "copy", "-f",
+                                 "rtsp", "-rtsp_transport", "tcp", "rtsp://127.0.0.1:8554/line3-conveyor"],
+                                stdout=log, stderr=log, start_new_session=True)
+        (OUT / "line3-conveyor.pid").write_text(str(proc.pid))
+        print("rtsp://127.0.0.1:8554/line3-conveyor  (simulated belt; make it with scripts/make_demo_line_video.py)")
 
 
 def down() -> None:

@@ -16,15 +16,15 @@ const DECISION: Record<SecondOpinion["decision"], { label: string; tone: Tone }>
 function summary(s: SecondOpinion): string {
   const yolo = TRIAGE_LABEL[s.policy_triage] ?? s.policy_triage;
   if (s.decision === "disagrees") {
-    return `YOLO alone would have auto-cleared this tyre (${yolo}). A vision model sees damage with ${s.confidence} confidence`
+    return `The classifier alone would have auto-cleared this tyre (${yolo}). A vision model sees damage with ${s.confidence} confidence`
       + `${s.location ? ` (${s.location})` : ""}, so the models disagree and an expert must check it.`;
   }
   if (s.decision === "unavailable") {
     return `The vision model gave no usable answer${s.error ? ` (${s.error.replaceAll("_", " ")})` : ""}, so the tyre is not auto-cleared.`;
   }
   return s.damage_visible
-    ? `The vision model noted only low-confidence cues, so YOLO's auto-clear (${yolo}) stands.`
-    : `A vision model re-checked YOLO's auto-clear (${yolo}) and sees no damage.`;
+    ? `The vision model noted only low-confidence cues, so the classifier's auto-clear (${yolo}) stands.`
+    : `A vision model re-checked the classifier's auto-clear (${yolo}) and sees no damage.`;
 }
 
 /** The vision LLM's re-check of an auto-clear: what it saw, and whether it kept the tyre away from auto-clearance. */

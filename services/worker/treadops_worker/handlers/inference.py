@@ -15,7 +15,7 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
-from treadops_api import jobs
+from treadops_api import jobs, llm_tracing
 from treadops_api.circularity import recommendation
 from treadops_api.db import must_get, new_session, session_scope
 from treadops_api.models import ImageAsset, Inspection, InspectionStage, Job, Prediction
@@ -24,8 +24,10 @@ from treadops_ml.attribution import annotate, occlusion_map, render_heatmap
 from treadops_ml.preprocess import Stage, run_stages, thumb
 
 from .. import subject_gate, vision_check
-from ..runtime import bundles, reference_encoder
+from ..runtime import bundles, depth_estimator, reference_encoder
 from ..tasks import JobContext, Permanent, handler, on_fail
+
+llm_tracing.use_experiment(llm_tracing.VISION_EXPERIMENT)  # this worker's LLM calls: the vision second opinion
 
 
 def _jpeg(img, quality: int = 88) -> bytes:
@@ -63,6 +65,7 @@ def run(ctx: JobContext) -> dict[str, Any]:
             raise Permanent("inspection_missing", "inspection row not found")
         asset = must_get(db, ImageAsset, insp.image_id)
         tup = dict(insp.model_tuple)
+        source = insp.source
         insp.status = "running"
         db.commit()
         queue_ms = (datetime.now(UTC) - insp.created_at).total_seconds() * 1000
@@ -75,6 +78,15 @@ def run(ctx: JobContext) -> dict[str, Any]:
         preprocess_ms = (time.perf_counter() - t0) * 1000
         for st in staged["stages"]:
             _put_stage(storage, insp.id, st, db)
+        depth = depth_estimator()
+        if depth is not None:  # advisory: shown and recorded, never part of the verdict
+            t_d = time.perf_counter()
+            img, facts = depth.stage(staged["canonical_rgb"])
+            _put_stage(storage, insp.id, Stage(
+                9, "depth", "Depth (advisory)", Image.fromarray(img), facts, (time.perf_counter() - t_d) * 1000,
+                [f"{facts['model']} at {facts['input_px']} px: relative depth, nearest surface covers "
+                 f"{facts['near_surface_fraction']:.0%} of the frame ({facts['framing']})",
+                 "advisory only: no units, cannot measure tread depth, not used for the verdict"]), db)
         ctx.heartbeat(0.4, "preprocessed")
         if not asset.canonical_key:
             key = f"canonical/{asset.id}.jpg"
@@ -89,7 +101,17 @@ def run(ctx: JobContext) -> dict[str, Any]:
         # The vision model is asked about every auto-clear and every unusual image: is a tyre the subject, and is
         # damage visible? It can send a tyre to an expert or reject a non-tyre; it never clears anything.
         ask = vision_check.enabled() and (pred.triage == "good_candidate" or subject["unusual"])
-        opinion = vision_check.second_opinion(staged["canonical_rgb"]) if ask else None
+        opinion = None
+        if ask:
+            iid, because = str(ctx.payload["inspection_id"]), ("auto-clear" if pred.triage == "good_candidate"
+                                                                else "unusual image")
+            with llm_tracing.span("vision_second_opinion", "vision", {"inspection_id": iid}) as sp:
+                llm_tracing.tag_trace(tags={"app": "treadops-vision-check", "asked_because": because,
+                                            "inspection_id": iid})
+                opinion = vision_check.second_opinion(staged["canonical_rgb"])
+                llm_tracing.set_io(sp, inputs={"inspection_id": iid, "asked_because": because,
+                                               "policy_triage": pred.triage, "p_defective": pred.p_defective,
+                                               "subject_score": subject["score"]}, outputs=opinion)
         no_tyre = vision_check.sees_no_tyre(opinion)
         subject |= {"vision_tyre_visible": (opinion or {}).get("tyre_visible"),
                     "vision_subject": (opinion or {}).get("subject")}
@@ -125,7 +147,7 @@ def run(ctx: JobContext) -> dict[str, Any]:
                 "vision": {k: (opinion or {}).get(k) for k in ("model", "prompt_version", "prompt_sha256", "subject",
                                                                "latency_ms")}})
         _put_stage(storage, insp.id, Stage(
-            6, "inference", f"YOLO inference ({tup.get('model_family')})", None,
+            6, "inference", f"Classifier inference ({tup.get('model_family')})", None,
             {"raw_probs": pred.raw_probs, "calibrated_probs": pred.calibrated_probs,
              "temperature": bundle.calibrator.temperature, "p_defective": pred.p_defective,
              "binary_threshold": bundle.policy.binary_threshold, "triage": pred.triage,
@@ -142,13 +164,21 @@ def run(ctx: JobContext) -> dict[str, Any]:
             why = "; ".join(filter(None, [why, (
                 f"image unusual for this model (subject score {subject['score']:.3f} > {subject['unusual_above']})"
                 if subject["unusual"] else "vision model sees no tyre in this photo") + ", so not auto-cleared"]))
+        # Damage locator (when the bundle carries one): boxes around local damage; a confident box only escalates.
+        damage = bundle.locate_damage(staged["canonical_rgb"])
+        if damage and damage["escalate"] and triage == "good_candidate":
+            strongest = damage["boxes"][0]
+            triage = "manual_review"
+            why = "; ".join(filter(None, [why, f"damage locator sees {strongest['class'].replace('_', ' ')} "
+                                               f"({strongest['confidence']:.2f}), so not auto-cleared"]))
         triage_reason = f"{pred.triage_reason}; {why}" if why else pred.triage_reason
         # Stored as a second opinion only when it judged an auto-clear (an unusual-image call is in `subject`).
         second = {**opinion, "decision": decision, "policy_triage": pred.triage} \
             if opinion and decision != "not_needed" else None
 
         t1 = time.perf_counter()
-        occ = occlusion_map(bundle, staged["tensor"], grid=8)
+        # Line cameras get a coarser heatmap (16 occluded copies instead of 64): it keeps a camera's pace on CPU.
+        occ = occlusion_map(bundle, staged["tensor"], grid=4 if source == "camera" else 8)
         heat = render_heatmap(staged["canonical_rgb"], occ["delta"], staged["letterbox_meta"])
         attribution_ms = (time.perf_counter() - t1) * 1000
         top = np.unravel_index(np.argmax(occ["delta"]), occ["delta"].shape)
@@ -157,16 +187,23 @@ def run(ctx: JobContext) -> dict[str, Any]:
                        "min_delta": float(occ["delta"].min()), "strongest_cell": [int(top[0]), int(top[1])],
                        "note": "attribution heatmap, not a defect segmentation"}
         _put_stage(storage, insp.id, Stage(
-            7, "attribution", "Occlusion attribution (8x8)", thumb(heat, 720), attribution, attribution_ms,
-            [f"64 occluded copies in one batch; largest drop in the defective-vs-good logit margin "
+            7, "attribution", f"Occlusion attribution ({occ['grid']}x{occ['grid']})", thumb(heat, 720), attribution,
+            attribution_ms,
+            [f"{occ['grid'] ** 2} occluded copies in one batch; largest drop in the defective-vs-good logit margin "
              f"{occ['delta'].max():+.2f} (base margin {occ['base_margin']:+.2f})",
              "red = regions supporting 'defective', blue = regions supporting 'good'",
              "explanation aid only - not a defect localisation"]), db)
 
         label = f"{tup.get('model_family')} v{tup.get('registry_version') or '?'}"
         base = heat if triage != "good_candidate" else thumb(Image.fromarray(staged["canonical_rgb"]), 720)
-        final = annotate(base, triage, pred.p_defective, label)
+        final = annotate(base, triage, pred.p_defective, label, boxes=(damage or {}).get("boxes"))
         log = [f"final decision {triage.upper()} · human clearance required"]
+        if damage is not None:
+            found = ", ".join(f"{b['class'].replace('_', ' ')} {b['confidence']:.2f}" for b in damage["boxes"][:4])
+            rule = (f"escalates at {damage['threshold']:.2f}" if damage.get("authority", "escalate") == "escalate"
+                    else "experimental, display only: it did not pass its gate")
+            log.insert(0, f"damage locator {damage['version']}: {found or 'no damage boxes'} ({rule})"
+                          + (" -> escalated" if damage["escalate"] else ""))
         if second:
             seen = second.get("findings") or []
             log.insert(0, f"vision second opinion ({second['model']}, prompt {second['prompt_version']}): " + (
@@ -176,7 +213,8 @@ def run(ctx: JobContext) -> dict[str, Any]:
         _put_stage(storage, insp.id, Stage(
             8, "classified", "Classified image", final,
             {"triage": triage, "p_defective": pred.p_defective, "policy_triage": pred.triage,
-             **({"second_opinion": second} if second else {})}, 0.0, log), db)
+             **({"second_opinion": second} if second else {}), **({"damage": damage} if damage else {})},
+            0.0, log), db)
 
         emb_key = f"embeddings/{insp.id}.npy"
         buf = io.BytesIO()
@@ -193,6 +231,7 @@ def run(ctx: JobContext) -> dict[str, Any]:
                "policy": {"version": bundle.policy.version, "binary_threshold": bundle.policy.binary_threshold,
                           "triage_low": bundle.policy.triage_low, "triage_high": bundle.policy.triage_high},
                "subject_gate": {k: subject[k] for k in ("version", "method", "unusual_above")},
+               **({"damage_locator": {"version": damage["version"], "threshold": damage["threshold"]}} if damage else {}),
                **({"second_opinion": {k: second[k] for k in ("model", "prompt_version", "prompt_sha256")}}
                   if second else {})}
     with session_scope() as db:
@@ -206,6 +245,7 @@ def run(ctx: JobContext) -> dict[str, Any]:
                 p_defective=pred.p_defective, triage=triage, triage_reason=triage_reason, second_opinion=second,
                 binary_defective=pred.binary_defective, quality_status=quality_status,
                 quality={"descriptors": pred.descriptors, "reasons": quality_reasons, "subject": subject},
+                damage=damage,
                 timing={"queue_ms": round(queue_ms, 1), "preprocess_ms": round(preprocess_ms, 2),
                         "inference_ms": round(pred.timing_ms["inference_ms"], 2),
                         "attribution_ms": round(attribution_ms, 1), "worker_total_ms": round(total_ms, 1)},
@@ -216,7 +256,8 @@ def run(ctx: JobContext) -> dict[str, Any]:
         row.status = "succeeded"
         row.completed_at = datetime.now(UTC)
         result = {"triage": triage, "p_defective": pred.p_defective, "bundle_sha256": bundle.sha,
-                  "second_opinion": decision, "subject_score": subject["score"]}
+                  "second_opinion": decision, "subject_score": subject["score"],
+                  "damage_escalated": bool(damage and damage["escalate"])}
         jobs.succeed(db, job, result)
     return result
 

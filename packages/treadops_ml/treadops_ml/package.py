@@ -65,7 +65,15 @@ def reference_features(rows: list[dict], contract: PreprocessContract, n_compone
     }
 
 
+def _sources() -> list[dict]:
+    src = read_json("data/manifests/source_manifest.json")
+    counts = src["actual_counts"].get("by_source") or {src["source_id"]: src["actual_counts"]}
+    meta = {src["source_id"]: src.get("license", "")} | {e["id"]: e["license"] for e in src.get("extra_sources", [])}
+    return [{"id": k, "canonical_images": v["canonical_images"], "license": meta.get(k, "")} for k, v in counts.items()]
+
+
 def model_card(manifest: dict, gate: dict, test: dict, stress: dict, latency: dict, record: dict) -> str:
+    sources = _sources()
     def pct(m):
         if not m or m.get("value") is None:
             return "n/a"
@@ -85,8 +93,8 @@ def model_card(manifest: dict, gate: dict, test: dict, stress: dict, latency: di
         " a casing intake. A human inspector gives final clearance; the model never certifies a tyre as safe.",
         "",
         "## Data",
-        "Mendeley D1 (doi:10.17632/bn7ch8tvyp.1, CC BY 4.0): 1828 unique public photographs after removing 28"
-        " byte-identical duplicates, grouped into reviewed same-tyre clusters and split 70/15/15 by group."
+        "Public phone photographs, grouped into same-tyre clusters and split 70/15/15 by group, each source on its"
+        " own: " + "; ".join(f"{s['id']} {s['canonical_images']} photos ({s['license']})" for s in sources) + "."
         " No Michelin production data is used; operational metadata in replays is simulated.",
         f"Fitted on {record['fitted_image_count']} images (dev_train); checkpoint selected on dev_val.",
         "",
@@ -106,7 +114,9 @@ def model_card(manifest: dict, gate: dict, test: dict, stress: dict, latency: di
         "## Limitations",
         "- Public photographs of mixed passenger/commercial tyres; not shearography or plant imagery.",
         "- Same-tyre clusters were inferred from visual similarity and capture order; residual leakage is possible.",
-        "- Image-level labels only: the attribution heatmap is not a defect localisation.",
+        "- Image-level labels: the attribution heatmap is not a defect localisation"
+        + ("; the bundled damage locator draws boxes but can only escalate, never clear."
+           if manifest.get("damage_locator") else "; no damage locator is bundled."),
         "- Sustainability figures shown in the app are estimates from Michelin's published truck/bus factors.",
     ]
     return "\n".join(lines) + "\n"
@@ -132,8 +142,8 @@ def register_mlflow(bundle_dir: Path, run_id: str | None, registry_name: str, ga
             python_model=TreadOpsBundleModel(),
             artifacts={"bundle": str(bundle_dir)},
             code_paths=[str(repo_path("packages/treadops_ml/treadops_ml"))],
-            pip_requirements=["ultralytics==8.4.183", "torch==2.14.1", "torchvision==0.29.1", "numpy", "pandas",
-                              "pillow", "opencv-python", "scipy", "pyyaml"],
+            pip_requirements=["ultralytics==8.4.183", "torch==2.14.1", "torchvision==0.29.1", "onnxruntime==1.31.0",
+                              "numpy", "pandas", "pillow", "opencv-python", "scipy", "pyyaml"],
             registered_model_name=registry_name,
         )
     version = str(info.registered_model_version)
@@ -176,6 +186,26 @@ def run(config_path: str = "configs/bundle.yaml", native_dir: str | None = None,
     write_json(out / "preprocess.json", contract.to_dict())
     shutil.copy2(evaluation / "calibration.json", out / "calibration.json")
     shutil.copy2(evaluation / "policy.json", out / "policy.json")
+
+    # The damage locator travels in the same bundle (same hashes, same promotion). Its own gate decides its
+    # authority: passed -> a confident box can stop an auto-clear; failed -> boxes are shown as experimental and
+    # never change a decision (and only boxes above the escalation threshold are shown, to keep noise down).
+    damage_dir = repo_path("artifacts/damage")
+    locator: dict[str, Any] | None = None
+    if (damage_dir / "evaluation.json").exists() and (damage_dir / "best.pt").exists():
+        dev = read_json(damage_dir / "evaluation.json")
+        dcfg = load_yaml("configs/damage.yaml")
+        passed = dev["gates"]["test_map50"]["status"] == "passed"
+        loc_record = read_json(damage_dir / "training_record.json")
+        shutil.copy2(damage_dir / "best.pt", out / "damage_locator.pt")
+        locator = {"version": dcfg["version"], "classes": dcfg["classes"], "imgsz": loc_record["recipe"]["imgsz"],
+                   "gate_status": "passed" if passed else "failed", "authority": "escalate" if passed else "display_only",
+                   "display_confidence": 0.25 if passed else dev["escalation_threshold"],
+                   "escalation_threshold": dev["escalation_threshold"],
+                   "test_map50": dev["detection"]["test_map50"], "test_map50_min": dev["gates"]["test_map50"]["min"],
+                   "ap50_by_class": dev["detection"]["ap50_by_class"], "threshold_rule": dev["threshold_rule"],
+                   "best_pt_sha256": loc_record["best_pt_sha256"]}
+        write_json(out / "damage.json", locator)
 
     roles = {r: read_jsonl(repo_path(eval_dir) / f"{r}.jsonl") for r in ("calibration", "policy", "test")}
     monitoring = reference_features(roles["calibration"] + roles["policy"], contract,
@@ -243,7 +273,8 @@ def run(config_path: str = "configs/bundle.yaml", native_dir: str | None = None,
     manifest: dict[str, Any] = {
         "schema_version": 1,
         "task": "classify",
-        "model_family": Path(record["pretrained"]["name"]).stem,
+        "model_family": record["recipe"].get("arch") or Path(record["pretrained"]["name"]).stem,
+        "model_framework": "torchvision" if runner.family == "torchvision" else "ultralytics",
         "bundle_sha256": None,
         "registry": {"name": cfg["registry_name"], "version": None},
         "reproducibility": {k: lineage[k] for k in ("git_sha", "git_dirty", "split_sha256", "recipe_sha256",
@@ -252,9 +283,13 @@ def run(config_path: str = "configs/bundle.yaml", native_dir: str | None = None,
                      "effective_train_ids_sha256": sha256_json(record["effective_train_ids"]),
                      "fitted_image_count": record["fitted_image_count"], "hardware": record["hardware"],
                      "packages": record["packages"]},
+        "damage_locator": locator,
         "evaluation": {"role_hashes": {r: sha256_json(sorted(x["image_id"] for x in roles[r])) for r in roles},
                        "role_counts": {r: len(roles[r]) for r in roles}, "gate_status": gate["status"]},
         "serving": {"runtimes": ["native"] + (["onnx"] if (out / "model.onnx").exists() else []),
+                    # torchvision on CPU is ~9x slower in torch than in ONNX Runtime; ONNX only when parity passed
+                    "preferred_runtime": "onnx" if runner.family == "torchvision" and (out / "model.onnx").exists()
+                    else "native",
                     "approved_device": "cpu", "precision": "fp32", "preprocess_version": contract.version,
                     "preprocess_sha256": contract.sha256, "class_names": {str(k): v for k, v in runner.names.items()},
                     "calibration_version": cal.version, "policy_version": pol.version},

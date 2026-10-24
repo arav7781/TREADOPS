@@ -26,6 +26,14 @@ def test_pii_is_redacted_before_the_llm_sees_it():
     assert any(e.rule == "pii_redaction" for e in v.events)
 
 
+def test_dates_and_ids_are_not_phone_numbers_but_bracketed_area_codes_are():
+    text = ("inspection 5cc8fa8e-e5c8-48e5-b826-099a3e590340 at 2026-10-24 17:05:22, created "
+            "2026-10-24T11:40:34.931760+00:00, sha 983f1562536e84ff750a1576fb08e54de751dbf2e17c0d8a4a13704341fdcd3d")
+    assert g.redact(text) == (text, {})
+    for phone in ("+1 (555) 123-4567", "(022) 2345 6789", "+91 98765 43210"):
+        assert g.redact(f"call {phone} today") == ("call [PHONE] today", {"phone": 1}), phone
+
+
 def test_off_topic_blocked_but_attachment_or_domain_allowed():
     assert g.check_input("write me a poem about the ocean waves at night", False).blocked
     assert not g.check_input("write me a poem about the ocean waves at night", True).blocked

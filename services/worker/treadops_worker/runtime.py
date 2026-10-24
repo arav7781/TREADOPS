@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+import logging
 import os
 import shutil
 import socket
@@ -10,6 +11,7 @@ import threading
 import time
 from collections import OrderedDict
 from pathlib import Path
+from typing import Any
 
 from sqlalchemy.dialects.postgresql import insert
 
@@ -19,6 +21,8 @@ from treadops_api.settings import get_settings
 from treadops_api.storage import get_storage
 from treadops_ml.bundle import Bundle, BundleInvalid
 from treadops_ml.common import repo_path
+
+log = logging.getLogger("treadops.worker.runtime")
 
 WORKER_ID = os.environ.get("WORKER_NAME") or f"{socket.gethostname()}:{os.getpid()}"
 
@@ -91,6 +95,25 @@ def reference_encoder():
 
             _encoder = ReferenceEncoder(str(pretrained("yolo26n-cls.pt")), device="cpu")
     return _encoder
+
+
+_depth: Any = None
+_depth_lock = threading.Lock()
+
+
+def depth_estimator():
+    """The advisory depth model (configs/depth.yaml), or None when it is disabled or cannot load."""
+    global _depth
+    with _depth_lock:
+        if _depth is None:
+            from treadops_ml import depth
+
+            try:
+                _depth = depth.DepthEstimator() if depth.config().get("enabled") else False
+            except Exception as exc:  # missing weights must not stop inspections: the stage is advisory
+                log.warning("depth stage disabled: %s", exc)
+                _depth = False
+    return _depth or None
 
 
 def beat(queue: str, paused: bool = False, info: dict | None = None) -> None:

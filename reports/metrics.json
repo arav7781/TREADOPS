@@ -1,12 +1,18 @@
 {
-  "binary_threshold": 0.205788,
-  "calibration_temperature": 1.49634912833618,
-  "gate_average_precision": 0.9873657226218292,
-  "gate_defect_recall": 0.9666666666666667,
-  "gate_specificity": 0.896,
-  "model_p95_ms_cpu": 14.978778907970987,
-  "test_average_precision": 0.979385630198583,
-  "test_brier": 0.0661486179700978,
-  "test_defect_recall": 0.94,
-  "test_specificity": 0.905511811023622
+  "binary_threshold": 0.836294,
+  "calibration_temperature": 0.5816868494803927,
+  "gate_average_precision": 0.9924996421381633,
+  "gate_defect_recall": 0.9642857142857143,
+  "gate_specificity": 0.9662921348314607,
+  "model_p95_ms_cpu": 469.0362458117306,
+  "test_average_precision": 0.9938838812019585,
+  "test_brier": 0.034069262296332815,
+  "test_defect_recall": 0.9113475177304965,
+  "test_defect_recall_d1": 0.88,
+  "test_defect_recall_msu": 0.0,
+  "test_defect_recall_tyrenet": 0.9615384615384616,
+  "test_specificity": 0.9710144927536232,
+  "test_specificity_d1": 0.9763779527559056,
+  "test_specificity_msu": 0.96,
+  "test_specificity_tyrenet": 0.967741935483871
 }

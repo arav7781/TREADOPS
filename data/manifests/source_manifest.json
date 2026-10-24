@@ -1,22 +1,72 @@
 {
   "actual_counts": {
-    "archive_members_images": 1856,
+    "archive_members_images": 4582,
     "by_label": {
-      "defective": 1000,
-      "good": 828
+      "defective": 1871,
+      "good": 1794
     },
-    "canonical_images": 1828,
-    "exact_duplicates": 28,
-    "groups": 948,
+    "by_source": {
+      "D1:v1": {
+        "by_label": {
+          "defective": 1000,
+          "good": 828
+        },
+        "canonical_images": 1828
+      },
+      "MSU:v1": {
+        "by_label": {
+          "defective": 8,
+          "good": 136
+        },
+        "canonical_images": 144
+      },
+      "TYRENET:v1": {
+        "by_label": {
+          "defective": 863,
+          "good": 830
+        },
+        "canonical_images": 1693
+      }
+    },
+    "canonical_images": 3665,
+    "cross_source_quarantined": 1,
+    "exact_duplicates": 916,
+    "groups": 2052,
     "images_in_label_conflicting_groups": 0,
-    "multi_member_groups": 359,
-    "quarantined": 0,
+    "multi_member_groups": 745,
+    "quarantined": 1,
     "skipped_members": 0
   },
   "archive_bytes": 2859136943,
   "archive_sha256": "897278a26d4df27889c87011337219ab46c862833b2b25815a3f3f87682c05d7",
   "attribution": "Pathmanaban P. et al., Mendeley Data, V1, doi:10.17632/bn7ch8tvyp.1",
   "doi": "10.17632/bn7ch8tvyp.1",
+  "extra_sources": [
+    {
+      "admissible_members": 1698,
+      "archive_bytes": 1897245528,
+      "archive_sha256": "d6a6946a3452c53c787578e740652a6fa0876e26d42197183aaf967f93847014",
+      "attribution": "Mahendrada V. S., Parameswaran M., Mendeley Data, V1, doi:10.17632/32b5vfj6tc.1",
+      "capture": "Android phone (48 MP) at six car and bike service stations and two tyre showrooms",
+      "doi": "10.17632/32b5vfj6tc.1",
+      "id": "TYRENET:v1",
+      "license": "CC BY 4.0",
+      "name": "TyreNet: A High-quality Annotated Dataset for Tyre Defect Classification with Deep Learning Models",
+      "url": "https://data.mendeley.com/datasets/32b5vfj6tc/1"
+    },
+    {
+      "admissible_members": 1028,
+      "archive_bytes": 799897555,
+      "archive_sha256": "b7659f80df5b427d2d2c017fdfbb85fad389b878b9f3105408519bd138d575c3",
+      "attribution": "Siegel J. E. et al., Michigan State University, Harvard Dataverse, doi:10.7910/DVN/Z3ZYLI",
+      "capture": "phone photos of sidewalls and treads in the USA; cracked (oxidised) or normal rubber",
+      "doi": "10.7910/DVN/Z3ZYLI",
+      "id": "MSU:v1",
+      "license": "CC0 1.0",
+      "name": "Oxidized and non-oxidized tire sidewall and tread images",
+      "url": "https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/Z3ZYLI"
+    }
+  ],
   "license": "CC BY 4.0",
   "name": "Digital images of defective and good condition tyres",
   "preprocess_contract": {

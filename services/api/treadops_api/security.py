@@ -120,10 +120,13 @@ def current_principal(
     return p
 
 
-def require(role: str):
+def require(role: str, *alternatives: str):
+    """Any one of the roles grants access (e.g. require("inspector", "ml_engineer"))."""
+    roles = (role, *alternatives)
+
     def dep(p: Principal = Depends(current_principal)) -> Principal:
-        if not p.has(role):
-            raise ApiError(403, "forbidden", f"This action requires the {role} role.")
+        if not any(p.has(r) for r in roles):
+            raise ApiError(403, "forbidden", f"This action requires the {' or '.join(roles)} role.")
         return p
 
     return dep

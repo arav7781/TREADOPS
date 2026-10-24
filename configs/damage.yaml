@@ -1,0 +1,40 @@
+# Damage locator: a YOLO26 detector that draws boxes around local damage (cuts, chunks, cracks, bulges, foreign
+# objects). It never clears a tyre: a confident box sends an auto-clear to an expert (services/worker vision path).
+schema_version: 1
+version: v1
+classes: [crack, cut, chunk, bulge, foreign_object]
+sources:                          # public Roboflow Universe exports (YOLO format); receipts in docs/evidence/data/
+  - id: "RF-TQ:v1"
+    url: "https://universe.roboflow.com/tirequalitydetection/tire_quality_dataset/dataset/1"
+    license: "CC BY 4.0"
+    attribution: "tirequalitydetection, tire_quality_dataset v1, Roboflow Universe"
+    archive: data/raw/damage/tire_quality_dataset-v1.zip
+    archive_sha256: 22b199029aba0cfa9f0ea33840ffea1a4f6b0aae012daf8f87a5f2e403036530
+    class_map: {chunk: chunk, crack: crack, cut: cut, foreign_object: foreign_object}
+  - id: "RF-TW:v11"
+    url: "https://universe.roboflow.com/laundrystain/tirewear_v2/dataset/11"
+    license: "CC BY 4.0"
+    attribution: "laundrystain, TireWear_v2 v11, Roboflow Universe"
+    archive: data/raw/damage/tirewear_v2-v11.zip
+    archive_sha256: 22bf245c5c963bcfbb7b6357a4c13a894a84290e9fd929c3a8de76c54f4f72e8
+    class_map: {Bulge: bulge, Crack: crack, Debries: foreign_object}
+    test_fraction: 0.15           # this export has no test split: carve one from train, deterministically
+out_dir: data/damage
+recipe:
+  # v1 failed its test gate: mAP50 0.392 < 0.40 (val 0.450; cut 0.29, chunk 0.33, crack 0.20 on val), so it ships as
+  # display-only (boxes shown as experimental, no escalation). No further public box-labelled cut data could be
+  # downloaded. Next step, not yet trained: yolo26s at 640 px, kept only if val mAP50 >= 0.48 (v1 + 0.03), then
+  # the test gate once more (the split's second look; docs/evidence/damage_locator/).
+  model: yolo26n.pt               # yolo26s at 640 px was ~5x slower per epoch on the dev Mac for this data size
+  imgsz: 512
+  epochs: 80
+  batch: 16
+  patience: 20
+  seed: 42
+  deterministic: false            # MPS has no deterministic index_put for the detection loss (10x slower with it)
+escalation:
+  # The box confidence above which an auto-clear goes to an expert. Chosen on the policy role's GOOD tyres so that
+  # at most this share of clean tyres is escalated; reported on the calibration role and the locked test.
+  max_false_escalation: 0.10
+gates:
+  test_map50_min: 0.40

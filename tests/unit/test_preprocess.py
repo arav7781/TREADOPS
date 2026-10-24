@@ -110,6 +110,15 @@ def test_rejections_are_typed(payload, code, status):
     assert e.value.code == code and e.value.http_status == status
 
 
+def test_non_images_stay_a_typed_rejection_after_ultralytics_patches_image_open():
+    pytest.importorskip("ultralytics")
+    import ultralytics.utils.patches  # noqa: F401  (patches PIL.Image.open with a HEIF fallback)
+
+    with pytest.raises(ImageRejected) as e:
+        ingest(b"not an image at all")
+    assert e.value.code == "unsupported_media" and e.value.http_status == 415
+
+
 def test_oversized_payload_and_pixel_bomb_rejected_before_decode():
     raw = _jpeg(Image.new("RGB", (400, 400)))
     with pytest.raises(ImageRejected) as e:

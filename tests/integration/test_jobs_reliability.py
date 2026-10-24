@@ -6,12 +6,14 @@ import threading
 import uuid
 from datetime import UTC, datetime, timedelta
 
+import pandas as pd
 import pytest
 from sqlalchemy import func, select
 
 from treadops_api import db as dbmod
 from treadops_api import jobs
 from treadops_api.models import Inspection, InspectionStage, Job, JobEvent, Prediction
+from treadops_ml.common import repo_path
 
 from .conftest import admin_id, fixture_bundle, import_and_activate, jpeg, login, requires_bundle
 
@@ -47,7 +49,11 @@ def test_job01_redelivery_after_completion_and_after_crash_gives_one_prediction(
         assert job.status == "succeeded" and job.attempt == 1
         stages = s.execute(select(func.count()).select_from(InspectionStage).where(
             InspectionStage.inspection_id == uuid.UUID(acc["inspection_id"]))).scalar_one()
-        assert stages == 8  # ingest, canonical, letterbox, tensor, quality, inference, attribution, classified
+        # ingest, canonical, letterbox, tensor, quality, inference, attribution, classified (+ the advisory depth
+        # stage when its pinned weights are available)
+        from treadops_worker.runtime import depth_estimator
+
+        assert stages == 8 + (depth_estimator() is not None)
 
     # crash mid-run: the job is running with an expired lease and no result
     acc2 = _submit(client, "job01-crash", 12)
@@ -149,7 +155,9 @@ def test_job04_single_training_slot(client):
         register_public_catalogue(s, get_storage(), upload=False)
     with dbmod.session_scope() as s:
         snap, _ = build_snapshot(s, get_storage(), include_verified_uploads=False)
-        assert snap.counts["included"] == 1276 and "protected_role:test" in snap.counts["excluded"]
+        split = pd.read_parquet(repo_path("data/manifests/split_assignments.parquet"))
+        eligible = int(split.role.isin(["dev_train", "dev_val"]).sum())  # the public development roles
+        assert snap.counts["included"] == eligible and "protected_role:test" in snap.counts["excluded"]
         sid = str(snap.id)
     a = client.post("/v1/training-runs", headers=h, json={"snapshot_id": sid, "config_id": "nano_smoke"})
     b = client.post("/v1/training-runs", headers=h, json={"snapshot_id": sid, "config_id": "nano_smoke"})

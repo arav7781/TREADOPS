@@ -12,13 +12,20 @@ import type { Stage, TimelineEvent } from "@/lib/types";
 export const STAGE_PLAN: { index: number; name: string; title: string; short?: string; caption: string }[] = [
   { index: 1, name: "ingest", title: "Ingest", caption: "Validate, apply EXIF orientation, strip metadata" },
   { index: 2, name: "canonical", title: "Canonical", caption: "Long side ≤ 1024 px, JPEG q95 — same path as training" },
+  { index: 9, name: "depth", title: "Depth (advisory)", short: "Depth", caption: "Relative depth map: tyre shape and framing, not used for the verdict" },
   { index: 3, name: "letterbox", title: "Letterbox 224", short: "Letterbox", caption: "Aspect preserved; lavender = padding, no crop" },
   { index: 4, name: "tensor", title: "Tensor", caption: "float32 NCHW in [0,1], R | G | B planes" },
   { index: 5, name: "quality", title: "Quality screen", short: "Quality", caption: "Brightness, contrast, blur — low quality escalates" },
-  { index: 6, name: "inference", title: "YOLO inference", short: "YOLO", caption: "Raw softmax → temperature-calibrated p(defective)" },
+  { index: 6, name: "inference", title: "Classifier inference", short: "Classifier", caption: "Raw softmax → temperature-calibrated p(defective)" },
   { index: 7, name: "attribution", title: "Attribution", caption: "Occlusion heatmap — not a defect location" },
   { index: 8, name: "classified", title: "Classified", caption: "Final triage decision, human clearance required" },
 ];
+
+/** Position in the plan (stage indices are storage keys: depth, added later, is 9 but runs after canonical). */
+const PLAN_POS = new Map(STAGE_PLAN.map((p, i) => [p.index, i]));
+const byPlan = (a: Stage, b: Stage) => (PLAN_POS.get(a.index) ?? 99) - (PLAN_POS.get(b.index) ?? 99);
+/** The number shown for a stage: its step in the pipeline, 1-based. */
+export const stepOf = (index: number) => (PLAN_POS.get(index) ?? index - 1) + 1;
 
 /** Reveal newly arrived stages one by one (~350 ms apart) so the progression is legible. */
 export function useStagedReveal(count: number, stepMs = 350): number {
@@ -79,7 +86,7 @@ function DataPanel({ stage }: { stage: Stage }) {
 }
 
 export function StageGallery({ stages, running, animate = true }: { stages: Stage[]; running: boolean; animate?: boolean }) {
-  const ordered = useMemo(() => [...stages].sort((a, b) => a.index - b.index), [stages]);
+  const ordered = useMemo(() => [...stages].sort(byPlan), [stages]);
   const shown = useStagedReveal(ordered.length, animate ? 350 : 0);
   const visible = animate ? ordered.slice(0, shown) : ordered;
   const byIndex = new Map(visible.map((s) => [s.index, s]));
@@ -95,7 +102,7 @@ export function StageGallery({ stages, running, animate = true }: { stages: Stag
             <div className="relative aspect-square bg-surface-muted">
               {s && url ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={url} alt={`Stage ${plan.index}: ${s.title}`} className="h-full w-full object-contain" />
+                <img src={url} alt={`Stage ${stepOf(plan.index)}: ${s.title}`} className="h-full w-full object-contain" />
               ) : s ? (
                 <DataPanel stage={s} />
               ) : (
@@ -104,7 +111,7 @@ export function StageGallery({ stages, running, animate = true }: { stages: Stag
                 </div>
               )}
               <span className="absolute left-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-ink/80 text-sm font-bold text-white">
-                {plan.index}
+                {stepOf(plan.index)}
               </span>
             </div>
             <div className="flex flex-1 flex-col gap-0.5 p-3">
@@ -135,7 +142,7 @@ export function StageTheatre({ stages, running, stepMs = 1600, onRevealed, thres
   onRevealed?: () => void;
   thresholds?: Thresholds | null;
 }) {
-  const ordered = useMemo(() => [...stages].sort((a, b) => a.index - b.index), [stages]);
+  const ordered = useMemo(() => [...stages].sort(byPlan), [stages]);
   const allByIndex = useMemo(() => new Map(ordered.map((s) => [s.index, s])), [ordered]);
   const shown = useStagedReveal(ordered.length, stepMs);
   useEffect(() => {
@@ -181,7 +188,7 @@ export function StageTheatre({ stages, running, stepMs = 1600, onRevealed, thres
       {current && plan && (
         <div key={`d-${current.index}`} className="space-y-2 border-t border-line px-4 py-3">
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <span className="text-xs font-bold uppercase tracking-[0.14em] text-primary">Stage {current.index} / {STAGE_PLAN.length}</span>
+            <span className="text-xs font-bold uppercase tracking-[0.14em] text-primary">Stage {stepOf(current.index)} / {STAGE_PLAN.length}</span>
             <h4 className="log-in text-lg font-bold text-ink">{plan.title}</h4>
             <span className="mono text-sm text-primary-ink">{ms(current.duration_ms)}</span>
             {picked !== null && live && (
@@ -202,7 +209,7 @@ export function StageTheatre({ stages, running, stepMs = 1600, onRevealed, thres
           </ol>
         </div>
       )}
-      <ol className="grid grid-cols-4 gap-2 border-t border-line p-3 sm:grid-cols-8">
+      <ol className="grid grid-cols-5 gap-2 border-t border-line p-3 sm:grid-cols-9">
         {STAGE_PLAN.map((p) => {
           const s = byIndex.get(p.index);
           // Quality and inference record no picture of their own: show what they looked at.
@@ -211,7 +218,7 @@ export function StageTheatre({ stages, running, stepMs = 1600, onRevealed, thres
           const params = (s?.params ?? {}) as Record<string, unknown>;
           return (
             <li key={p.index} data-stage={p.name} className="min-w-0">
-              <button type="button" disabled={!s} onClick={() => setPicked(p.index)} aria-label={`Stage ${p.index}: ${p.title}`} aria-pressed={active}
+              <button type="button" disabled={!s} onClick={() => setPicked(p.index)} aria-label={`Stage ${stepOf(p.index)}: ${p.title}`} aria-pressed={active}
                 className={clsx("relative block aspect-square w-full overflow-hidden rounded-lg ring-2 transition",
                   active ? "ring-brand-yellow" : "ring-transparent hover:ring-line-strong",
                   s ? "pop-in bg-navy" : next?.index === p.index ? "shimmer" : "bg-surface-muted")}>
@@ -229,7 +236,7 @@ export function StageTheatre({ stages, running, stepMs = 1600, onRevealed, thres
                   <span className="mono absolute inset-x-1 bottom-1 rounded bg-black/70 text-center text-[10px] font-bold text-brand-yellow">p {params.p_defective.toFixed(2)}</span>
                 )}
                 <span className={clsx("absolute left-1 top-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-bold",
-                  s ? "bg-navy/85 text-white" : "bg-line text-muted")}>{p.index}</span>
+                  s ? "bg-navy/85 text-white" : "bg-line text-muted")}>{stepOf(p.index)}</span>
               </button>
               <span className={clsx("mt-1 block truncate text-center text-xs font-semibold", s ? "text-ink-soft" : "text-muted")} title={p.title}>{p.short ?? p.title}</span>
             </li>
@@ -254,9 +261,9 @@ export function PipelineConsole({ stages, timeline, status, error }: {
       out.push({ key: `t-${e.at}-${e.to}`, text: `${timeOnly(e.at)}  job ${e.from ?? "∅"} → ${e.to}${e.reason ? `  (${e.reason})` : ""}`, tone: "text-[#7fb2ff]" });
     }
     let cumulative = 0;
-    for (const s of [...stages].sort((a, b) => a.index - b.index)) {
+    for (const s of [...stages].sort(byPlan)) {
       cumulative += s.duration_ms;
-      out.push({ key: `s-${s.index}`, text: `[stage ${s.index}] ${s.title}  ${ms(s.duration_ms)}  (Σ ${ms(cumulative)})`, tone: "font-bold text-[#b9b0ff]" });
+      out.push({ key: `s-${s.index}`, text: `[stage ${stepOf(s.index)}] ${s.title}  ${ms(s.duration_ms)}  (Σ ${ms(cumulative)})`, tone: "font-bold text-[#b9b0ff]" });
       for (const [i, l] of s.log.entries()) out.push({ key: `s-${s.index}-${i}`, text: `    ${l}`, tone: "text-white/75" });
     }
     if (error) out.push({ key: "err", text: `error: ${error}`, tone: "text-[#ff8a9a]" });

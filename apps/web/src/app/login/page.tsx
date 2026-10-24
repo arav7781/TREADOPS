@@ -20,7 +20,7 @@ export default function LoginPage() {
           <p className="text-sm font-bold uppercase tracking-[0.16em] text-brand-yellow">Casing intake for retreading</p>
           <h1 className="headline mt-3 text-4xl sm:text-6xl">Every casing,<br /><span className="headline-light">decided with evidence</span></h1>
           <p className="mt-4 max-w-lg text-white/75">
-            YOLO triage of a phone photo, a governed MLOps release loop and Bib, a guarded copilot, so more casings
+            Model triage of a phone photo, a governed MLOps release loop and Bib, a guarded copilot, so more casings
             get a second life and every claim is traceable.
           </p>
         </div>

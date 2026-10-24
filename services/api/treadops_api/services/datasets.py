@@ -1,7 +1,7 @@
 """DatasetService: public-catalogue registration and immutable training-eligible snapshots.
 
 Eligibility (logged per reason):
-  public D1 images in dev_train/dev_val roles (frozen split)                      -> included
+  public images (every source) in dev_train/dev_val roles (frozen split)         -> included
   inspector-verified uploads (good/defective), originals only, own new group       -> included
   calibration / policy / test roles and anything descended from them              -> excluded (protected)
   replay / synthetic derivatives, unjudgeable or unreviewed uploads               -> excluded

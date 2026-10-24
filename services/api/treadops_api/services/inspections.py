@@ -282,6 +282,7 @@ def detail(db: Session, insp: Inspection, include_timeline: bool = True) -> dict
             "binary_defective": pred.binary_defective, "quality_status": pred.quality_status,
             "quality": pred.quality, "timing": pred.timing, "lineage": pred.lineage,
             "attribution": pred.attribution, "circularity": pred.circularity, "second_opinion": pred.second_opinion,
+            "damage": pred.damage,
             "policy": pred.lineage.get("policy") or _bundle_policy(pred.lineage.get("bundle_sha256", "")),
             "heatmap_url": next((st["image_url"] for st in out["stages"] if st["name"] == "attribution"), None),
             "classified_image_url": next((st["image_url"] for st in out["stages"] if st["name"] == "classified"), None),

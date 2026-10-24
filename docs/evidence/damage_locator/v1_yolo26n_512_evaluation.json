@@ -1,0 +1,102 @@
+{
+  "calibration_role": {
+    "D1:v1": {
+      "defect_flag_rate": 0.44,
+      "defective": 75,
+      "defective_flagged": 33,
+      "false_escalation": 0.0161,
+      "good": 62,
+      "good_escalated": 1
+    },
+    "MSU:v1": {
+      "defect_flag_rate": 0.0,
+      "defective": 0,
+      "defective_flagged": 0,
+      "false_escalation": 0.0,
+      "good": 5,
+      "good_escalated": 0
+    },
+    "TYRENET:v1": {
+      "defect_flag_rate": 0.3906,
+      "defective": 64,
+      "defective_flagged": 25,
+      "false_escalation": 0.1406,
+      "good": 64,
+      "good_escalated": 9
+    }
+  },
+  "detection": {
+    "ap50_by_class": {
+      "bulge": 0.8144,
+      "chunk": 0.1233,
+      "crack": 0.1165,
+      "cut": 0.1938,
+      "foreign_object": 0.7124
+    },
+    "precision": 0.4034,
+    "recall": 0.4081,
+    "test_map50": 0.3921,
+    "test_map50_95": 0.2115
+  },
+  "escalation_threshold": 0.3655,
+  "gates": {
+    "test_map50": {
+      "min": 0.4,
+      "status": "failed",
+      "value": 0.3921
+    }
+  },
+  "policy_role": {
+    "D1:v1": {
+      "defect_flag_rate": 0.32,
+      "defective": 75,
+      "defective_flagged": 24,
+      "false_escalation": 0.0635,
+      "good": 63,
+      "good_escalated": 4
+    },
+    "MSU:v1": {
+      "defect_flag_rate": 1.0,
+      "defective": 1,
+      "defective_flagged": 1,
+      "false_escalation": 0.0909,
+      "good": 11,
+      "good_escalated": 1
+    },
+    "TYRENET:v1": {
+      "defect_flag_rate": 0.2462,
+      "defective": 65,
+      "defective_flagged": 16,
+      "false_escalation": 0.1452,
+      "good": 62,
+      "good_escalated": 9
+    }
+  },
+  "test_role": {
+    "D1:v1": {
+      "defect_flag_rate": 0.3067,
+      "defective": 150,
+      "defective_flagged": 46,
+      "false_escalation": 0.0394,
+      "good": 127,
+      "good_escalated": 5
+    },
+    "MSU:v1": {
+      "defect_flag_rate": 0.0,
+      "defective": 2,
+      "defective_flagged": 0,
+      "false_escalation": 0.0,
+      "good": 25,
+      "good_escalated": 0
+    },
+    "TYRENET:v1": {
+      "defect_flag_rate": 0.4077,
+      "defective": 130,
+      "defective_flagged": 53,
+      "false_escalation": 0.121,
+      "good": 124,
+      "good_escalated": 15
+    }
+  },
+  "threshold_rule": "(1 - 0.1) quantile of max box confidence on policy-role good tyres, clamped to [0.25, 0.95]"
+}

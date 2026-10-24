@@ -1,0 +1,13 @@
+# Advisory depth stage (treadops_ml/depth.py): shown to the inspector, recorded, never used for the verdict.
+schema_version: 1
+enabled: true
+model: depth_anything_v2_small.onnx   # pinned in configs/weights.lock.yaml
+display_name: Depth Anything V2 Small
+license: Apache-2.0
+input_px: 392                         # long side; ~280 ms on CPU (518 px: ~500 ms, no visible gain on tyre photos)
+framing:                              # share of the frame taken by the nearest surface
+  fills_frame: 0.45
+  too_small: 0.15
+limits: >-
+  Relative depth (no units, no scale): shows the tyre's shape and how much of the frame it fills. It cannot
+  measure tread depth and does not resolve cuts or cracks at this resolution.

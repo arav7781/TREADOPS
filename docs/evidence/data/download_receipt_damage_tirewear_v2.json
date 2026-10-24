@@ -1,0 +1,15 @@
+{
+  "archive_bytes": 14262721,
+  "archive_path": "data/raw/damage/tirewear_v2-v11.zip",
+  "archive_sha256": "22bf245c5c963bcfbb7b6357a4c13a894a84290e9fd929c3a8de76c54f4f72e8",
+  "classes": {
+    "Bulge": 80,
+    "Crack": 99,
+    "Debries": 116
+  },
+  "format": "yolov8",
+  "license": "CC BY 4.0",
+  "retrieved_at": "2026-10-24T11:17:33.066613+00:00",
+  "source": "roboflow:laundrystain/tirewear_v2/11",
+  "url": "https://universe.roboflow.com/laundrystain/tirewear_v2/dataset/11"
+}

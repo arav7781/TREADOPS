@@ -30,6 +30,11 @@ class AugmentConfig:
     brightness: float = 0.2
     contrast: float = 0.2
     saturation: float = 0.2
+    # Robustness (probabilities; 0 = off, so older recipes train exactly as before): the conditions a line camera
+    # or a phone in a workshop actually meets, and where the stress tests showed the model was weak.
+    low_light: float = 0.0   # darken to 35-75 % with a gamma curve (dim bays, shadows under a vehicle)
+    blur: float = 0.0        # Gaussian blur, sigma 0.5-2.0 (motion, focus)
+    jpeg: float = 0.0        # recompress at quality 30-70 (messaging apps, cheap cameras)
 
 
 class EvalTransform:
@@ -72,7 +77,16 @@ class TrainTransform(EvalTransform):
         if a.rotate_deg:
             rgb = _rotate_expand(np.ascontiguousarray(rgb), random.uniform(-a.rotate_deg, a.rotate_deg),
                                  self.contract.pad_value)
+        if a.blur and random.random() < a.blur:
+            rgb = cv2.GaussianBlur(np.ascontiguousarray(rgb), (0, 0), random.uniform(0.5, 2.0))
+        if a.jpeg and random.random() < a.jpeg:
+            ok, enc = cv2.imencode(".jpg", np.ascontiguousarray(rgb)[:, :, ::-1],
+                                   [cv2.IMWRITE_JPEG_QUALITY, random.randint(30, 70)])
+            if ok:
+                rgb = cv2.imdecode(enc, cv2.IMREAD_COLOR)[:, :, ::-1]
         x = np.ascontiguousarray(rgb).astype(np.float32)
+        if a.low_light and random.random() < a.low_light:
+            x = 255.0 * (x / 255.0) ** random.uniform(1.2, 1.8) * random.uniform(0.35, 0.75)
         if a.brightness:
             x *= random.uniform(1 - a.brightness, 1 + a.brightness)
         if a.contrast:

@@ -1,0 +1,70 @@
+{
+  "boxes_by_split": {
+    "test": {
+      "bulge": 12,
+      "chunk": 13,
+      "crack": 85,
+      "cut": 8,
+      "foreign_object": 47
+    },
+    "train": {
+      "bulge": 56,
+      "chunk": 62,
+      "crack": 339,
+      "cut": 54,
+      "foreign_object": 123
+    },
+    "val": {
+      "bulge": 12,
+      "chunk": 18,
+      "crack": 65,
+      "cut": 12,
+      "foreign_object": 26
+    }
+  },
+  "classes": [
+    "crack",
+    "cut",
+    "chunk",
+    "bulge",
+    "foreign_object"
+  ],
+  "dropped": {
+    "copy_of_protected_role_image": 77
+  },
+  "images": {
+    "test": 108,
+    "train": 499,
+    "val": 108
+  },
+  "images_by_main_class": {
+    "background": 210,
+    "bulge": 80,
+    "chunk": 50,
+    "crack": 156,
+    "cut": 46,
+    "foreign_object": 173
+  },
+  "leakage_guard": {
+    "dropped": 77,
+    "protected_images_checked": 1105,
+    "rule": "reference-embedding cosine >= 0.90 to any calibration/policy/test photo (square-stretched like the export)"
+  },
+  "sources": [
+    {
+      "archive_sha256": "22b199029aba0cfa9f0ea33840ffea1a4f6b0aae012daf8f87a5f2e403036530",
+      "attribution": "tirequalitydetection, tire_quality_dataset v1, Roboflow Universe",
+      "id": "RF-TQ:v1",
+      "license": "CC BY 4.0",
+      "url": "https://universe.roboflow.com/tirequalitydetection/tire_quality_dataset/dataset/1"
+    },
+    {
+      "archive_sha256": "22bf245c5c963bcfbb7b6357a4c13a894a84290e9fd929c3a8de76c54f4f72e8",
+      "attribution": "laundrystain, TireWear_v2 v11, Roboflow Universe",
+      "id": "RF-TW:v11",
+      "license": "CC BY 4.0",
+      "url": "https://universe.roboflow.com/laundrystain/tirewear_v2/dataset/11"
+    }
+  ],
+  "version": "v1"
+}

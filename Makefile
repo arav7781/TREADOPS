@@ -52,8 +52,10 @@ migrate: ## alembic upgrade head (one-shot)
 seed-demo: ## idempotent fixture users (password = DEMO_PASSWORD in .env)
 	$(ENVRUN) $(PY) -m treadops_api.cli seed-demo
 
-fetch-data: ## download D1 through the publisher API (resumable)
+fetch-data: ## download D1 and the extra public sources through the publishers' APIs (resumable, checksum-verified)
 	$(PY) -m treadops_ml.acquire --dest $(ARCHIVE)
+	$(PY) -m treadops_ml.acquire --extra
+	$(ENVRUN) $(PY) -m treadops_ml.acquire --damage
 
 prepare-data: ## audit + canonicalise the archive, then split (ARCHIVE=/path/to/zip)
 	$(ENVRUN) $(PY) -m treadops_ml.prepare --archive $(ARCHIVE)

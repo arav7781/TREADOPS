@@ -53,7 +53,7 @@ These are the controls as implemented; see `services/api/treadops_api/security.p
 | Copilot | Input guardrails (prompt injection, off-topic, PII redaction) and output guardrails (no safety certification, triage consistency, numeric grounding against tool outputs, system-prompt leak) |
 | Secrets | `make env` generates secrets locally into `.env`, which is git-ignored; CI generates throw-away secrets per run |
 | Audit | Promotions, rollbacks, reviews and alert transitions are recorded with actor, reason and correlation ID |
-| Cameras | Stream URLs (which may embed camera credentials) are encrypted at rest (Fernet, key derived from `JWT_SECRET`) and only ever returned masked (`rtsp://user:•••@host`); only `rtsp`, `rtsps`, `http` and `https` are accepted (`file://` only when `CAMERA_ALLOW_FILE_URLS=true` for tests); adding, changing and removing cameras needs the ML-engineer role and is audited |
+| Cameras | Stream URLs (which may embed camera credentials) are encrypted at rest (Fernet, key derived from `JWT_SECRET`) and only ever returned masked (`rtsp://user:•••@host`); only `rtsp`, `rtsps`, `http` and `https` are accepted (`file://` only when `CAMERA_ALLOW_FILE_URLS=true` for tests); inspectors and ML engineers connect and change cameras (from Cameras or Bib's chat), only ML engineers remove them, and every change is audited. Annotated live frames live in Redis for 10 s only |
 
 ## Known limitations
 
@@ -64,10 +64,17 @@ These are the controls as implemented; see `services/api/treadops_api/security.p
 - `JWT_SECRET` signs sessions and media URLs and derives the camera-URL encryption key; rotating it signs everyone
   out, invalidates open media links and means camera stream URLs must be entered again.
 - A camera URL makes the connector (and the "test connection" call) open a network connection to that host. That
-  is the point of the feature, but it also means an ML engineer can make the server reach internal addresses;
-  restrict that role accordingly and run the connector on a network segment that can only see the cameras.
+  is the point of the feature, but it also means an inspector or ML engineer can make the server reach internal
+  addresses; grant those roles accordingly and run the connector on a network segment that can only see the cameras.
 - LLM provider credentials (`LLM_API_KEY`) live in `.env`; prompts sent to an external provider leave your network.
   PII is redacted first, but review your provider's data policy.
+- MLflow Tracing (on when `MLFLOW_TRACKING_URI` is set) stores Bib's turns, including tool results and the
+  model's answers, in the MLflow server. Every span passes the copilot's PII redaction and has base64 images
+  removed first, but treat the MLflow server as holding chat content: keep it on the private network (the
+  compose file binds it to 127.0.0.1) or set `LLM_MLFLOW_TRACING=false`.
+- `ROBOFLOW_API_KEY` (optional, `.env`) is only used by `make fetch-data` to download the damage locator's public
+  datasets. Roboflow takes it as a URL query parameter, so the fetcher re-raises request errors without the URL
+  (tested), and the key never reaches logs, receipts or MLflow. The services never read it.
 - With `VISION_CHECK_MODEL` set, the inference worker sends the canonical image (metadata stripped, JPEG, long
   side ≤ 768 px) of every tyre YOLO would auto-clear, and of every image the subject gate finds unusual, to that
   provider. Leave it empty to keep images on-premises: auto-clears then rely on YOLO alone, and unusual images

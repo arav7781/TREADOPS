@@ -13,6 +13,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm.attributes import flag_modified
 
+from treadops_api import llm_tracing
 from treadops_api.db import must_get, new_session, session_scope
 from treadops_api.errors import ApiError
 from treadops_api.models import ChatMessage, ChatSession
@@ -75,7 +76,7 @@ MAX_VIDEO_FRAMES = 8
 def start_turn(db, *, actor, session_id: uuid.UUID | None, text: str, image: bytes | None,
                frames: list[bytes] | None = None, video: dict[str, Any] | None = None) -> dict[str, Any]:
     """Persist the user turn and start the agent. Photos/frames are validated and sanitized previews stored now;
-    the inspections themselves are created later by the agent's YOLO tools (raw bytes stay in memory)."""
+    the inspections themselves are created later by the agent's inspection tools (raw bytes stay in memory)."""
     if not llm_status()["configured"]:
         raise ApiError(503, "llm_not_configured", "Bib needs a language model: set LLM_BASE_URL, LLM_API_KEY and "
                                                   "LLM_MODEL in .env and restart the API.")
@@ -140,7 +141,7 @@ def _emit_factory(message_id: uuid.UUID):
             extra: dict[str, Any] = {}
             if kind == "inspection" and "frame" in data:  # video: one inspection per sampled frame
                 extra["inspection_ids"] = [*m.attachments.get("inspection_ids", []), data["inspection_id"]]
-            elif kind == "inspection":  # the YOLO tool created the inspection: expose it for live stage images
+            elif kind == "inspection":  # the inspection tool created the inspection: expose it for live stage images
                 extra["inspection_id"] = data["inspection_id"]
                 sess = db.get(ChatSession, m.session_id)
                 if sess is not None:
@@ -226,9 +227,25 @@ def run_turn(message_id: uuid.UUID, actor, text: str, image: bytes | None, frame
     with tracer.span("copilot_turn", "node", has_attachment=bool(image or frames), video=bool(frames)):
         state = app.invoke({"user_text": text, "has_attachment": bool(image or frames), "is_video": bool(frames)},
                            config={"recursion_limit": 40})
-    blocked = bool(state.get("blocked"))
-    mode = "llm"
-    status = "blocked" if blocked else ("error" if state.get("llm_error") else "ok")
+        blocked = bool(state.get("blocked"))
+        mode = "llm"
+        status = "blocked" if blocked else ("error" if state.get("llm_error") else "ok")
+        g = state.get("grounding") or {}
+        flags = sorted({e.rule for e in tracer.guard_events if e.action != "pass"})
+        tracer.io(inputs={"message": text, "attachment": "video" if frames else "photo" if image else None,
+                          "history_turns": len(history),
+                          "earlier_inspections": [i.get("inspection_id") for i in earlier]},
+                  outputs={"answer": state.get("final_text"), "suggestions": state.get("suggestions", []),
+                           "status": status, "tools": tracer.tools_used, "guardrails": flags, "grounding": g,
+                           "inspection_ids": [r["result"].get("inspection_id") for r in ctx.results
+                                              if r["result"].get("inspection_id")],
+                           "error": state.get("llm_error")})
+        if status == "error":
+            tracer.fail(state.get("llm_error") or "error")
+        llm_tracing.tag_trace(tags={
+            "status": status, "guardrails": ",".join(flags) or "none", "tools": ",".join(tracer.tools_used) or "none",
+            **({"grounding_rate": f"{(g['checked'] - len(g.get('ungrounded', []))) / g['checked']:.3f}"}
+               if g.get("checked") else {})})
     video_result = next((r["result"] for r in ctx.results if r["tool"] == "classify_tyre_video"), None)
     with session_scope() as db:
         tr = tracer.persist(db, status=status, llm_mode=mode, grounding=state.get("grounding"),

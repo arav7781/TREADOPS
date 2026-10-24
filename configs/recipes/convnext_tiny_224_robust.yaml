@@ -1,0 +1,16 @@
+id: convnext_tiny_224_robust
+family: torchvision               # trained by treadops_ml/tvmodel.py; served through ONNX Runtime
+arch: convnext_tiny
+model: convnext_tiny-983f1562.pth # ImageNet-1k weights, SHA-256 pinned in configs/weights.lock.yaml
+epochs: 30
+imgsz: 224
+batch: 32
+optimizer: AdamW
+lr0: 0.0001
+weight_decay: 0.05
+label_smoothing: 0.1
+patience: 6                       # epochs without a lower val loss
+seed: 42
+workers: 4
+# Same images, transforms and robustness augmentation as small_224_robust.
+augment: {hflip: 0.5, vflip: 0.0, rotate_deg: 10, brightness: 0.2, contrast: 0.2, saturation: 0.2, low_light: 0.3, blur: 0.2, jpeg: 0.2}

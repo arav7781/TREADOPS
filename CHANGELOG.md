@@ -3,6 +3,69 @@
 All notable changes to TreadOps. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 version numbers follow `pyproject.toml`. Measured results are in [docs/evidence](docs/evidence/README.md).
 
+## [Unreleased] - 2026-10-24
+
+Closing the gaps against plant-grade casing inspection: more data, robustness, a model benchmark and damage
+localisation.
+
+### Added
+
+- **Two more public data sources**: TyreNet (Mendeley, 1,693 photos) and the MSU tire sidewall set (Harvard
+  Dataverse; 883 of its photos are copies of D1 and are collapsed onto D1, 144 remain). Each is fetched from its
+  publisher and checksum-verified (`make fetch-data`), grouped against D1 without moving any D1 photo, and carved
+  into roles on its own. Gate and test reports are broken down per source.
+- **Robustness augmentation**: low light (gamma, 35-75 % brightness), Gaussian blur and JPEG recompression,
+  off by default, enabled in the `*_robust` recipes.
+- **Model benchmark** (`scripts/benchmark_models.py`): YOLO26 n/s/m robust, a YOLO26s control and ConvNeXt-Tiny
+  (torchvision, pinned ImageNet weights, served through ONNX Runtime), trained on the same images and scored on the
+  gate cohort per source and under low light and blur, with a selection rule fixed before any result.
+- **Damage locator**: a YOLO26n detector for cracks, cuts, chunks, bulges and foreign objects, trained on two
+  box-labelled Roboflow Universe datasets after removing copies of TreadOps evaluation photos. Its boxes are
+  drawn on the classified image and in the result; a confident box stops an auto-clear (threshold chosen on the
+  policy role's good tyres). DVC stages `damage_prepare`, `damage_train`, `damage_evaluate`; bundled only when its
+  mAP gate passes; `scripts/eval_damage_locator.py` measures its effect end to end.
+- Migration `0005`: `predictions.damage` (JSONB).
+- **MLflow Tracing for LLMOps**: every Bib turn is an MLflow trace (experiment `treadops-copilot`) mirroring the
+  LLMOps spans (agent, guardrail, planning, autologged OpenAI completions with token usage, tools with full
+  inputs and outputs), tagged with session, user, prompt version and status; inspector feedback and golden-set
+  case results are logged on the traces; the vision second opinion traces to `treadops-vision-check`. Spans are
+  PII-redacted and stripped of images before export; export is asynchronous and best effort. The LLMOps page
+  links each trace to MLflow. Migration `0006`: `llm_traces.mlflow_trace_id`.
+- **ConvNeXt-Tiny as a second model family** (`tvmodel.py`, recipe `convnext_tiny_224_robust`): trained, evaluated,
+  exported, parity-checked and packaged by the same pipeline stages; its bundles serve through ONNX Runtime
+  (`serving.preferred_runtime`).
+- **New serving model**: ConvNeXt-Tiny won the benchmark (the only candidate meeting both gate targets; YOLO26s/n
+  robust missed recall/specificity; YOLO26m and the control unfinished when the benchmark was stopped) and is
+  promoted as registry v4, generation 4. Locked test: recall 0.911, specificity 0.971, 4/282 defective tyres
+  auto-cleared, low-light recall 0.901.
+- **Depth stage (advisory)**: Depth Anything V2 Small (ONNX, Apache-2.0) as stage 3 of every inspection: relative
+  depth, the nearest surface outlined and a framing check; never part of the verdict.
+- **Line cameras, live**: inspection zone (ROI) per camera; annotated live frames about 5 per second (zone in the
+  verdict's colour for the tyre in it, damage-locator boxes on every frame) on the Cameras page and in Bib's chat;
+  connect cameras from Bib (inspectors and admins too); stop-and-go capture (`on_change`: once a tyre has stopped
+  in the zone); demo belt video and an RTSP stream for it (`scripts/make_demo_line_video.py`,
+  `python scripts/sim_cameras.py up`). Migration `0007`: `cameras.roi`, `cameras.overlay`.
+- **Damage locator authority**: bundled even when its gate fails, as `display_only` (experimental boxes, no
+  escalation); `escalate` only after it passes.
+- **Vision check circuit breaker**: a TCP probe and a 5-minute breaker stop an unreachable provider from stalling
+  inspections for ~50 s each (still fail-safe: no auto-clear without a usable answer).
+
+### Changed
+
+- Bib's system prompt v7 and its tool descriptions name "the deployed classifier" instead of YOLO (golden-set
+  evaluation still to be run; the gateway was unreachable).
+- Camera inspections use a 4×4 occlusion heatmap (16 copies instead of 64) to keep a camera's pace on CPU.
+- Stages are ordered and numbered by their place in the pipeline (depth, stored as stage 9, is shown third).
+
+### Fixed
+
+- Bib's PII redaction masked ISO dates and times ("2026-10-24 17:05") as phone numbers and missed numbers with
+  a bracketed area code ("+1 (555) 123-4567").
+- After Ultralytics was imported (it patches `PIL.Image.open` with a HEIF fallback), a non-image upload raised
+  `ModuleNotFoundError` instead of the typed 415 rejection.
+- The split took a group's stratification label from whichever member came last; it now comes from the group's
+  home source, so an attached photo with a different label cannot re-stratify a primary group.
+
 ## [0.1.0] - 2026-10-23 (not tagged)
 
 First complete version of the blueprint: data to model to release to monitoring, with a guarded copilot and a web UI.

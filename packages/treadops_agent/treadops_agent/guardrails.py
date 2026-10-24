@@ -2,7 +2,7 @@
 
 Input:  length, prompt injection (block), PII redaction (email/phone/vehicle reg/card), scope (block off-topic)
 Output: certification claims (rewrite), ungrounded numbers (flag + note), a verdict on a rejected non-tyre image
-        (replace), triage contradicting the YOLO tool
+        (replace), triage contradicting the classification tool
         (replace with the grounded summary), system-prompt leakage (block), PII (redact), mandatory disclaimer
 """
 
@@ -18,12 +18,16 @@ from treadops_ml.common import load_yaml
 PII_PATTERNS = {  # card before phone: a phone match would otherwise take a card's first digits
     "email": re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b"),
     "card_number": re.compile(r"\b(?:\d[ -]?){13,16}\b"),
-    "phone": re.compile(r"(?<!\d)(?:\+?\d{1,3}[\s-]?)?(?:\d[\s-]?){9,11}\d(?!\d)"),
+    "phone": re.compile(r"(?<!\d)(?:\+?\d{1,3}[\s-]?)?(?:\d[\s-]?){9,11}\d(?!\d)"
+                       r"|(?<!\d)(?:\+?\d{1,3}[\s-]?)?\(\d{2,4}\)[\s-]?\d{3,4}[\s-]?\d{3,4}(?!\d)"),  # (area) code
     "vehicle_registration": re.compile(r"\b[A-Z]{2}[ -]?\d{1,2}[ -]?[A-Z]{1,3}[ -]?\d{4}\b"),
 }
-# Inspection IDs and hashes are not PII: the digits between a UUID's hyphens look like a phone number.
+# Inspection IDs, hashes and ISO dates/times are not PII: the digits between a UUID's hyphens, or in
+# "2026-10-24 17:05", look like a phone number.
 IDENTIFIER = re.compile(r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b"
-                        r"|\b(?=[0-9a-f]*[a-f])[0-9a-f]{12,64}\b", re.IGNORECASE)
+                        r"|\b(?=[0-9a-f]*[a-f])[0-9a-f]{12,64}\b"
+                        r"|\b\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?",
+                        re.IGNORECASE)
 NUMBER = re.compile(r"(?<![\w.])(\d{1,3}(?:\.\d+)?)\s?%|(?<![\w.])(0\.\d{2,})(?![\d])")
 TRIAGE_WORDS = {
     "good_candidate": ("retread candidate", "good candidate", "good_candidate"),
@@ -209,7 +213,7 @@ def check_output(text: str, *, tool_results: list[dict[str, Any]], system_prompt
             return OutputVerdict("I can't share my configuration, but I'm happy to help with the inspection.",
                                  events, {"checked": 0, "ungrounded": []}, replaced=True)
 
-    # 2) triage contradiction with the YOLO tool; no verdict at all for an image the subject gate rejected
+    # 2) triage contradiction with the classification tool; no verdict at all for an image the subject gate rejected
     replaced = False
     if classification and classification.get("verdict") == "not_a_tyre":
         plain = ABOUT_THE_VERDICT.sub(" ", low)
@@ -224,7 +228,7 @@ def check_output(text: str, *, tool_results: list[dict[str, Any]], system_prompt
         actual = classification["triage"]
         claimed = {t for t, words in TRIAGE_WORDS.items() if any(w in low for w in words)}
         verdict, said = classification.get("verdict"), claimed_verdict(low)
-        # An uncertain result may be described as possibly damaged, or quote YOLO's own "not damaged" alongside the
+        # An uncertain result may be described as possibly damaged, or quote the classifier's own "not damaged" alongside the
         # expert check, but never presented as simply not damaged.
         wrong_verdict = (said == "not_damaged" and not UNCERTAIN_WORDS.search(low)) if verdict == "uncertain" \
             else bool(verdict and said and said != verdict)

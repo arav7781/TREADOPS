@@ -31,6 +31,7 @@ def _load_env() -> None:
         pytest.skip("TEST_DATABASE_URL not set (run `make env` and `make infra`)", allow_module_level=True)
     os.environ["DATABASE_URL"] = test_url
     os.environ["VISION_CHECK_MODEL"] = ""  # never call an external model from tests; tests that need it script it
+    os.environ["LLM_MLFLOW_TRACING"] = "false"  # test turns must not land in the real MLflow traces experiment
     os.environ["S3_BUCKET"] = "treadops-test"
     os.environ["INFERENCE_QUEUE_LIMIT"] = "1000"
     os.environ["BUNDLE_CACHE_DIR"] = "models/cache"

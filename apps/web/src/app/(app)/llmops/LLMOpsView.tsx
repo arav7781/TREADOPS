@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
-import { Coins, Gauge, MessagesSquare, ShieldCheck, ThumbsUp, Zap } from "lucide-react";
+import { Coins, ExternalLink, Gauge, MessagesSquare, ShieldCheck, ThumbsUp, Zap } from "lucide-react";
 
 import { LatencyLine, SimpleBars } from "@/components/domain/charts";
 import { Markdown } from "@/components/domain/Markdown";
@@ -31,6 +31,9 @@ function TracePanel({ id }: { id: string }) {
         ["Cost", t.cost_usd !== null ? `$${t.cost_usd.toFixed(6)}` : t.usage.prompt + t.usage.completion === 0 ? "$0.00 (no LLM call in this turn)" : "unpriced model (add it to configs/copilot.yaml)"],
         ["Grounding", t.grounding ? `${t.grounding.pass ? "pass" : "fail"} · ${t.grounding.checked} figures checked${t.grounding.ungrounded.length ? ` · ungrounded ${t.grounding.ungrounded.join(", ")}` : ""}` : "n/a"],
         ...(t.error ? [["Error", t.error] as [string, string]] : []),
+        ["MLflow trace", t.mlflow?.trace_url
+          ? <a key="m" href={t.mlflow.trace_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-primary-ink hover:underline"><span className="mono">{t.mlflow.trace_id}</span> <ExternalLink aria-hidden className="h-3.5 w-3.5" /></a>
+          : "not traced in MLflow (tracing off or before it was enabled)"],
       ]} />
       <div>
         <h3 className="mb-2 font-bold text-ink">Span waterfall</h3>
@@ -78,7 +81,10 @@ export function LLMOpsView() {
     <>
       <PageHeader eyebrow="LLMOps" title="Bib observability"
         subtitle="Every turn of Bib, the casing copilot, is a trace: graph nodes, LLM calls and tool calls as spans, token usage, cost, guardrail events, grounding checks and user feedback — versioned by prompt."
-        actions={<CopilotModeBadge />} />
+        actions={<div className="flex items-center gap-3">
+          {o.data?.mlflow && <a href={o.data.mlflow.traces_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm font-semibold text-primary-ink hover:underline">Traces in MLflow <ExternalLink aria-hidden className="h-3.5 w-3.5" /></a>}
+          <CopilotModeBadge />
+        </div>} />
       {o.isError ? <ErrorState error={o.error} onRetry={() => o.refetch()} /> : !d ? <SkeletonRows rows={4} /> : d.turns === 0 ? (
         <EmptyState title="No copilot turns yet">Ask Bib something on Inspect &amp; ask to generate the first trace.</EmptyState>
       ) : (
@@ -98,7 +104,7 @@ export function LLMOpsView() {
           )}
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <Stat label="Turns (7 days)" icon={<MessagesSquare className="h-5 w-5" />} value={num(d.turns)} hint={Object.entries(d.by_status).map(([k, v]) => `${k} ${v}`).join(" · ")} />
-            <Stat label="Latency p50 / p95" icon={<Gauge className="h-5 w-5" />} value={`${ms(d.latency_ms.p50)} / ${ms(d.latency_ms.p95)}`} hint="whole turn incl. YOLO tool" />
+            <Stat label="Latency p50 / p95" icon={<Gauge className="h-5 w-5" />} value={`${ms(d.latency_ms.p50)} / ${ms(d.latency_ms.p95)}`} hint="whole turn incl. inspection tool" />
             <Stat label="Tokens" icon={<Zap className="h-5 w-5" />} value={calls > 0 ? num(d.tokens.prompt + d.tokens.completion) : "No LLM calls"}
               hint={tokenHint} />
             <Stat label="Cost" icon={<Coins className="h-5 w-5" />} value={costValue} hint={costHint} />

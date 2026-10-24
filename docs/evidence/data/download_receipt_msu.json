@@ -1,0 +1,12 @@
+{
+  "archive_bytes": 799897555,
+  "archive_mtime": "2026-10-24T11:29:03.736041+00:00",
+  "archive_path": "data/raw/archive/msu-z3zyli.tar.gz",
+  "archive_sha256": "b7659f80df5b427d2d2c017fdfbb85fad389b878b9f3105408519bd138d575c3",
+  "doi": "10.7910/DVN/Z3ZYLI",
+  "license": "CC0 1.0",
+  "source_endpoint": "https://dataverse.harvard.edu/api/access/datafile/5118474",
+  "source_id": "MSU:v1",
+  "verified_against": "archive_md5",
+  "verified_at": "2026-10-24T11:41:37.151163+00:00"
+}

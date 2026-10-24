@@ -67,7 +67,8 @@ def _score(case: dict, msg: dict, trace: dict | None) -> dict:
         checks["triage_consistent"] = bool(triage) and TRIAGE_LABEL[triage] in text.lower()
     return {"id": case["id"], "category": case["category"], "pass": all(checks.values()), "checks": checks,
             "mode": att.get("mode"), "latency_ms": (trace or {}).get("latency_ms"),
-            "tokens": (trace or {}).get("tokens"), "answer_preview": text[:240]}
+            "tokens": (trace or {}).get("tokens"), "answer_preview": text[:240],
+            "mlflow_trace_id": (trace or {}).get("mlflow_trace_id")}
 
 
 def run(api: str) -> dict:
@@ -99,12 +100,13 @@ def run(api: str) -> dict:
                 t = c.get(f"/v1/llmops/traces/{msg['trace_id']}", headers=h).json()
                 cls_span = next((s for s in t["spans"] if s["name"] == "tool:classify_tyre_image"), None)
                 triage = None
-                # The agent's YOLO tool creates the inspection during the turn and records it on the answer.
+                # The agent's inspection tool creates the inspection during the turn and records it on the answer.
                 iid = (msg.get("attachments") or {}).get("inspection_id") or body.get("inspection_id")
                 if cls_span is not None and iid:
                     d = c.get(f"/v1/inspections/{iid}", headers=h).json()
                     triage = (d.get("prediction") or {}).get("triage")
                 trace = {"status": t["status"], "latency_ms": t["latency_ms"],
+                         "mlflow_trace_id": (t.get("mlflow") or {}).get("trace_id"),
                          "tokens": t["usage"]["prompt"] + t["usage"]["completion"],
                          "guardrail_flags_all": [e["rule"] for e in t["guardrail_events"] if e["action"] != "pass"],
                          "classified_triage": triage}
@@ -129,6 +131,26 @@ def run(api: str) -> dict:
     return report
 
 
+def _link_traces(mlflow, results: list[dict], run_id: str) -> None:
+    """Each case's verdict on the MLflow trace of its turn (traced by the API), so failures open on the spans."""
+    from mlflow.entities import AssessmentSource, AssessmentSourceType
+
+    source = AssessmentSource(source_type=AssessmentSourceType.CODE, source_id="treadops.copilot_eval")
+    for r in results:
+        tid = r.get("mlflow_trace_id")
+        if not tid:
+            continue
+        try:
+            failed = [k for k, ok in r["checks"].items() if not ok]
+            mlflow.log_feedback(trace_id=tid, name="golden_case_pass", value=bool(r["pass"]), source=source,
+                                rationale="all checks passed" if not failed else "failed: " + ", ".join(failed),
+                                metadata={"case": r["id"], "category": r["category"], "eval_run_id": run_id})
+            mlflow.set_trace_tag(tid, "golden_case", r["id"])
+            mlflow.set_trace_tag(tid, "copilot_eval_run", run_id)
+        except Exception as exc:  # a trace that never reached MLflow is reported, not fatal
+            print(f"could not link {r['id']} to trace {tid}: {exc}")
+
+
 def log_mlflow(report: dict) -> str | None:
     uri = os.environ.get("MLFLOW_TRACKING_URI")
     if not uri:
@@ -145,6 +167,7 @@ def log_mlflow(report: dict) -> str | None:
             mlflow.log_metrics({"pass_rate": report["pass_rate"], "cases": report["cases"],
                                 **{f"pass_{k}": v["passed"] / v["total"] for k, v in report["by_category"].items()}})
             mlflow.log_dict(report, "copilot_eval.json")
+            _link_traces(mlflow, report["results"], run.info.run_id)
             return run.info.run_id
     except Exception as exc:
         print(f"MLflow logging skipped: {exc}")

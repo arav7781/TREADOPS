@@ -1,0 +1,16 @@
+{
+  "archive_bytes": 24066117,
+  "archive_path": "data/raw/damage/tire_quality_dataset-v1.zip",
+  "archive_sha256": "22b199029aba0cfa9f0ea33840ffea1a4f6b0aae012daf8f87a5f2e403036530",
+  "classes": {
+    "chunk": 105,
+    "crack": 525,
+    "cut": 96,
+    "foreign_object": 80
+  },
+  "format": "yolov8",
+  "license": "CC BY 4.0",
+  "retrieved_at": "2026-10-24T11:17:03.698449+00:00",
+  "source": "roboflow:tirequalitydetection/tire_quality_dataset/1",
+  "url": "https://universe.roboflow.com/tirequalitydetection/tire_quality_dataset/dataset/1"
+}

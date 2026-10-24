@@ -1,5 +1,5 @@
 schema_version: 1
-recipe: configs/recipes/nano_224.yaml
+recipe: configs/recipes/convnext_tiny_224_robust.yaml  # benchmark winner (docs/evidence/benchmark/20261024T170848.json)
 data_root: data/yolo/dev
 split_manifest: data/manifests/split_manifest.json
 out_dir: artifacts/native

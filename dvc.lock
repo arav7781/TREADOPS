@@ -5,28 +5,36 @@ stages:
     deps:
     - path: configs/data.yaml
       hash: md5
-      md5: a23a24609cec73dc0f4f7de0d2b27035
-      size: 1670
+      md5: abc5ba1dec8d7d681307a7e68d7e840d
+      size: 3361
     - path: configs/weights.lock.yaml
       hash: md5
-      md5: 72ee4f4343c458eb6f6888b2e769d01d
-      size: 566
+      md5: 55e4cd923c3fcbf7b957e1f27a82d1f6
+      size: 1803
     - path: data/raw/archive/bn7ch8tvyp-1.zip
       hash: md5
       md5: 34b25cc245cc2095615105c7c8f37f61
       size: 2859136943
+    - path: data/raw/archive/msu-z3zyli.tar.gz
+      hash: md5
+      md5: 92127aa4e8d475628444e9da823f2832
+      size: 799897555
+    - path: data/raw/archive/tyrenet-32b5vfj6tc-1.rar
+      hash: md5
+      md5: 60ac26331fdca4d8115f1799e4e74e2c
+      size: 1897245528
     - path: packages/treadops_ml/treadops_ml/descriptors.py
       hash: md5
       md5: d8986e803fb75e921764bf00303b5823
       size: 3950
     - path: packages/treadops_ml/treadops_ml/prepare.py
       hash: md5
-      md5: 68b9e4bf270bcc85169ee675d36cf2d3
-      size: 16484
+      md5: 45dac48e56e5780cd2886e5bdc412cd0
+      size: 23025
     - path: packages/treadops_ml/treadops_ml/preprocess.py
       hash: md5
-      md5: cf7100aa4a6dcbba3d0b02ffd905a1f5
-      size: 15461
+      md5: 2b7f0f4e81d4df8840d1a883b0974fd4
+      size: 15684
     outs:
     - path: data/manifests/class_mapping.json
       hash: md5
@@ -34,25 +42,25 @@ stages:
       size: 83
     - path: data/manifests/duplicate_review.csv
       hash: md5
-      md5: 28aae0e082bc117a751670c26effed7f
-      size: 496706
+      md5: 101377d45ab0f6591dfa0a4bf02a2ef6
+      size: 809263
     - path: data/manifests/image_manifest.parquet
       hash: md5
-      md5: a22f0440d993e65e4caf29e3454edf04
-      size: 624148
+      md5: 637a1b2099cf36476e39bee6a3fef26f
+      size: 1239236
     - path: data/manifests/quality_report.json
       hash: md5
-      md5: e9036cecf6060976580542018dd4031e
-      size: 1281
+      md5: 523980eed49ef9481d7ace72f2f369c4
+      size: 1497
     - path: data/manifests/source_manifest.json
       hash: md5
-      md5: 07138e305cae56b658e6273b106b7e71
-      size: 1723
+      md5: 97e7faea84a9c8829afbe97b9623b905
+      size: 3540
     - path: data/processed
       hash: md5
-      md5: 2b34ee5aa1e8e333659bf056a8ee267e.dir
-      size: 449690368
-      nfiles: 1830
+      md5: 35ee59c8c0cfac50fc922abb187fa647.dir
+      size: 1370924474
+      nfiles: 3668
   split:
     cmd: python -m treadops_ml.split --config configs/split.yaml
     deps:
@@ -62,36 +70,36 @@ stages:
       size: 412
     - path: data/manifests/image_manifest.parquet
       hash: md5
-      md5: a22f0440d993e65e4caf29e3454edf04
-      size: 624148
+      md5: 637a1b2099cf36476e39bee6a3fef26f
+      size: 1239236
     - path: data/processed
       hash: md5
-      md5: 2b34ee5aa1e8e333659bf056a8ee267e.dir
-      size: 449690368
-      nfiles: 1830
+      md5: 35ee59c8c0cfac50fc922abb187fa647.dir
+      size: 1370924474
+      nfiles: 3668
     - path: packages/treadops_ml/treadops_ml/split.py
       hash: md5
-      md5: 669e3a57783ba9437303363310b973ec
-      size: 7684
+      md5: 7864e8a5122391b437265bf37847d350
+      size: 9370
     outs:
     - path: data/eval
       hash: md5
-      md5: 1cbdec79de3279e82fa0544ebf02229a.dir
-      size: 580739
+      md5: dd589fcaac3debe016d441fd94de60e2.dir
+      size: 1252879
       nfiles: 5
     - path: data/manifests/split_assignments.parquet
       hash: md5
-      md5: 75117a31f825c15982c2217a03756ab4
-      size: 214263
+      md5: 4b3c50dfbb2d340cbb45b2932a803938
+      size: 427741
     - path: data/manifests/split_manifest.json
       hash: md5
-      md5: f52f30468d71c858e7a974a2dd364beb
-      size: 1628
+      md5: c1d5edf02155746ace5c336466324e65
+      size: 2801
     - path: data/yolo/dev
       hash: md5
-      md5: de784e0b37336acf7ccc9a4aa66a4158.dir
-      size: 310393959
-      nfiles: 1276
+      md5: 8c969935bb98ff8edffa98846055d255.dir
+      size: 947478994
+      nfiles: 2560
   train:
     cmd: python -m treadops_ml.train --config configs/train.yaml
     deps:
@@ -101,42 +109,42 @@ stages:
       size: 227
     - path: configs/train.yaml
       hash: md5
-      md5: 8cbda8366031bb3d4b898a2bf8a8d170
-      size: 304
+      md5: 7a7156ba6ec0818a9edaf94571322a76
+      size: 387
     - path: configs/weights.lock.yaml
       hash: md5
-      md5: 72ee4f4343c458eb6f6888b2e769d01d
-      size: 566
+      md5: 55e4cd923c3fcbf7b957e1f27a82d1f6
+      size: 1803
     - path: data/yolo/dev
       hash: md5
-      md5: de784e0b37336acf7ccc9a4aa66a4158.dir
-      size: 310393959
-      nfiles: 1276
+      md5: 8c969935bb98ff8edffa98846055d255.dir
+      size: 947478994
+      nfiles: 2560
     - path: packages/treadops_ml/treadops_ml/preprocess.py
       hash: md5
-      md5: cf7100aa4a6dcbba3d0b02ffd905a1f5
-      size: 15461
+      md5: 2b7f0f4e81d4df8840d1a883b0974fd4
+      size: 15684
     - path: packages/treadops_ml/treadops_ml/train.py
       hash: md5
-      md5: 5ca90564cddbf295fa5c320234e660c2
-      size: 9328
+      md5: faddb8d3c28cffa9ef6c68e85ade5d4f
+      size: 10242
     - path: packages/treadops_ml/treadops_ml/transforms.py
       hash: md5
-      md5: 971fc116ef1012110e698783651a1f5d
-      size: 4876
+      md5: 72d02b3802bfa236111eb635b4e6f3c4
+      size: 5963
     outs:
     - path: artifacts/native
       hash: md5
-      md5: 0d5b618aab8fa586ff73fd905c945950.dir
-      size: 3258537
+      md5: ae78320edaaea0b95dc80e64ac0bcbbf.dir
+      size: 111454084
       nfiles: 3
   evaluate:
     cmd: python -m treadops_ml.evaluate --config configs/evaluate.yaml
     deps:
     - path: artifacts/native
       hash: md5
-      md5: 0d5b618aab8fa586ff73fd905c945950.dir
-      size: 3258537
+      md5: ae78320edaaea0b95dc80e64ac0bcbbf.dir
+      size: 111454084
       nfiles: 3
     - path: configs/evaluate.yaml
       hash: md5
@@ -148,8 +156,8 @@ stages:
       size: 903
     - path: data/eval
       hash: md5
-      md5: 1cbdec79de3279e82fa0544ebf02229a.dir
-      size: 580739
+      md5: dd589fcaac3debe016d441fd94de60e2.dir
+      size: 1252879
       nfiles: 5
     - path: packages/treadops_ml/treadops_ml/calibrate.py
       hash: md5
@@ -157,8 +165,8 @@ stages:
       size: 2336
     - path: packages/treadops_ml/treadops_ml/evaluate.py
       hash: md5
-      md5: 8b8f92387c098cf282d1b37cde88b8cc
-      size: 14397
+      md5: 36ccd8fa6b30dedc16a96879a0c01d1f
+      size: 15948
     - path: packages/treadops_ml/treadops_ml/metrics.py
       hash: md5
       md5: e96948700b02c07dde71058324f19514
@@ -174,25 +182,25 @@ stages:
     outs:
     - path: artifacts/evaluation
       hash: md5
-      md5: 8e4cd3ce7d026d2863f08a629498e5d4.dir
-      size: 40788
+      md5: 8875ac44011d06bf461104fd8b28e506.dir
+      size: 83547
       nfiles: 9
     - path: reports/metrics.json
       hash: md5
-      md5: e9f904708f7c5ba0e0bf49c1b1bab45b
-      size: 399
+      md5: e4a61ae049947e4e52372f025feba7dd
+      size: 675
   export_parity:
     cmd: python -m treadops_ml.export_parity
     deps:
     - path: artifacts/evaluation
       hash: md5
-      md5: 8e4cd3ce7d026d2863f08a629498e5d4.dir
-      size: 40788
+      md5: 8875ac44011d06bf461104fd8b28e506.dir
+      size: 83547
       nfiles: 9
     - path: artifacts/native
       hash: md5
-      md5: 0d5b618aab8fa586ff73fd905c945950.dir
-      size: 3258537
+      md5: ae78320edaaea0b95dc80e64ac0bcbbf.dir
+      size: 111454084
       nfiles: 3
     - path: configs/policy.yaml
       hash: md5
@@ -200,31 +208,39 @@ stages:
       size: 903
     - path: packages/treadops_ml/treadops_ml/export_parity.py
       hash: md5
-      md5: 05497c7d425673e744c2deab5ee6fd38
-      size: 4966
+      md5: 66d14fb504a364a7c25c62b339188782
+      size: 5213
     outs:
     - path: artifacts/export
       hash: md5
-      md5: 992d7e6abb01d72173753d93ddef0d0c.dir
-      size: 6212228
+      md5: 47423976ae50f191921bdb0c5a7ff168.dir
+      size: 111388714
       nfiles: 2
   package:
     cmd: python -m treadops_ml.package --config configs/bundle.yaml
     deps:
+    - path: artifacts/damage/best.pt
+      hash: md5
+      md5: e9530e555630903f4f94bf7e08ac5fd7
+      size: 5447237
+    - path: artifacts/damage/evaluation.json
+      hash: md5
+      md5: fe8719074ab05a88af8de169ee52df88
+      size: 2296
     - path: artifacts/evaluation
       hash: md5
-      md5: 8e4cd3ce7d026d2863f08a629498e5d4.dir
-      size: 40788
+      md5: 8875ac44011d06bf461104fd8b28e506.dir
+      size: 83547
       nfiles: 9
     - path: artifacts/export
       hash: md5
-      md5: 992d7e6abb01d72173753d93ddef0d0c.dir
-      size: 6212228
+      md5: 47423976ae50f191921bdb0c5a7ff168.dir
+      size: 111388714
       nfiles: 2
     - path: artifacts/native
       hash: md5
-      md5: 0d5b618aab8fa586ff73fd905c945950.dir
-      size: 3258537
+      md5: ae78320edaaea0b95dc80e64ac0bcbbf.dir
+      size: 111454084
       nfiles: 3
     - path: configs/bundle.yaml
       hash: md5
@@ -236,19 +252,116 @@ stages:
       size: 903
     - path: packages/treadops_ml/treadops_ml/bundle.py
       hash: md5
-      md5: a8ebf0b3db05b0318f72b5abe31eee4f
-      size: 9466
+      md5: 2d923ae9c316767b7dad537091ea91ad
+      size: 12357
     - path: packages/treadops_ml/treadops_ml/gates.py
       hash: md5
       md5: b45acbeb8fc2c05241b9425e0c9b481d
       size: 4038
     - path: packages/treadops_ml/treadops_ml/package.py
       hash: md5
-      md5: a98c4d4601ee04fbb727ce5e798daef5
-      size: 16315
+      md5: 95060cc841f52b0b299cab6988cdb15f
+      size: 18960
     outs:
     - path: artifacts/bundle
       hash: md5
-      md5: f0d26a49c01dc80b547a20d62c2e7665.dir
-      size: 11433702
-      nfiles: 21
+      md5: 8d5e44d658f5e881eae378e5aed38403.dir
+      size: 231497501
+      nfiles: 23
+  damage_prepare:
+    cmd: python -m treadops_ml.damage prepare
+    deps:
+    - path: configs/damage.yaml
+      hash: md5
+      md5: e0bcfad38e181884cc8a522bb6991d12
+      size: 2415
+    - path: configs/weights.lock.yaml
+      hash: md5
+      md5: 55e4cd923c3fcbf7b957e1f27a82d1f6
+      size: 1803
+    - path: data/eval
+      hash: md5
+      md5: dd589fcaac3debe016d441fd94de60e2.dir
+      size: 1252879
+      nfiles: 5
+    - path: data/raw/damage/tire_quality_dataset-v1.zip
+      hash: md5
+      md5: dbea1490559270a444c978cd035d4b3e
+      size: 24066117
+    - path: data/raw/damage/tirewear_v2-v11.zip
+      hash: md5
+      md5: 0baa0915aa9ce31d2d2bfaa07b181a18
+      size: 14262721
+    - path: packages/treadops_ml/treadops_ml/damage.py
+      hash: md5
+      md5: 4b7997bd5472cecd7628a907d58ebc6b
+      size: 13973
+    outs:
+    - path: data/damage/manifest.json
+      hash: md5
+      md5: e7c8a57de90278f887967044f635b5bc
+      size: 1665
+    - path: data/damage/yolo
+      hash: md5
+      md5: c5c300680a8908520e6f52ba0d3a699e.dir
+      size: 34848297
+      nfiles: 1434
+  damage_train:
+    cmd: python -m treadops_ml.damage train
+    deps:
+    - path: configs/damage.yaml
+      hash: md5
+      md5: e0bcfad38e181884cc8a522bb6991d12
+      size: 2415
+    - path: configs/weights.lock.yaml
+      hash: md5
+      md5: 55e4cd923c3fcbf7b957e1f27a82d1f6
+      size: 1803
+    - path: data/damage/yolo
+      hash: md5
+      md5: c5c300680a8908520e6f52ba0d3a699e.dir
+      size: 34848297
+      nfiles: 1434
+    - path: packages/treadops_ml/treadops_ml/damage.py
+      hash: md5
+      md5: 4b7997bd5472cecd7628a907d58ebc6b
+      size: 13973
+    outs:
+    - path: artifacts/damage/best.pt
+      hash: md5
+      md5: e9530e555630903f4f94bf7e08ac5fd7
+      size: 5447237
+    - path: artifacts/damage/training_record.json
+      hash: md5
+      md5: c6cb800a2762363d6a0275858cda900d
+      size: 572
+  damage_evaluate:
+    cmd: python -m treadops_ml.damage evaluate
+    deps:
+    - path: artifacts/damage/best.pt
+      hash: md5
+      md5: e9530e555630903f4f94bf7e08ac5fd7
+      size: 5447237
+    - path: configs/damage.yaml
+      hash: md5
+      md5: e0bcfad38e181884cc8a522bb6991d12
+      size: 2415
+    - path: data/damage/yolo
+      hash: md5
+      md5: c5c300680a8908520e6f52ba0d3a699e.dir
+      size: 34848297
+      nfiles: 1434
+    - path: data/eval
+      hash: md5
+      md5: dd589fcaac3debe016d441fd94de60e2.dir
+      size: 1252879
+      nfiles: 5
+    - path: packages/treadops_ml/treadops_ml/damage.py
+      hash: md5
+      md5: 4b7997bd5472cecd7628a907d58ebc6b
+      size: 13973
+    outs:
+    - path: artifacts/damage/evaluation.json
+      hash: md5
+      md5: fe8719074ab05a88af8de169ee52df88
+      size: 2296

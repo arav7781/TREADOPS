@@ -1,4 +1,5 @@
-"""Stage `train`: real Ultralytics YOLO26 classification training with the full-image trainer.
+"""Stage `train`: real Ultralytics YOLO26 classification training with the full-image trainer, or a torchvision
+classifier (recipe `family: torchvision`, see tvmodel.py) on the same images, transforms and record.
 
 Writes <out_dir>/best.pt plus training_record.json (recipe, effective data IDs, seed, lock hash, hardware,
 pretrained hash, epoch series) and logs one project-owned MLflow run when a tracking server is reachable.
@@ -109,65 +110,76 @@ def run(
         mlflow.set_tags({"recipe_sha": recipe_sha, "split_sha": split_sha or "", "device": dev,
                          "preprocess_sha": contract.sha256, **(extra_tags or {})})
 
-    model = YOLO(str(weights))
+    if rec.get("family") == "torchvision":
+        from . import tvmodel
 
-    def _on_fit_epoch_end(trainer):
-        m = {k: float(v) for k, v in (trainer.metrics or {}).items() if isinstance(v, int | float)}
-        tl = getattr(trainer, "tloss", None)  # running mean of loss items: dict in 8.4.x, tensor in older releases
-        if isinstance(tl, dict):
-            m.update({f"train_{k}": float(v) for k, v in tl.items()})
-        elif tl is not None:
-            m["train_loss"] = float(tl.mean())
-        m["lr"] = float(trainer.optimizer.param_groups[0]["lr"])
-        e = int(trainer.epoch) + 1
-        if epochs and epochs[-1]["epoch"] == e:  # Ultralytics re-fires this hook for the final best.pt validation
-            final_eval.update(m)
-            return
-        epochs.append({"epoch": e, **m, "t": round(time.time() - t0, 2)})
-        if mlrun:
-            import mlflow
+        out.mkdir(parents=True, exist_ok=True)
+        t0 = time.time()
+        epochs, cancelled, train_args = tvmodel.train(rec, data, out, dev, weights, on_epoch, mlrun)
+        duration = time.time() - t0
+        if not (out / "best.pt").exists():
+            raise RuntimeError("training finished without best.pt")
+        names = tvmodel.load(out / "best.pt")[1]
+    else:
+        model = YOLO(str(weights))
 
-            mlflow.log_metrics({k.replace("/", "_").replace("(", "").replace(")", ""): v for k, v in m.items()
-                                if v == v}, step=e)
-        if on_epoch and on_epoch(e, int(trainer.epochs), m):
-            trainer.stop = True
-            trainer._treadops_cancelled = True
+        def _on_fit_epoch_end(trainer):
+            m = {k: float(v) for k, v in (trainer.metrics or {}).items() if isinstance(v, int | float)}
+            tl = getattr(trainer, "tloss", None)  # running mean of loss items: dict in 8.4.x, tensor in older releases
+            if isinstance(tl, dict):
+                m.update({f"train_{k}": float(v) for k, v in tl.items()})
+            elif tl is not None:
+                m["train_loss"] = float(tl.mean())
+            m["lr"] = float(trainer.optimizer.param_groups[0]["lr"])
+            e = int(trainer.epoch) + 1
+            if epochs and epochs[-1]["epoch"] == e:  # Ultralytics re-fires this hook for the final best.pt validation
+                final_eval.update(m)
+                return
+            epochs.append({"epoch": e, **m, "t": round(time.time() - t0, 2)})
+            if mlrun:
+                import mlflow
 
-    model.add_callback("on_fit_epoch_end", _on_fit_epoch_end)
-    t0 = time.time()
-    train_args = dict(
-        trainer=FullImageTrainer,
-        data=str(data),
-        epochs=int(rec["epochs"]),
-        imgsz=int(rec["imgsz"]),
-        batch=int(rec["batch"]),
-        device=dev,
-        seed=int(rec["seed"]),
-        deterministic=True,
-        workers=int(rec.get("workers", 2)),
-        cache=False,
-        optimizer=rec["optimizer"],
-        lr0=float(rec["lr0"]),
-        patience=int(rec["patience"]),
-        fraction=float(rec.get("fraction", 1.0)),
-        project=str(repo_path(cfg.get("runs_dir", "runs/treadops"))),
-        name=run_name,
-        exist_ok=True,
-        plots=False,
-        verbose=False,
-        val=True,
-    )
-    model.train(**train_args)
-    duration = time.time() - t0
-    trainer = model.trainer
-    cancelled = bool(getattr(trainer, "_treadops_cancelled", False))
+                mlflow.log_metrics({k.replace("/", "_").replace("(", "").replace(")", ""): v for k, v in m.items()
+                                    if v == v}, step=e)
+            if on_epoch and on_epoch(e, int(trainer.epochs), m):
+                trainer.stop = True
+                trainer._treadops_cancelled = True
 
-    best = Path(trainer.best)
-    if not best.exists():
-        raise RuntimeError("training finished without best.pt")
-    out.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(best, out / "best.pt")
-    names = {int(k): v for k, v in YOLO(str(out / "best.pt")).names.items()}
+        model.add_callback("on_fit_epoch_end", _on_fit_epoch_end)
+        t0 = time.time()
+        train_args = dict(
+            trainer=FullImageTrainer,
+            data=str(data),
+            epochs=int(rec["epochs"]),
+            imgsz=int(rec["imgsz"]),
+            batch=int(rec["batch"]),
+            device=dev,
+            seed=int(rec["seed"]),
+            deterministic=True,
+            workers=int(rec.get("workers", 2)),
+            cache=False,
+            optimizer=rec["optimizer"],
+            lr0=float(rec["lr0"]),
+            patience=int(rec["patience"]),
+            fraction=float(rec.get("fraction", 1.0)),
+            project=str(repo_path(cfg.get("runs_dir", "runs/treadops"))),
+            name=run_name,
+            exist_ok=True,
+            plots=False,
+            verbose=False,
+            val=True,
+        )
+        model.train(**train_args)
+        duration = time.time() - t0
+        trainer = model.trainer
+        cancelled = bool(getattr(trainer, "_treadops_cancelled", False))
+
+        best = Path(trainer.best)
+        if not best.exists():
+            raise RuntimeError("training finished without best.pt")
+        out.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(best, out / "best.pt")
+        names = {int(k): v for k, v in YOLO(str(out / "best.pt")).names.items()}
     if sorted(names.values()) != ["defective", "good"]:
         raise RuntimeError(f"unexpected class names {names}")
 
@@ -199,7 +211,8 @@ def run(
         "uv_lock_sha256": lock_hash(),
         "packages": package_versions(),
         "hardware": hardware(),
-        "nondeterminism_note": "seed + deterministic=True; bitwise GPU/MPS reproducibility is not guaranteed",
+        "nondeterminism_note": ("seeded (DataLoader workers included); " if rec.get("family") == "torchvision" else
+                                "seed + deterministic=True; ") + "bitwise GPU/MPS reproducibility is not guaranteed",
         **git_state(),
         "mlflow_run_id": mlrun.info.run_id if mlrun else None,
     }

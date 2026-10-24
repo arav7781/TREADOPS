@@ -18,6 +18,7 @@ from __future__ import annotations
 import json
 import re
 import time
+from dataclasses import asdict
 from typing import Any, TypedDict
 
 from langgraph.graph import END, START, StateGraph
@@ -67,10 +68,10 @@ NOT_A_TYRE_REPLY = ("This image does not show a tyre, so no damage verdict was p
 
 
 def guardrail_summary(c: dict[str, Any]) -> str:
-    """What the output guardrail shows when it withholds a draft that contradicts the YOLO result."""
+    """What the output guardrail shows when it withholds a draft that contradicts the classifier's result."""
     if c.get("verdict") == "not_a_tyre":
         return NOT_A_TYRE_REPLY
-    return (f"The YOLO result for this tyre is **{verdict_label(c)}** ({c.get('triage_label')}, calibrated "
+    return (f"The model's result for this tyre is **{verdict_label(c)}** ({c.get('triage_label')}, calibrated "
             f"p(defective) {c.get('p_defective', 0):.4f}). The drafted answer contradicted it, so the output "
             "guardrail withheld it. Ask again for an explanation.")
 
@@ -140,6 +141,11 @@ def build(*, llm, model: str | None, ctx: tools.ToolContext, tracer: Tracer, sys
         with tracer.span("guard_input", "guard"):
             v = guardrails.check_input(state["user_text"], state["has_attachment"])
             tracer.guard_events += v.events
+            tracer.io(inputs={"user_text": state["user_text"], "has_attachment": state["has_attachment"],
+                              "is_video": bool(state.get("is_video"))},
+                      outputs={"blocked": v.blocked, "text_for_llm": v.text, "reply": v.reply,
+                               "certification_request": v.certification_request,
+                               "events": [asdict(e) for e in v.events]})
         flagged = [e.rule for e in v.events if e.action != "pass"]
         ctx.emit("guard_input", {"status": "blocked" if v.blocked else "passed", "rules": flagged,
                                  "message": "input guardrails: " + ("blocked (" + ", ".join(flagged) + ")"
@@ -187,6 +193,10 @@ def build(*, llm, model: str | None, ctx: tools.ToolContext, tracer: Tracer, sys
                         time.sleep(0.8)
                 tracer.add_usage(llm.last_usage, model)
                 attrs["usage"] = llm.last_usage
+                tracer.io(inputs={"iteration": it + 1, "model": model, "tool_choice": choice,
+                                  "last_message": state["messages"][-1]},
+                          outputs={"content": msg.get("content"), "tool_calls": msg.get("tool_calls") or [],
+                                   "usage": llm.last_usage})
             except Exception as exc:
                 attrs["error"] = f"{exc.__class__.__name__}: {str(exc)[:1500]}"
                 filtered = "content_filter" in str(exc)
@@ -217,6 +227,11 @@ def build(*, llm, model: str | None, ctx: tools.ToolContext, tracer: Tracer, sys
                 ctx.emit("tool_call", {"tool": name, "args": call["function"]["arguments"]})
                 res = tools.execute(ctx, name, call["function"]["arguments"])
                 tracer.tools_used.append(name)
+                try:
+                    args = tools.parse_arguments(call["function"]["arguments"])
+                except json.JSONDecodeError:
+                    args = {"unparsed": call["function"]["arguments"]}
+                tracer.io(inputs=args, outputs=res)
                 attrs["result_keys"] = sorted(res)[:20]
                 attrs["error"] = res.get("error")
                 ctx.emit("tool_result", {"tool": name, "ok": not res.get("error"), "summary": summarize(name, res)})
@@ -240,6 +255,9 @@ def build(*, llm, model: str | None, ctx: tools.ToolContext, tracer: Tracer, sys
                                         system_prompt=system_prompt, classification=cls,
                                         fallback_summary=guardrail_summary(cls) if cls else None)
             tracer.guard_events += v.events
+            tracer.io(inputs={"draft": body, "classification": cls},
+                      outputs={"text": v.text, "replaced": v.replaced, "grounding": v.grounding,
+                               "events": [asdict(e) for e in v.events]})
         flagged = [e.rule for e in v.events if e.action != "pass"]
         g = v.grounding
         ctx.emit("guard_output", {"rules": flagged, "grounding": g,

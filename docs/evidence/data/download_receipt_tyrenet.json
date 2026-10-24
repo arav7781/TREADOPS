@@ -1,0 +1,12 @@
+{
+  "archive_bytes": 1897245528,
+  "archive_mtime": "2026-10-24T11:36:08.590487+00:00",
+  "archive_path": "data/raw/archive/tyrenet-32b5vfj6tc-1.rar",
+  "archive_sha256": "d6a6946a3452c53c787578e740652a6fa0876e26d42197183aaf967f93847014",
+  "doi": "10.17632/32b5vfj6tc.1",
+  "license": "CC BY 4.0",
+  "source_endpoint": "https://data.mendeley.com/public-files/datasets/32b5vfj6tc/files/34bae407-28f3-4728-ba58-3c7fd50817ea/file_downloaded",
+  "source_id": "TYRENET:v1",
+  "verified_against": "archive_sha256",
+  "verified_at": "2026-10-24T11:41:30.988176+00:00"
+}

@@ -13,7 +13,7 @@ const jetbrains = JetBrains_Mono({ variable: "--font-jetbrains", subsets: ["lati
 
 export const metadata: Metadata = {
   title: { default: "TreadOps", template: "%s · TreadOps" },
-  description: "YOLO tyre-casing triage with a governed MLOps release loop and a circularity copilot.",
+  description: "Tyre-casing triage with a governed MLOps release loop and a circularity copilot.",
 };
 
 export const viewport: Viewport = { themeColor: "#000000", width: "device-width", initialScale: 1 };

@@ -39,7 +39,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="TreadOps API",
         version="1.0.0",
-        description="Tyre casing inspection with YOLO26 classification, a governed MLOps release loop and a "
+        description="Tyre casing inspection with image classification (YOLO26 or ConvNeXt bundles), a governed MLOps release loop and a "
         "guarded circularity copilot. All times UTC ISO 8601; all IDs UUID.",
         openapi_url="/v1/openapi.json",
         docs_url="/v1/docs",

@@ -57,3 +57,14 @@ def test_outer_fractions_close_to_target_after_grouping():
     m = read_json("data/manifests/split_manifest.json")
     for k, target in {"train": 0.70, "val": 0.15, "test": 0.15}.items():
         assert abs(m["actual_outer_fractions"][k] - target) < 0.03
+
+
+def test_data05_extra_sources_never_move_a_d1_image():
+    frozen = read_json("docs/evidence/data/d1_frozen_roles.json")
+    split = pd.read_parquet(repo_path("data/manifests/split_assignments.parquet"))
+    d1 = split[split.source_id == frozen["source_id"]] if "source_id" in split.columns else split
+    from treadops_ml.common import sha256_json
+
+    assert sha256_json(sorted(zip(d1.image_id, d1.role, strict=True))) == frozen["image_role_pairs_sha256"]
+    for sid, g in split.groupby("source_id") if "source_id" in split.columns else []:
+        assert set(g.role) <= {"dev_train", "dev_val", "calibration", "policy", "test"}, sid

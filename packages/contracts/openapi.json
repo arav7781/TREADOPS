@@ -210,6 +210,27 @@
             "title": "Name",
             "type": "string"
           },
+          "overlay": {
+            "default": true,
+            "description": "Annotate the live view (inspection zone, verdict, damage boxes)",
+            "title": "Overlay",
+            "type": "boolean"
+          },
+          "roi": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Inspection zone [x0, y0, x1, y1], normalised; null = whole frame",
+            "title": "Roi"
+          },
           "simulated": {
             "default": false,
             "description": "Test stream (e.g. a looped video): its inspections are labelled simulated",
@@ -318,6 +339,31 @@
               }
             ],
             "title": "Name"
+          },
+          "overlay": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overlay"
+          },
+          "roi": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roi"
           },
           "simulated": {
             "anyOf": [
@@ -638,7 +684,7 @@
     }
   },
   "info": {
-    "description": "Tyre casing inspection with YOLO26 classification, a governed MLOps release loop and a guarded circularity copilot. All times UTC ISO 8601; all IDs UUID.",
+    "description": "Tyre casing inspection with image classification (YOLO26 or ConvNeXt bundles), a governed MLOps release loop and a guarded circularity copilot. All times UTC ISO 8601; all IDs UUID.",
     "title": "TreadOps API",
     "version": "1.0.0"
   },
@@ -1262,6 +1308,65 @@
         ]
       }
     },
+    "/v1/cameras/{camera_id}/live": {
+      "get": {
+        "description": "The newest annotated frame (about 5 per second while the stream is up): inspection zone in the colour of\nthe latest verdict, damage boxes, camera name. The browser polls it; 404 when the stream is not live.",
+        "operationId": "live_v1_cameras__camera_id__live_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "camera_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Camera Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "image/jpeg": {}
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "no live frame"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Live",
+        "tags": [
+          "cameras"
+        ]
+      }
+    },
     "/v1/cameras/{camera_id}/snapshot": {
       "get": {
         "operationId": "snapshot_v1_cameras__camera_id__snapshot_get",
@@ -1582,7 +1687,7 @@
     },
     "/v1/copilot/messages/{message_id}/stream": {
       "get": {
-        "description": "Server-sent events for one answer: `step` for each agent/pipeline event as it is recorded, `inspection` once\nthe YOLO tool has created one, and `done` with the final, guardrail-checked message. The answer text is only\nsent after the output guardrails have seen all of it.",
+        "description": "Server-sent events for one answer: `step` for each agent/pipeline event as it is recorded, `inspection` once\nthe inspection tool has created one, and `done` with the final, guardrail-checked message. The answer text is only\nsent after the output guardrails have seen all of it.",
         "operationId": "stream_v1_copilot_messages__message_id__stream_get",
         "parameters": [
           {

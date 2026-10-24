@@ -5,7 +5,7 @@ import { isSameOrigin } from "@/lib/origin";
 export const SESSION_COOKIE = "treadops_session";
 const FORWARD_REQUEST_HEADERS = ["content-type", "idempotency-key", "x-correlation-id", "x-request-id", "accept"];
 const FORWARD_RESPONSE_HEADERS = ["content-type", "x-request-id", "location", "retry-after", "cache-control",
-  "idempotent-replay", "x-accel-buffering"];
+  "idempotent-replay", "x-accel-buffering", "x-overlay", "x-frame-at"];
 const HEADERS_TIMEOUT_MS = 15_000;
 
 export function apiBase(): string {

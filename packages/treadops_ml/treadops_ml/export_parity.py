@@ -13,6 +13,7 @@ from typing import Any
 
 import numpy as np
 
+from . import tvmodel
 from .calibrate import TemperatureCalibrator
 from .common import load_yaml, read_json, repo_path, sha256_file, write_json
 from .evaluate import NativeRunner, read_jsonl
@@ -30,18 +31,21 @@ def run(native_dir: str = "artifacts/native", evaluation_dir: str = "artifacts/e
     record = read_json(native / "training_record.json")
     imgsz = int(record["recipe"]["imgsz"])
 
-    work = out / "work"
-    work.mkdir(exist_ok=True)
-    shutil.copy2(native / "best.pt", work / "best.pt")
-    exported = YOLO(str(work / "best.pt"), task="classify").export(
-        format="onnx", imgsz=imgsz, dynamic=True, simplify=True, device="cpu", verbose=False)
+    runner = NativeRunner(native / "best.pt", "cpu", imgsz)
     onnx_path = out / "model.onnx"
-    shutil.move(exported, onnx_path)
-    shutil.rmtree(work)
+    if runner.family == tvmodel.FAMILY:
+        tvmodel.export_onnx(runner.model, onnx_path, imgsz)
+    else:
+        work = out / "work"
+        work.mkdir(exist_ok=True)
+        shutil.copy2(native / "best.pt", work / "best.pt")
+        exported = YOLO(str(work / "best.pt"), task="classify").export(
+            format="onnx", imgsz=imgsz, dynamic=True, simplify=True, device="cpu", verbose=False)
+        shutil.move(exported, onnx_path)
+        shutil.rmtree(work)
 
     rows = read_jsonl(repo_path(eval_dir) / "policy.jsonl") + read_jsonl(repo_path(eval_dir) / "calibration.jsonl")
     rows = rows[: max(pcfg["min_images"], 120)]
-    runner = NativeRunner(native / "best.pt", "cpu", imgsz)
     x = np.concatenate([tensor_from_canonical(repo_path(r["path"]).read_bytes(), runner.contract) for r in rows])
     native_raw = runner.raw(x)
 
@@ -74,7 +78,8 @@ def run(native_dir: str = "artifacts/native", evaluation_dir: str = "artifacts/e
         "n_images": len(rows),
         "cohort": "held-out development images (policy + calibration roles)",
         "precision": "fp32",
-        "runtimes": {"native": "ultralytics/torch cpu", "onnx": f"onnxruntime {ort.__version__} CPUExecutionProvider"},
+        "runtimes": {"native": "torch cpu (torchvision)" if runner.family == tvmodel.FAMILY else "ultralytics/torch cpu",
+                     "onnx": f"onnxruntime {ort.__version__} CPUExecutionProvider"},
         "mean_abs_probability_error": float(err.mean()),
         "max_abs_probability_error": float(err.max()),
         "tolerances": {"mean": pcfg["fp32_mean_abs_probability_error"], "max": pcfg["fp32_max_abs_probability_error"]},

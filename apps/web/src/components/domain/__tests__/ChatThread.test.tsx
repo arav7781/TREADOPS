@@ -34,7 +34,7 @@ describe("ChatThread", () => {
     expect(steps.map((s) => s.getAttribute("data-kind"))).toEqual(["start", "guard_input", "tool_call", "stage", "tool_result"]);
     expect(within(steps[4]).getByText("classify_tyre_image → Defect flagged, p(defective) 0.97")).toBeInTheDocument();
     expect(within(steps[4]).getByText("+2.0s")).toBeInTheDocument();
-    expect(screen.getByText("Finished the YOLO inspection")).toBeInTheDocument(); // live status from the latest step
+    expect(screen.getByText("Finished the model inspection")).toBeInTheDocument(); // live status from the latest step
   });
 
   it("folds the steps away once an answer is ready; a click opens them; follow-ups and copy are offered", async () => {

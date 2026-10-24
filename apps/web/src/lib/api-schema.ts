@@ -162,6 +162,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/cameras/{camera_id}/live": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Live
+         * @description The newest annotated frame (about 5 per second while the stream is up): inspection zone in the colour of
+         *     the latest verdict, damage boxes, camera name. The browser polls it; 404 when the stream is not live.
+         */
+        get: operations["live_v1_cameras__camera_id__live_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/cameras/{camera_id}/snapshot": {
         parameters: {
             query?: never;
@@ -260,7 +281,7 @@ export interface paths {
         /**
          * Stream
          * @description Server-sent events for one answer: `step` for each agent/pipeline event as it is recorded, `inspection` once
-         *     the YOLO tool has created one, and `done` with the final, guardrail-checked message. The answer text is only
+         *     the inspection tool has created one, and `done` with the final, guardrail-checked message. The answer text is only
          *     sent after the output guardrails have seen all of it.
          */
         get: operations["stream_v1_copilot_messages__message_id__stream_get"];
@@ -962,6 +983,17 @@ export interface components {
             /** Name */
             name: string;
             /**
+             * Overlay
+             * @description Annotate the live view (inspection zone, verdict, damage boxes)
+             * @default true
+             */
+            overlay: boolean;
+            /**
+             * Roi
+             * @description Inspection zone [x0, y0, x1, y1], normalised; null = whole frame
+             */
+            roi?: number[] | null;
+            /**
              * Simulated
              * @description Test stream (e.g. a looped video): its inspections are labelled simulated
              * @default false
@@ -986,6 +1018,10 @@ export interface components {
             min_sharpness?: number | null;
             /** Name */
             name?: string | null;
+            /** Overlay */
+            overlay?: boolean | null;
+            /** Roi */
+            roi?: number[] | null;
             /** Simulated */
             simulated?: boolean | null;
             /** Stream Url */
@@ -1453,6 +1489,46 @@ export interface operations {
                 content: {
                     "application/json": unknown;
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    live_v1_cameras__camera_id__live_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                camera_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": unknown;
+                };
+            };
+            /** @description no live frame */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

@@ -4,6 +4,8 @@ stages:
     cmd: python -m treadops_ml.prepare --config configs/data.yaml
     deps:
       - data/raw/archive/bn7ch8tvyp-1.zip
+      - data/raw/archive/tyrenet-32b5vfj6tc-1.rar
+      - data/raw/archive/msu-z3zyli.tar.gz
       - configs/data.yaml
       - configs/weights.lock.yaml
       - packages/treadops_ml/treadops_ml/prepare.py
@@ -79,8 +81,45 @@ stages:
       - artifacts/export
       - configs/bundle.yaml
       - configs/policy.yaml
+      - artifacts/damage/best.pt
+      - artifacts/damage/evaluation.json
       - packages/treadops_ml/treadops_ml/package.py
       - packages/treadops_ml/treadops_ml/gates.py
       - packages/treadops_ml/treadops_ml/bundle.py
     outs:
       - artifacts/bundle
+  damage_prepare:
+    cmd: python -m treadops_ml.damage prepare
+    deps:
+      - data/raw/damage/tire_quality_dataset-v1.zip
+      - data/raw/damage/tirewear_v2-v11.zip
+      - data/eval
+      - configs/damage.yaml
+      - configs/weights.lock.yaml
+      - packages/treadops_ml/treadops_ml/damage.py
+    outs:
+      - data/damage/yolo
+      - data/damage/manifest.json:
+          cache: false
+  damage_train:
+    cmd: python -m treadops_ml.damage train
+    deps:
+      - data/damage/yolo
+      - configs/damage.yaml
+      - configs/weights.lock.yaml
+      - packages/treadops_ml/treadops_ml/damage.py
+    outs:
+      - artifacts/damage/best.pt
+      - artifacts/damage/training_record.json:
+          cache: false
+  damage_evaluate:
+    cmd: python -m treadops_ml.damage evaluate
+    deps:
+      - artifacts/damage/best.pt
+      - data/damage/yolo
+      - data/eval
+      - configs/damage.yaml
+      - packages/treadops_ml/treadops_ml/damage.py
+    outs:
+      - artifacts/damage/evaluation.json:
+          cache: false

@@ -81,10 +81,22 @@ def _font(size: int):
         return ImageFont.load_default()
 
 
-def annotate(img: Image.Image, triage: str, p_def: float, model_label: str, side: int = 720) -> Image.Image:
-    """Final classified image: border + banner in the triage colour. No invented boxes."""
+def annotate(img: Image.Image, triage: str, p_def: float, model_label: str, side: int = 720,
+             boxes: list[dict] | None = None) -> Image.Image:
+    """Final classified image: border + banner in the triage colour, plus the damage locator's measured boxes
+    (normalised xyxy from a real detector; never drawn from the classifier)."""
     img = img.copy()
     img.thumbnail((side, side), Image.Resampling.LANCZOS)
+    if boxes:
+        d0 = ImageDraw.Draw(img)
+        for b in boxes:
+            x0, y0, x1, y1 = (b["box"][0] * img.width, b["box"][1] * img.height, b["box"][2] * img.width,
+                              b["box"][3] * img.height)
+            hue = (252, 229, 0) if b.get("escalates") else (255, 255, 255)
+            d0.rectangle((x0, y0, x1, y1), outline=hue, width=3)
+            tag = f"{b['class'].replace('_', ' ')} {b['confidence']:.2f}"
+            d0.rectangle((x0, max(0, y0 - 18), x0 + 9 * len(tag), max(18, y0)), fill=(0, 32, 91))
+            d0.text((x0 + 3, max(0, y0 - 17)), tag, fill=hue, font=_font(13))
     colour = TRIAGE_COLOURS[triage]
     border, banner = 10, 54
     canvas = Image.new("RGB", (img.width + 2 * border, img.height + 2 * border + banner), colour)

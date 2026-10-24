@@ -123,7 +123,7 @@ export interface Circularity {
   scope: string;
 }
 
-/** A vision LLM's re-check of a tyre YOLO would auto-clear (null when YOLO did not auto-clear or it is off). */
+/** A vision LLM's re-check of a tyre the classifier would auto-clear (null when it did not auto-clear or it is off). */
 export interface SecondOpinion {
   model: string;
   prompt_version: string;
@@ -138,6 +138,20 @@ export interface SecondOpinion {
   latency_ms?: number;
 }
 
+/** Boxes from the damage locator (a YOLO26 detector); normalised [x0, y0, x1, y1] on the canonical image. */
+export interface DamageBox { class: string; confidence: number; box: number[]; escalates: boolean }
+
+export interface DamageLocator {
+  version: string;
+  threshold: number;
+  boxes: DamageBox[];
+  max_confidence: number;
+  escalate: boolean;
+  /** "escalate" when the locator passed its gate; "display_only" when its boxes are shown as experimental. */
+  authority?: "escalate" | "display_only";
+  gate_status?: "passed" | "failed";
+}
+
 export interface PredictionView {
   task: "classify";
   raw_probs: Record<string, number>;
@@ -149,6 +163,7 @@ export interface PredictionView {
   quality_status: "accepted" | "low_quality";
   quality: { descriptors?: Record<string, number>; reasons?: string[] };
   second_opinion: SecondOpinion | null;
+  damage?: DamageLocator | null;
   timing: Record<string, number>;
   lineage: Record<string, unknown>;
   attribution: { method?: string; grid?: number; max_delta?: number; min_delta?: number; strongest_cell?: number[]; note?: string } | null;
@@ -864,6 +879,16 @@ export interface LLMOpsOverview {
   grounding: { passed: number; checked: number; pass_rate: number | null };
   feedback: { up: number; down: number };
   timeline: { t: string; turns: number; p95_ms: number | null; flagged: number }[];
+  /** MLflow Tracing mirror of these turns (null when tracing is off). */
+  mlflow: MlflowLinks | null;
+}
+
+/** Browser links into the MLflow UI's Traces view. */
+export interface MlflowLinks {
+  experiment: string;
+  traces_url: string;
+  trace_id?: string;
+  trace_url?: string;
 }
 
 export interface TraceRow {
@@ -879,6 +904,7 @@ export interface TraceRow {
   tools: string[];
   guardrail_flags: string[];
   grounding: { checked: number; ungrounded: number[]; pass: boolean } | null;
+  mlflow_trace_id: string | null;
 }
 
 export interface TraceSpan {
@@ -908,6 +934,7 @@ export interface TraceDetail {
   guardrail_events: { stage: string; rule: string; action: string; detail: Record<string, unknown> }[];
   user_message: string | null;
   assistant_message: string | null;
+  mlflow: MlflowLinks | null;
 }
 
 export interface CameraCounts { inspected: number; damaged: number; not_damaged: number; expert_check: number }
@@ -934,6 +961,22 @@ export interface Camera {
   frames_read: number;
   captures: number;
   last_hour: CameraCounts;
+  /** Inspection zone [x0, y0, x1, y1], normalised; null = the whole frame is inspected. */
+  roi: number[] | null;
+  /** Whether the live view is annotated (zone, verdict, damage boxes). */
+  overlay: boolean;
+  last_result: CameraResult | null;
+}
+
+/** The newest finished inspection of a camera: what the live overlay labels the inspection zone with. */
+export interface CameraResult {
+  inspection_id: string;
+  at: string;
+  verdict: "damaged" | "not_damaged" | "uncertain";
+  triage: string;
+  p_defective: number;
+  model_family: string | null;
+  damage: { boxes: DamageBox[] | null; authority: string | null; escalate: boolean | null } | null;
 }
 
 export interface CameraProbe { ok: boolean; width: number; height: number; fps: number | null; snapshot_url: string; stream_url: string }
