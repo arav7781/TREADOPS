@@ -47,8 +47,9 @@ localisation.
   `python scripts/sim_cameras.py up`). Migration `0007`: `cameras.roi`, `cameras.overlay`.
 - **Damage locator authority**: bundled even when its gate fails, as `display_only` (experimental boxes, no
   escalation); `escalate` only after it passes.
-- **Vision check circuit breaker**: a TCP probe and a 5-minute breaker stop an unreachable provider from stalling
-  inspections for ~50 s each (still fail-safe: no auto-clear without a usable answer).
+- **Vision check circuit breaker**: a TCP probe and a breaker (60 s, after two timeouts or connection errors in a
+  row, or at once when the connection is refused) stop an unreachable provider from stalling inspections for ~50 s
+  each (still fail-safe: no auto-clear without a usable answer).
 
 ### Changed
 
@@ -59,6 +60,14 @@ localisation.
 
 ### Fixed
 
+- Bib's step timeline repeated the depth stage and never showed the quality stage (stage events were tracked by
+  position in an index-ordered list, and depth, stored as 9, finishes before quality); React reported duplicate
+  keys. Events are now tracked by stage index; the timeline numbers stages by pipeline step and shows each once,
+  including in answers recorded before the fix.
+- One slow vision answer (a timeout among normal 3-4 s answers) paused the second opinion for 5 minutes, sending
+  every good tyre on a camera to an expert in the meantime (51 on 2026-10-25).
+- The damage panel showed a green "No damage boxes" for the experimental (display-only) locator, which misses many
+  cuts; it now says an empty result is no evidence of a sound tyre, and that its boxes never change a decision.
 - Bib's PII redaction masked ISO dates and times ("2026-10-24 17:05") as phone numbers and missed numbers with
   a bracketed area code ("+1 (555) 123-4567").
 - After Ultralytics was imported (it patches `PIL.Image.open` with a HEIF fallback), a non-image upload raised

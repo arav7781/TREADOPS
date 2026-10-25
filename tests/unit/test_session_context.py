@@ -42,3 +42,28 @@ def test_ids_and_hashes_are_not_pii_but_phones_and_cards_are():
     assert "84e4dfd9-b218-42e8-9123-456789f155b2" in text and "5ec3b6a3c0ffee1234567890ab" in text
     assert "98765" not in text and "4111" not in text
     assert counts == {"phone": 1, "card_number": 1}
+
+
+def test_each_pipeline_stage_reaches_the_chat_once_even_when_depth_lands_before_quality(monkeypatch):
+    import uuid
+
+    def st(i: int) -> dict:
+        return {"index": i, "name": f"s{i}", "title": f"Stage {i}", "duration_ms": 1}
+
+    polls = [[st(1), st(2)], [st(1), st(2), st(9)], [st(1), st(2), st(5), st(9)]]  # listed in index order
+
+    def load(db, iid):
+        stages = polls.pop(0)
+        return {"inspection_id": str(iid), "status": "running" if polls else "succeeded", "stages": stages}
+
+    class _DB:
+        def close(self): ...
+
+    emitted: list[int] = []
+    monkeypatch.setattr(tools, "_load", load)
+    monkeypatch.setattr(tools, "new_session", _DB)
+    monkeypatch.setattr(tools.time, "sleep", lambda s: None)
+    ctx = tools.ToolContext(actor=None, inspection_id=uuid.uuid4(),
+                            emit=lambda kind, ev: emitted.append(ev["stage"]) if kind == "stage" else None)
+    assert tools.classify_tyre_image(ctx)["status"] == "succeeded"
+    assert emitted == [1, 2, 9, 5]

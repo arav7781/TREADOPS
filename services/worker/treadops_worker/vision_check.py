@@ -29,8 +29,19 @@ from treadops_ml.common import load_yaml, sha256_bytes
 
 ESCALATE_CONFIDENCE = {"medium", "high"}
 TIMEOUT_S = 25
-BREAKER_S = 300.0  # after the provider is unreachable or times out, skip it (fail-safe: expert check) this long
-_breaker: dict[str, Any] = {"open_until": 0.0, "reason": ""}
+# A dead provider is skipped (fail-safe: expert check) so a line camera does not wait 50 s per tyre on it. One slow
+# answer is not a dead provider (normal answers take 3-4 s with spikes past the timeout), so the breaker opens after
+# BREAKER_AFTER timeouts or connection errors in a row, or at once when nothing accepts a connection; once its
+# BREAKER_S have passed the next tyre tries again, and a single failure then reopens it.
+BREAKER_AFTER = 2
+BREAKER_S = 60.0
+_breaker: dict[str, Any] = {"open_until": 0.0, "reason": "", "failures": 0}
+
+
+def _fail(reason: str, *, at_once: bool = False) -> None:
+    _breaker["failures"] += 1
+    if at_once or _breaker["failures"] >= BREAKER_AFTER:
+        _breaker.update(open_until=time.monotonic() + BREAKER_S, reason=reason)
 
 
 def _reachable(base_url: str | None, timeout: float = 1.5) -> bool:
@@ -105,10 +116,11 @@ def second_opinion(canonical_rgb: np.ndarray) -> dict[str, Any]:
     img.convert("RGB").save(buf, "JPEG", quality=85)
     b64 = base64.b64encode(buf.getvalue()).decode()
     meta = {"model": s.vision_check_model, "prompt_version": version, "prompt_sha256": sha}
-    if time.monotonic() < _breaker["open_until"]:  # a line camera must not wait 50 s per frame on a dead provider
-        return {**meta, "error": f"skipped: provider unreachable moments ago ({_breaker['reason']})", "latency_ms": 0.0}
+    if time.monotonic() < _breaker["open_until"]:
+        return {**meta, "error": f"skipped: provider failing in the last minute ({_breaker['reason']})",
+                "latency_ms": 0.0}
     if not _reachable(s.llm_base_url):
-        _breaker.update(open_until=time.monotonic() + BREAKER_S, reason="no connection")
+        _fail("no connection", at_once=True)
         return {**meta, "error": "provider unreachable (no connection)", "latency_ms": 1500.0}
     t0 = time.perf_counter()
     try:
@@ -119,8 +131,9 @@ def second_opinion(canonical_rgb: np.ndarray) -> dict[str, Any]:
                 {"type": "text", "text": template},
                 {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}}]}])
         out = parse(r.choices[0].message.content or "")
+        _breaker["failures"] = 0
     except Exception as exc:  # any provider failure means "no usable answer", never an auto-clear
         out = {"error": f"{exc.__class__.__name__}: {str(exc)[:160]}"}
         if exc.__class__.__name__ in ("APITimeoutError", "APIConnectionError"):
-            _breaker.update(open_until=time.monotonic() + BREAKER_S, reason=exc.__class__.__name__)
+            _fail(exc.__class__.__name__)
     return {**meta, **out, "latency_ms": round((time.perf_counter() - t0) * 1000, 1)}

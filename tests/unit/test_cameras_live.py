@@ -33,33 +33,57 @@ def test_overlay_draws_the_zone_in_the_verdict_colour_and_the_boxes():
     assert tuple(out[y0 + int(0.5 * zh), x0 + int(0.6 * zw)]) == overlay.BOX  # the box edge, mapped into the zone
 
 
-def test_a_dead_vision_provider_is_skipped_for_a_minute_and_never_clears(monkeypatch):
+def _provider(monkeypatch, answers: list):
+    """A reachable provider that raises or answers from `answers` in order; returns the list of calls made."""
     import openai
 
     calls = []
 
-    class Dead:
+    class Fake:
         def __init__(self, **kw):
             self.chat = self
             self.completions = self
 
         def create(self, **kw):
             calls.append(1)
-            raise openai.APITimeoutError(request=None)  # type: ignore[arg-type]
+            a = answers.pop(0)
+            if isinstance(a, Exception):
+                raise a
+            msg = type("M", (), {"content": a})
+            return type("R", (), {"choices": [type("C", (), {"message": msg})]})
 
-    monkeypatch.setattr(openai, "OpenAI", Dead)
-    monkeypatch.setattr(vision_check, "_reachable", lambda url: True)  # reachable, but the request times out
-    monkeypatch.setattr(vision_check, "_breaker", {"open_until": 0.0, "reason": ""})
+    monkeypatch.setattr(openai, "OpenAI", Fake)
+    monkeypatch.setattr(vision_check, "_reachable", lambda url: True)
+    monkeypatch.setattr(vision_check, "_breaker", {"open_until": 0.0, "reason": "", "failures": 0})
+    return calls
+
+
+def test_a_dead_vision_provider_is_skipped_for_a_minute_and_never_clears(monkeypatch):
+    import openai
+
+    calls = _provider(monkeypatch, [openai.APITimeoutError(request=None)] * 2)  # type: ignore[arg-type]
     rgb = np.zeros((64, 64, 3), np.uint8)
-    first, second = vision_check.second_opinion(rgb), vision_check.second_opinion(rgb)
-    assert len(calls) == 1 and "APITimeoutError" in first["error"] and second["error"].startswith("skipped")
-    assert second["latency_ms"] == 0.0
-    assert vision_check.decide("good_candidate", second)[0] == "manual_review"
+    first, second, third = (vision_check.second_opinion(rgb) for _ in range(3))
+    assert len(calls) == 2 and "APITimeoutError" in first["error"] and "APITimeoutError" in second["error"]
+    assert third["error"].startswith("skipped") and third["latency_ms"] == 0.0
+    assert all(vision_check.decide("good_candidate", o)[0] == "manual_review" for o in (first, second, third))
+
+
+def test_one_slow_vision_answer_does_not_stop_the_next_tyre_being_checked(monkeypatch):
+    import openai
+
+    ok = '{"tyre_visible": true, "damage_visible": false, "confidence": "high"}'
+    timeout = openai.APITimeoutError(request=None)  # type: ignore[arg-type]
+    calls = _provider(monkeypatch, [timeout, ok, timeout, ok])
+    rgb = np.zeros((64, 64, 3), np.uint8)
+    outs = [vision_check.second_opinion(rgb) for _ in range(4)]
+    assert len(calls) == 4 and [("error" in o) for o in outs] == [True, False, True, False]
+    assert vision_check.decide("good_candidate", outs[1])[0] == "good_candidate"  # a success resets the count
 
 
 def test_an_unreachable_provider_is_detected_by_a_quick_connect(monkeypatch):
     real_reachable = vision_check._reachable
-    monkeypatch.setattr(vision_check, "_breaker", {"open_until": 0.0, "reason": ""})
+    monkeypatch.setattr(vision_check, "_breaker", {"open_until": 0.0, "reason": "", "failures": 0})
     monkeypatch.setattr(vision_check, "_reachable", lambda url: False)
     out = vision_check.second_opinion(np.zeros((64, 64, 3), np.uint8))
     assert out["error"] == "provider unreachable (no connection)" and vision_check._breaker["open_until"] > 0

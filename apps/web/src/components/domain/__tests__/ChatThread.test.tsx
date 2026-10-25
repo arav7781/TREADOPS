@@ -71,6 +71,23 @@ describe("ChatThread", () => {
     expect(onSuggest).toHaveBeenCalledWith("Can this casing be retreaded?");
   });
 
+  it("shows each pipeline stage once, numbered by its step, even when a stored answer repeats one", async () => {
+    const stage = (s: number, i: number, name: string) =>
+      ev(s, { kind: "stage", tool: "classify_tyre_image", stage: i, name, title: name, duration_ms: 5 });
+    // As recorded before stages were tracked by index: depth (9) twice, quality (5) never.
+    const stored = [stage(1, 1, "ingest"), stage(1, 2, "canonical"), stage(2, 9, "depth"), stage(2, 3, "letterbox"), stage(3, 9, "depth")];
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const done: ChatMessage = { id: "a5", role: "assistant", content: "Done.", suggestions: [], trace_id: null, created_at: at(0),
+      attachments: { status: "complete", events: stored } };
+    renderWithQuery(<ChatThread messages={[done]} onSuggest={() => {}} autoScroll={false} />);
+    await userEvent.click(screen.getByRole("button", { name: /5 steps/ }));
+    const row = within(screen.getByRole("list", { name: "Agent steps" })).getByRole("listitem");
+    expect(within(row).getAllByText(/ · 5\.0 ms$/).map((c) => c.textContent)).toEqual(
+      ["1 ingest · 5.0 ms", "2 canonical · 5.0 ms", "3 depth · 5.0 ms", "4 letterbox · 5.0 ms"]);
+    expect(error.mock.calls.flat().join(" ")).not.toMatch(/same key/);
+    error.mockRestore();
+  });
+
   it("describes the inspection event with its pinned deployment", () => {
     expect(eventText({ at: at(0), kind: "inspection", inspection_id: "c65b0e94-c703", model: "yolo26s-cls v2", deployment_generation: 3 }))
       .toBe("inspection c65b0e94 created · yolo26s-cls v2 · generation 3");

@@ -41,7 +41,7 @@ import { RejectionPanel } from "@/components/domain/Rejection";
 import { SecondOpinionPanel } from "@/components/domain/SecondOpinion";
 import { ProbabilityPanel } from "@/components/domain/ProbabilityPanel";
 import { ReviewForm } from "@/components/domain/ReviewForm";
-import { PipelineConsole, StageTheatre } from "@/components/domain/StageGallery";
+import { PipelineConsole, StageTheatre, stepOf } from "@/components/domain/StageGallery";
 import { VideoPanel, type VideoPicker } from "@/components/domain/VideoCapture";
 import { QualityBadge, StatusBadge, TriageBadge, VerdictBadge } from "@/components/domain/badges";
 import { Badge, Button, ErrorState, ProgressBar } from "@/components/ui";
@@ -213,6 +213,8 @@ export function eventText(e: ChatEvent): string {
       return `${e.tool} → ${e.summary ?? (e.ok ? "ok" : "failed")}`;
     case "inspection":
       return `inspection ${e.inspection_id?.slice(0, 8)} created · ${e.model ?? "model"} · generation ${e.deployment_generation ?? "?"}`;
+    case "stage": // numbered by its place in the pipeline, as in the stage gallery (depth is stored as 9, runs 3rd)
+      return `Stage ${stepOf(e.stage ?? 0)}: ${e.title ?? humanize(e.name ?? "")} (${ms(e.duration_ms ?? 0)})`;
     default:
       return e.message ?? humanize(e.kind);
   }
@@ -236,7 +238,7 @@ export function statusLine(e: ChatEvent | undefined): string {
     case "inspection": return "Inspection created, waiting for the worker";
     case "inspection_ref": return `Showing inspection ${e.inspection_id?.slice(0, 8) ?? ""}`;
     case "tool_progress": return e.message ?? `Running ${tool}`;
-    case "stage": return `Stage ${e.stage}: ${e.title}`;
+    case "stage": return `Stage ${stepOf(e.stage ?? 0)}: ${e.title}`;
     case "tool_result": return `Finished ${tool}`;
     case "compose": return "Writing the answer";
     case "guard_output": return "Checking the answer";
@@ -268,13 +270,15 @@ export function AgentTimeline({ events, pending }: { events: ChatEvent[]; pendin
   if (!events.length && !pending) return null;
   const t0 = events.length ? Date.parse(events[0].at) : 0;
   const total = events.length ? (Date.parse(events[events.length - 1].at) - t0) / 1000 : 0;
-  // Consecutive pipeline stages read better as one row of chips; the theatre below shows each one in full.
+  // Consecutive pipeline stages read better as one row of chips, in pipeline order; the theatre below shows each
+  // one in full. Answers recorded before stages were tracked by index can repeat one, so each stage shows once.
   const rows: ChatEvent[][] = [];
   for (const e of events) {
     const prev = rows[rows.length - 1];
-    if (e.kind === "stage" && prev?.[0].kind === "stage") prev.push(e);
-    else rows.push([e]);
+    if (e.kind !== "stage" || prev?.[0].kind !== "stage") rows.push([e]);
+    else if (!prev.some((g) => g.stage === e.stage)) prev.push(e);
   }
+  const byStep = (a: ChatEvent, b: ChatEvent) => stepOf(a.stage ?? 0) - stepOf(b.stage ?? 0);
   return (
     <div className="border-l-2 border-line pl-3">
       <button type="button" onClick={() => setUserOpen(!expanded)} aria-expanded={expanded}
@@ -300,9 +304,9 @@ export function AgentTimeline({ events, pending }: { events: ChatEvent[]; pendin
                 <li key={`${group[0].at}-${i}`} data-kind={e.kind} className="log-in flex items-start gap-2">
                   <Icon aria-hidden className={clsx("mt-0.5 h-3.5 w-3.5 shrink-0", tone, (last || e.kind === "tool_progress") && pending && "animate-pulse")} />
                   {e.kind === "stage" ? (
-                    <span className="flex min-w-0 flex-1 flex-wrap gap-1" title={group.map(eventText).join("\n")}>
-                      {group.map((g) => (
-                        <span key={g.stage} className="pop-in mono rounded-full bg-accent-soft px-2 py-px text-xs text-ink">{g.stage} {g.name} · {ms(g.duration_ms ?? 0)}</span>
+                    <span className="flex min-w-0 flex-1 flex-wrap gap-1" title={[...group].sort(byStep).map(eventText).join("\n")}>
+                      {[...group].sort(byStep).map((g) => (
+                        <span key={g.stage} className="pop-in mono rounded-full bg-accent-soft px-2 py-px text-xs text-ink">{stepOf(g.stage ?? 0)} {g.name} · {ms(g.duration_ms ?? 0)}</span>
                       ))}
                     </span>
                   ) : (

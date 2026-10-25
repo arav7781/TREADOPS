@@ -198,7 +198,9 @@ def classify_tyre_image(ctx: ToolContext) -> dict[str, Any]:
     assert inspection_id is not None  # set by _submit_photo above
     wait = float(config()["classify_wait_s"])
     t0 = time.monotonic()
-    seen_stages = 0
+    # By index, not position: stages are listed in index order, and depth (stored as 9) lands before quality (5),
+    # so a position cursor would re-emit depth and never emit quality.
+    seen_stages: set[int] = set()
     ctx.emit("tool_progress", {"tool": "classify_tyre_image",
                                "message": "inspection job queued; waiting for the worker"})
     while True:
@@ -209,12 +211,13 @@ def classify_tyre_image(ctx: ToolContext) -> dict[str, Any]:
             db.close()
         if res is None:
             return {"error": "not_found", "inspection_id": str(ctx.inspection_id)}
-        if len(res["stages"]) > seen_stages:
-            for st in res["stages"][seen_stages:]:
-                ctx.emit("stage", {"tool": "classify_tyre_image", "stage": st["index"], "name": st["name"],
-                                   "title": st["title"], "duration_ms": st["duration_ms"],
-                                   "message": f"stage {st['index']}: {st['title']} ({st['duration_ms']} ms)"})
-            seen_stages = len(res["stages"])
+        for st in res["stages"]:
+            if st["index"] in seen_stages:
+                continue
+            seen_stages.add(st["index"])
+            ctx.emit("stage", {"tool": "classify_tyre_image", "stage": st["index"], "name": st["name"],
+                               "title": st["title"], "duration_ms": st["duration_ms"],
+                               "message": f"{st['title']} ({st['duration_ms']} ms)"})
         if res["status"] == "rejected":
             return {"error": "not_a_tyre", "inspection_id": res["inspection_id"], "rejection": res.get("rejection"),
                     "message": "The image was rejected: it does not show a tyre. No damage verdict exists; do not "

@@ -297,8 +297,9 @@ Bib's chat): the inspection zone in the colour of the verdict for the tyre in it
 *damaged*, amber *expert check*; "inspecting…" until the verdict arrives, dropped as soon as the zone changes) and
 the damage locator's boxes found on that very frame. On the simulated belt (5 s stops) every tyre is inspected
 once, 1.7 s from capture to verdict at the median. With the vision second opinion configured but unreachable, a
-connect probe and a 5-minute circuit breaker keep cameras moving, and every would-be auto-clear goes to an expert
-(fail-safe), so the belt shows no green verdicts until the provider is back.
+connect probe and a circuit breaker (open for 60 s after two timeouts in a row or a refused connection) keep
+cameras moving, and every would-be auto-clear goes to an expert (fail-safe), so the belt shows no green verdicts
+until the provider is back.
 
 ## Sustainability ledger
 
