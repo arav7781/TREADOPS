@@ -28,6 +28,20 @@ LLMOps tracing. Inspection happens inside the chat: the photo goes to Bib, and B
 > (March 2026). It uses public photographs and explicitly simulated operational metadata; **no Michelin
 > production data is used** and nothing here describes a Michelin deployment.
 
+## Demo trailer
+
+<p align="center">
+  <a href="https://github.com/arav7781/TREADOPS/releases/tag/trailer-v9">
+    <img src="docs/assets/treadops-trailer-v9.jpg" width="100%"
+      alt="TreadOps demo trailer, 1 minute 57 seconds. Opens the release page with the video.">
+  </a>
+</p>
+
+A 1:57 trailer of the product: Bib calling the computer-vision pipeline, the guardrails stopping a prompt injection,
+LLMOps traced in MLflow and gated model releases. The video is attached to the
+[`trailer-v9` release](https://github.com/arav7781/TREADOPS/releases/tag/trailer-v9) as
+`TreadOps-Trailer-v9-1080p60.mp4`; credits for its photos, music and narration are in [NOTICE.md](NOTICE.md#demo-trailer).
+
 ## What you can do with it
 
 | Role | Flow |

@@ -107,6 +107,22 @@ Operational metadata in replays (lines, cameras, scenarios) is **simulated** and
 and the icons derived from it (`apps/web/public/brand/`, `apps/web/src/app/icon.png`, `apple-icon.png`) are the
 authors' own mark; the white variant for dark backgrounds is a recolouring of it.
 
+## Demo trailer
+
+The demo trailer (`TreadOps-Trailer-v9-1080p60.mp4`, attached to the
+[`trailer-v9` release](https://github.com/arav7781/TREADOPS/releases/tag/trailer-v9) and not stored in Git) and
+its thumbnail `docs/assets/treadops-trailer-v9.jpg` are the authors' own edit of TreadOps screen recordings. They
+include third-party material:
+
+| Material | Licence | Attribution |
+|---|---|---|
+| Tyre photographs (the thumbnail shows one, in black and white) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | TyreNet (Mahendrada V. S., Parameswaran M.) and Pathmanaban P. et al., Mendeley Data, as listed under Data |
+| Outro music, "Tempting Secrets" | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | "Tempting Secrets" Kevin MacLeod (incompetech.com), Licensed under Creative Commons: By Attribution 4.0 |
+| Narration | ElevenLabs terms of service | Voice-over generated with ElevenLabs (elevenlabs.io) |
+
+The rest of the music is an original composition. The trailer's own credits card repeats these attributions, and
+its prompt-injection sequence is a reconstruction of the guardrail's real behaviour and reply text.
+
 ## Trademarks and affiliation
 
 TreadOps is an independent engineering prototype. It is **not affiliated with, sponsored by or endorsed by
