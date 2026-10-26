@@ -109,8 +109,8 @@ authors' own mark; the white variant for dark backgrounds is a recolouring of it
 
 ## Demo trailer
 
-The demo trailer (`TreadOps-Trailer-v9-1080p60.mp4`, attached to the
-[`trailer-v9` release](https://github.com/arav7781/TREADOPS/releases/tag/trailer-v9) and not stored in Git) and
+The demo trailer (`docs/assets/TreadOps-Trailer-v9-1080p60.mp4`, stored with Git LFS and also attached to the
+[`trailer-v9` release](https://github.com/arav7781/TREADOPS/releases/tag/trailer-v9)) and
 its thumbnail `docs/assets/treadops-trailer-v9.jpg` are the authors' own edit of TreadOps screen recordings. They
 include third-party material:
 
