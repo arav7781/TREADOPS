@@ -38,9 +38,11 @@ LLMOps tracing. Inspection happens inside the chat: the photo goes to Bib, and B
 </p>
 
 A 1:57 trailer of the product: Bib calling the computer-vision pipeline, the guardrails stopping a prompt injection,
-LLMOps traced in MLflow and gated model releases. The video is attached to the
-[`trailer-v9` release](https://github.com/arav7781/TREADOPS/releases/tag/trailer-v9) as
-`TreadOps-Trailer-v9-1080p60.mp4`; credits for its photos, music and narration are in [NOTICE.md](NOTICE.md#demo-trailer).
+LLMOps traced in MLflow and gated model releases. Watch or download it from the
+[`trailer-v9` release](https://github.com/arav7781/TREADOPS/releases/tag/trailer-v9); the same file is in the repo at
+[`docs/assets/TreadOps-Trailer-v9-1080p60.mp4`](docs/assets/TreadOps-Trailer-v9-1080p60.mp4), stored with Git LFS
+(run `git lfs install` before cloning to fetch it). Credits for its photos, music and narration are in
+[NOTICE.md](NOTICE.md#demo-trailer).
 
 ## What you can do with it
 
