@@ -2,6 +2,16 @@
 
 Start with the [project README](../README.md). This index lists everything else.
 
+## Paper and presentation
+
+- [Research paper](report/TreadOps_IEEE_Research_Paper.pdf) (PDF, IEEE format, 18 pages): *TreadOps: A Governed
+  Platform for Tyre Inspection with MLOps and LLMOps*, by Arav Saxena and Mahi Laddha. It analyses the repository at
+  commit `6b3a30e`, with ConvNeXt-Tiny v4 serving.
+- [Project presentation](presentation/TreadOps_Presentation.pptx) (PowerPoint, 18 slides): tyre anatomy, data
+  sources, model benchmark, the inspection pipeline, live line camera, Bib, MLflow tracing and limits.
+
+Both describe ConvNeXt-Tiny v4 as the serving model. YOLO26s v3 has served since 2026-10-25 (see the Models page).
+
 ## Architecture decisions
 
 | ADR | Decision |
